@@ -53,6 +53,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { GoogleConnectionBadge } from '@/components/GoogleConnectionBadge';
 
 import { 
   authService,
@@ -2087,10 +2088,14 @@ export default function SettingsPage() {
                   <Store className="w-5 h-5 text-emerald-700" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-bold text-slate-900">
                       Accessible Google Business Accounts &amp; Locations
                     </h3>
+                    <GoogleConnectionBadge
+                      status={googleIntegrationStatus}
+                      compact
+                    />
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
                       Account Management API
                     </span>

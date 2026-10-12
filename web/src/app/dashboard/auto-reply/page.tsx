@@ -27,7 +27,8 @@ import {
   Key
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { replyEngine, reviewService, businessService, replyService } from '@/services';
+import { replyEngine, reviewService, businessService, replyService, googleBusinessProfileService } from '@/services';
+import { GoogleConnectionBadge, GoogleBadgeStatus } from '@/components/GoogleConnectionBadge';
 import { Review, Business } from '@/types';
 
 const TABS = ['Settings', 'Reply Templates', 'Review Categories', 'Smart Customisation', 'Activity Log'];
@@ -37,6 +38,7 @@ const LANGUAGES = ['English', 'Hindi', 'Hinglish', 'Other'];
 export default function AutoReplyPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [isEnabled, setIsEnabled] = useState(false);
+  const [googleStatus, setGoogleStatus] = useState<GoogleBadgeStatus>('not_connected');
   const [selectedTone, setSelectedTone] = useState(TONES[0]);
   const [selectedLang, setSelectedLang] = useState(LANGUAGES[0]);
   const [customInstructions, setCustomInstructions] = useState('Always thank the customer by their first name and express our passion for warm hospitality and authentic flavors.');
@@ -92,10 +94,21 @@ export default function AutoReplyPage() {
         setIsEnabled(false);
       }
 
-      // Load real reviews that have replies
-      const reviews = await reviewService.getReviews(bizId);
+      // Load real reviews that have replies and check connection status
+      const [reviews, connInfo] = await Promise.all([
+        reviewService.getReviews(bizId),
+        googleBusinessProfileService.getConnectionStatus(biz),
+      ]);
       const replied = reviews.filter(r => r.replyStatus === 'replied' || r.replyStatus === 'auto_replied');
       setRecentReplies(replied);
+
+      if (connInfo.status === 'connected') {
+        setGoogleStatus('connected');
+      } else if (connInfo.status === 'reconnect_required') {
+        setGoogleStatus('requires_auth');
+      } else {
+        setGoogleStatus(biz?.googlePlaceId ? 'connected' : 'not_connected');
+      }
     }
     loadData();
   }, []);
@@ -209,9 +222,12 @@ export default function AutoReplyPage() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold mb-2">
-            <Bot className="w-3.5 h-3.5 text-blue-600" />
-            <span>AI Automated Reputation Manager</span>
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
+              <Bot className="w-3.5 h-3.5 text-blue-600" />
+              <span>AI Automated Reputation Manager</span>
+            </div>
+            <GoogleConnectionBadge status={googleStatus} compact />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Auto Reply System</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">

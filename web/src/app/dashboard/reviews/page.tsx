@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Star, Bot, CheckCircle, Clock, MoreVertical, ExternalLink, Edit2, Copy, Smile, MessageSquare, AlertCircle, RefreshCw } from 'lucide-react';
 import { reviewService, replyEngine, businessService, googleBusinessProfileService } from '@/services';
+import { GoogleConnectionBadge, GoogleBadgeStatus } from '@/components/GoogleConnectionBadge';
 import { Review, Business } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -15,6 +16,8 @@ export default function ReviewsPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  const [googleStatus, setGoogleStatus] = useState<GoogleBadgeStatus>('not_connected');
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | undefined>(undefined);
   const [replyMode, setReplyMode] = useState<'suggestion' | 'custom'>('suggestion');
   const [activeBiz, setActiveBiz] = useState<Business | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
@@ -25,11 +28,36 @@ export default function ReviewsPage() {
       setActiveBiz(biz);
       const bizId = biz?.businessId || await businessService.getActiveBusinessId();
 
-      const data = await reviewService.getReviews(bizId);
+      const [data, connInfo] = await Promise.all([
+        reviewService.getReviews(bizId),
+        googleBusinessProfileService.getConnectionStatus(biz),
+      ]);
+
       setReviews(data);
       if (data.length > 0) {
         setSelected(data[0]);
         if (data[0].replyText) setReplyText(data[0].replyText);
+      }
+
+      if (connInfo.status === 'connected') {
+        setGoogleStatus('connected');
+        setLastSyncedAt(connInfo.lastSyncedAt);
+      } else if (connInfo.status === 'reconnect_required') {
+        setGoogleStatus('requires_auth');
+      } else {
+        // Query status diagnostics
+        try {
+          const accountsData = await googleBusinessProfileService.getAccountsAndStatus({ businessId: bizId });
+          if (accountsData.integrationStatus === 'access_pending') {
+            setGoogleStatus('access_pending');
+          } else if (accountsData.accounts.length > 0) {
+            setGoogleStatus('connected');
+          } else {
+            setGoogleStatus('not_connected');
+          }
+        } catch {
+          setGoogleStatus('not_connected');
+        }
       }
     }
     loadData();
@@ -43,7 +71,11 @@ export default function ReviewsPage() {
       const bizId = activeBiz.businessId || activeBiz.id || '';
       const result = await googleBusinessProfileService.syncReviews(bizId);
 
+      const now = new Date().toISOString();
+      setLastSyncedAt(now);
+
       if (result.success) {
+        setGoogleStatus('connected');
         const freshReviews = await reviewService.getReviews(bizId);
         setReviews(freshReviews);
         if (freshReviews.length > 0) {
@@ -53,8 +85,10 @@ export default function ReviewsPage() {
         }
         setActionNotice(result.message || `${result.syncedCount} reviews synchronized from Google My Business! ✨`);
       } else if (result.status === 'access_pending') {
+        setGoogleStatus('access_pending');
         setActionNotice('Google API access approval is pending on Google Cloud project pixora-funnel-511104. Merchant profile is connected.');
       } else if (result.status === 'requires_auth') {
+        setGoogleStatus('requires_auth');
         setActionNotice('Please connect your Google Business Profile in Settings to enable live review sync.');
       } else {
         setActionNotice(result.message || 'Could not synchronize reviews from Google.');
@@ -185,19 +219,25 @@ export default function ReviewsPage() {
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
         <div>
-          <h1 className="text-lg font-bold text-gray-900 tracking-tight">Customer Reviews</h1>
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h1 className="text-lg font-bold text-gray-900 tracking-tight">Customer Reviews</h1>
+            <GoogleConnectionBadge
+              status={googleStatus}
+              lastSyncedAt={lastSyncedAt}
+              compact
+            />
+          </div>
           <p className="text-xs text-gray-500">Manage, analyze, and reply to Google reviews for your business</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleSyncGoogle}
-            disabled={isSyncing}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 shadow-sm transition-all cursor-pointer disabled:opacity-50"
-            title="Synchronize latest customer reviews from Google My Business"
-          >
-            <RefreshCw className={cn("w-3.5 h-3.5 text-blue-600", isSyncing && "animate-spin")} />
-            <span>{isSyncing ? 'Syncing with Google...' : 'Sync with Google'}</span>
-          </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <GoogleConnectionBadge
+            status={googleStatus}
+            locationName={activeBiz?.name}
+            lastSyncedAt={lastSyncedAt}
+            showSyncButton
+            onSync={handleSyncGoogle}
+            isSyncing={isSyncing}
+          />
         </div>
       </div>
 

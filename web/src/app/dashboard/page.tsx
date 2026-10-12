@@ -30,13 +30,16 @@ import {
   ChevronRight
 } from 'lucide-react';
 import Image from 'next/image';
-import { businessService, analyticsService, reviewService, menuService, getCatalogTerminology } from '@/services';
+import { businessService, analyticsService, reviewService, menuService, getCatalogTerminology, googleBusinessProfileService } from '@/services';
+import { GoogleConnectionBadge, GoogleBadgeStatus } from '@/components/GoogleConnectionBadge';
 import { Business, Review, MenuItem, Analytics } from '@/types';
 import { cn, copyToClipboard } from '@/lib/utils';
 import { triggerPwaInstall } from '@/components/PwaInstallPrompt';
 
 export default function DashboardHome() {
   const [activeBiz, setActiveBiz] = useState<Business | null>(null);
+  const [googleStatus, setGoogleStatus] = useState<GoogleBadgeStatus>('not_connected');
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | undefined>(undefined);
   const [analytics, setAnalytics] = useState<Analytics>({
     googleReviews: 0,
     googleReviewsGrowth: 0,
@@ -160,16 +163,25 @@ export default function DashboardHome() {
         setActiveBiz(biz);
 
         if (biz) {
-          const [bizAnalytics, bizReviews, bizMenu] = await Promise.all([
+          const [bizAnalytics, bizReviews, bizMenu, connInfo] = await Promise.all([
             analyticsService.getAnalytics(biz.businessId),
             reviewService.getReviews(biz.businessId),
             menuService.getItems(biz.businessId),
+            googleBusinessProfileService.getConnectionStatus(biz),
           ]);
 
           if (isMounted) {
             setAnalytics(bizAnalytics);
             setReviews(bizReviews);
             setMenuItems(bizMenu);
+            if (connInfo.status === 'connected') {
+              setGoogleStatus('connected');
+              setLastSyncedAt(connInfo.lastSyncedAt);
+            } else if (connInfo.status === 'reconnect_required') {
+              setGoogleStatus('requires_auth');
+            } else {
+              setGoogleStatus(biz.googlePlaceId ? 'connected' : 'not_connected');
+            }
           }
         }
       } catch (err) {
@@ -208,10 +220,18 @@ export default function DashboardHome() {
       {/* ── Page Header ── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Good Morning, <span className="font-normal block sm:inline mt-1 sm:mt-0">Here's how your business is doing</span>
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">Track reviews, customer engagement and manage your funnel — all in one place.</p>
+          <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+            <h1 className="text-2xl font-bold text-slate-900">
+              Good Morning, <span className="font-normal block sm:inline mt-1 sm:mt-0">Here's how your business is doing</span>
+            </h1>
+            <GoogleConnectionBadge
+              status={googleStatus}
+              locationName={activeBiz?.name}
+              lastSyncedAt={lastSyncedAt}
+              compact
+            />
+          </div>
+          <p className="text-sm text-slate-500">Track reviews, customer engagement and manage your funnel — all in one place.</p>
         </div>
 
         {/* Interactive Date Range Selector Dropdown */}
@@ -446,7 +466,10 @@ export default function DashboardHome() {
           {/* Latest Reviews (REAL DATA ONLY) */}
           <div className="bg-white rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200 p-5">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-slate-900 text-base">Latest Reviews</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-slate-900 text-base">Latest Reviews</h3>
+                <GoogleConnectionBadge status={googleStatus} compact />
+              </div>
               <Link href="/dashboard/reviews" className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition">
                 View All
               </Link>
