@@ -58,8 +58,9 @@ export default function LoginPage() {
         const bizs = await businessService.getBusinessesForUser(user.id);
         
         if (bizs.length === 0) {
-          setInfoMessage('Welcome! Redirecting to setup...');
-          router.push('/onboarding');
+          setError('No business profile attached to this email');
+          setIsLoading(false);
+          return;
         } else {
           setInfoMessage('Signed in successfully! Redirecting to dashboard...');
           router.push('/dashboard');
@@ -77,13 +78,18 @@ export default function LoginPage() {
     try {
       setIsLoading(true);
       setError(null);
-      await authService.signInWithGoogle();
+      const user = await authService.signInWithGoogle();
       
-      // If we are in local mock mode, we manually redirect.
-      // If Supabase is configured, signInWithOAuth will redirect the browser itself.
-      // Calling router.push() here would interrupt the OAuth redirect.
+      // If we are in local mock mode, check if they have a business
       const { isSupabaseConfigured } = await import('@/lib/supabase/client');
-      if (!isSupabaseConfigured()) {
+      if (!isSupabaseConfigured() && user) {
+        const { businessService } = await import('@/services');
+        const bizs = await businessService.getBusinessesForUser(user.id);
+        if (bizs.length === 0) {
+          setError('No business profile attached to this email');
+          setIsLoading(false);
+          return;
+        }
         router.push('/dashboard');
       }
     } catch (err: any) {
@@ -144,9 +150,22 @@ export default function LoginPage() {
 
           {/* Feedback Alerts */}
           {error && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
-              <span>{error}</span>
+            <div className="mb-4 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium space-y-2">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                <span className="font-semibold">{error}</span>
+              </div>
+              {error === 'No business profile attached to this email' && (
+                <div className="pt-2 border-t border-red-200/60 flex items-center justify-between text-[11px]">
+                  <span className="text-red-700">Need to create your funnel?</span>
+                  <Link
+                    href="/onboarding"
+                    className="font-bold text-red-800 hover:text-red-950 underline flex items-center gap-1"
+                  >
+                    <span>Start 1-Day Trial →</span>
+                  </Link>
+                </div>
+              )}
             </div>
           )}
 

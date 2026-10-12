@@ -3707,9 +3707,9 @@ export default function SettingsPage() {
                   ) : googleAccountsList.length === 0 ? (
                     <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-2.5">
                       <Store className="w-8 h-8 text-slate-400 mx-auto" />
-                      <p className="text-xs font-bold text-slate-800">No accounts loaded yet</p>
+                      <p className="text-xs font-bold text-slate-800">No business profile attached to this email</p>
                       <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-                        Authorize with your Google account via OAuth 2.0 to load verified locations.
+                        No Google Business Profile was found attached to this email address. Make sure you authorize the exact Google email that manages your business on Google Maps.
                       </p>
                       <div className="flex items-center justify-center gap-2 pt-1">
                         <button

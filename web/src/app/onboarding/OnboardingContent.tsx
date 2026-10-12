@@ -1360,9 +1360,9 @@ export default function OnboardingContent() {
                 ) : (
                   <div className="p-8 text-center bg-stone-50 rounded-2xl border border-stone-200 space-y-2">
                     <Store className="w-8 h-8 text-stone-400 mx-auto" />
-                    <p className="text-sm font-bold text-slate-800">No businesses listed yet</p>
+                    <p className="text-sm font-bold text-slate-800">No business profile attached to this email</p>
                     <p className="text-xs text-stone-500 max-w-md mx-auto">
-                      Use the search bar above to look up your business on Google Maps, or sign in with your Google account to list the profiles you manage.
+                      Use the search bar above to look up your business on Google Maps, or sign in with the exact Google account managing your business profile.
                     </p>
                   </div>
                 )}

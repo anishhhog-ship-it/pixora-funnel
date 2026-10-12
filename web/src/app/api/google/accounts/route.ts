@@ -338,6 +338,11 @@ export async function POST(req: NextRequest) {
 
     const totalLocations = accounts.reduce((acc, a) => acc + a.locations.length, 0);
 
+    const hasAccounts = accounts.length > 0 && totalLocations > 0;
+    const responseMessage = hasAccounts
+      ? 'Accessible Google Business Profile accounts fetched successfully.'
+      : 'No business profile attached to this email';
+
     return NextResponse.json({
       success: true,
       apiKeyConfigured: !!apiKey,
@@ -347,10 +352,10 @@ export async function POST(req: NextRequest) {
       totalLocations,
       requiresOAuth,
       integrationStatus,
-      apiWarning,
+      apiWarning: hasAccounts ? apiWarning : (apiWarning || 'No business profile attached to this email'),
       googleConsoleUrl:
         'https://console.cloud.google.com/apis/library/mybusinessaccountmanagement.googleapis.com?project=pixora-funnel-511104',
-      message: 'Accessible Google Business Profile accounts fetched successfully.',
+      message: responseMessage,
     });
   } catch (error: any) {
     return NextResponse.json(

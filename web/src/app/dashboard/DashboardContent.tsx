@@ -121,6 +121,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
   const [activeBusiness, setActiveBusiness] = useState<Business | null>(null);
   const [allBusinesses, setAllBusinesses] = useState<Business[]>([]);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [noBusinessAttached, setNoBusinessAttached] = useState(false);
   const [showBizSwitcher, setShowBizSwitcher] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -245,8 +246,8 @@ export default function DashboardContent({ children }: { children: React.ReactNo
           setUnreadNotifCount(notifs.filter(n => !n.read).length);
         });
       } else {
-        // User is logged in but hasn't completed onboarding -> direct to setup their 1 business
-        router.push('/onboarding');
+        setIsInitializing(false);
+        setNoBusinessAttached(true);
       }
     });
 
@@ -441,6 +442,45 @@ export default function DashboardContent({ children }: { children: React.ReactNo
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center" suppressHydrationWarning>
         <div className="w-8 h-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin mb-4" />
         <p className="text-sm font-semibold text-slate-600">Loading Dashboard...</p>
+      </div>
+    );
+  }
+
+  if (noBusinessAttached) {
+    const currentUser = authService.getCurrentUser();
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-slate-200 shadow-xl space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200">
+            <Store className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900">
+            No business profile attached to this email
+          </h2>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            {currentUser?.email ? (
+              <>The email <strong className="text-slate-800 font-semibold">{currentUser.email}</strong> does not have an active business profile listed yet.</>
+            ) : (
+              'No business profile attached to this email.'
+            )}
+          </p>
+          <div className="pt-2 flex flex-col gap-2.5">
+            <Link
+              href="/onboarding"
+              className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-md flex items-center justify-center gap-2"
+            >
+              <span>Create Business Profile</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer"
+            >
+              Sign out / Use another email
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
