@@ -1,0 +1,60 @@
+{
+  "name": "Pixora Funnel — Business & Reviews",
+  "short_name": "Pixora Funnel",
+  "description": "Smart Google review collection, digital QR stands, and customer funnel app for local businesses.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0B3D2E",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Reviews",
+      "short_name": "Reviews",
+      "description": "View and manage incoming Google reviews",
+      "url": "/dashboard/reviews",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "QR Stands",
+      "short_name": "QR Stands",
+      "description": "Download and generate QR table standees",
+      "url": "/dashboard/qr",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Settings",
+      "short_name": "Settings",
+      "description": "Manage business appearance and funnel theme",
+      "url": "/dashboard/settings",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
