@@ -393,26 +393,49 @@ export const googleBusinessProfileService = {
   },
 
   /**
-   * Google review synchronization
+   * Google review synchronization via official GMB API v4
    */
-  syncReviews: async (businessId: string): Promise<{ syncedCount: number; message: string }> => {
-    if (isSupabaseConfigured() && businessId && !businessId.startsWith('biz_')) {
-      try {
-        const now = new Date().toISOString();
-        await supabase
-          .from('google_integrations')
-          .update({ last_synced_at: now })
-          .eq('business_id', businessId);
+  syncReviews: async (businessId: string): Promise<{
+    success: boolean;
+    status: 'synced' | 'access_pending' | 'requires_auth' | 'api_error';
+    syncedCount: number;
+    message: string;
+    totalReviewCount?: number;
+    averageRating?: number;
+  }> => {
+    try {
+      if (typeof window !== 'undefined') {
+        const res = await fetch('/api/google/reviews/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ businessId }),
+        });
 
-        await supabase
-          .from('google_connections')
-          .update({ last_synced_at: now })
-          .eq('business_id', businessId);
-      } catch (e) {}
+        const data = await res.json();
+        return {
+          success: Boolean(data.success),
+          status: data.status || (data.success ? 'synced' : 'api_error'),
+          syncedCount: data.syncedCount || 0,
+          totalReviewCount: data.totalReviewCount,
+          averageRating: data.averageRating,
+          message: data.message || (data.success ? 'Reviews synchronized successfully.' : 'Sync failed.'),
+        };
+      }
+    } catch (err: any) {
+      console.warn('Could not contact /api/google/reviews/sync:', err);
+      return {
+        success: false,
+        status: 'api_error',
+        syncedCount: 0,
+        message: err.message || 'Network exception during Google review synchronization.',
+      };
     }
+
     return {
+      success: false,
+      status: 'api_error',
       syncedCount: 0,
-      message: 'Google review synchronization completed.',
+      message: 'Client environment unavailable.',
     };
   },
 

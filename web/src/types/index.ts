@@ -130,7 +130,8 @@ export type Review = {
   source: 'google' | 'direct' | 'qr' | 'nfc';
   status: 'published' | 'pending';
   sentiment: 'positive' | 'neutral' | 'negative';
-  replyStatus: 'replied' | 'auto_replied' | 'pending';
+  replyStatus: 'replied' | 'auto_replied' | 'pending' | 'draft';
+  replyText?: string;
   tags: string[];
 };
 

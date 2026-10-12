@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Star, Bot, CheckCircle, Clock, MoreVertical, ExternalLink, Edit2, Copy, Smile, MessageSquare, AlertCircle } from 'lucide-react';
-import { reviewService, replyEngine, businessService } from '@/services';
+import { Search, Star, Bot, CheckCircle, Clock, MoreVertical, ExternalLink, Edit2, Copy, Smile, MessageSquare, AlertCircle, RefreshCw } from 'lucide-react';
+import { reviewService, replyEngine, businessService, googleBusinessProfileService } from '@/services';
 import { Review, Business } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +13,7 @@ export default function ReviewsPage() {
   const [search, setSearch] = useState('');
   const [replyText, setReplyText] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [replyMode, setReplyMode] = useState<'suggestion' | 'custom'>('suggestion');
   const [activeBiz, setActiveBiz] = useState<Business | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
@@ -25,10 +26,45 @@ export default function ReviewsPage() {
 
       const data = await reviewService.getReviews(bizId);
       setReviews(data);
-      if (data.length > 0) setSelected(data[0]);
+      if (data.length > 0) {
+        setSelected(data[0]);
+        if (data[0].replyText) setReplyText(data[0].replyText);
+      }
     }
     loadData();
   }, []);
+
+  const handleSyncGoogle = async () => {
+    if (!activeBiz) return;
+    setIsSyncing(true);
+    setActionNotice(null);
+    try {
+      const bizId = activeBiz.businessId || activeBiz.id || '';
+      const result = await googleBusinessProfileService.syncReviews(bizId);
+
+      if (result.success) {
+        const freshReviews = await reviewService.getReviews(bizId);
+        setReviews(freshReviews);
+        if (freshReviews.length > 0) {
+          const matchSelected = selected ? freshReviews.find(r => r.reviewId === selected.reviewId) : freshReviews[0];
+          setSelected(matchSelected || freshReviews[0]);
+          if (matchSelected?.replyText) setReplyText(matchSelected.replyText);
+        }
+        setActionNotice(result.message || `${result.syncedCount} reviews synchronized from Google My Business! ✨`);
+      } else if (result.status === 'access_pending') {
+        setActionNotice('Google API access approval is pending on Google Cloud project pixora-funnel-511104. Merchant profile is connected.');
+      } else if (result.status === 'requires_auth') {
+        setActionNotice('Please connect your Google Business Profile in Settings to enable live review sync.');
+      } else {
+        setActionNotice(result.message || 'Could not synchronize reviews from Google.');
+      }
+    } catch (err: any) {
+      setActionNotice(err?.message || 'Error occurred during review synchronization.');
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => setActionNotice(null), 6000);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!selected) return;
@@ -89,6 +125,25 @@ export default function ReviewsPage() {
 
   return (
     <div className="flex flex-col gap-5 pb-10">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+        <div>
+          <h1 className="text-lg font-bold text-gray-900 tracking-tight">Customer Reviews</h1>
+          <p className="text-xs text-gray-500">Manage, analyze, and reply to Google reviews for your business</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSyncGoogle}
+            disabled={isSyncing}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+            title="Synchronize latest customer reviews from Google My Business"
+          >
+            <RefreshCw className={cn("w-3.5 h-3.5 text-blue-600", isSyncing && "animate-spin")} />
+            <span>{isSyncing ? 'Syncing with Google...' : 'Sync with Google'}</span>
+          </button>
+        </div>
+      </div>
+
       {/* Action Notice */}
       {actionNotice && (
         <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-between">
@@ -197,7 +252,7 @@ export default function ReviewsPage() {
                     'flex items-start gap-3 px-5 py-3 border-b border-gray-50 cursor-pointer transition-colors',
                     selected?.reviewId === review.reviewId ? 'bg-blue-50 border-l-2 border-l-[blue-600]' : 'hover:bg-gray-50'
                   )}
-                  onClick={() => { setSelected(review); setReplyText(''); }}
+                  onClick={() => { setSelected(review); setReplyText(review.replyText || ''); }}
                 >
                   <img 
                     src={review.reviewerImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(review.reviewerName)}&background=0B3D2E&color=fff`} 
@@ -454,6 +509,7 @@ function SentimentBadge({ sentiment }: { sentiment?: string }) {
 function ReplyStatusBadge({ status }: { status: string }) {
   if (status === 'replied') return <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full flex items-center gap-0.5"><CheckCircle className="w-2.5 h-2.5" /> Replied</span>;
   if (status === 'auto_replied') return <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full flex items-center gap-0.5"><Bot className="w-2.5 h-2.5" /> Auto Replied</span>;
+  if (status === 'draft') return <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" /> Draft</span>;
   return <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" /> Pending</span>;
 }
 

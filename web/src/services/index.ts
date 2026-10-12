@@ -1057,7 +1057,8 @@ export const reviewService = {
             source: 'google',
             status: 'published',
             sentiment: (r.sentiment || 'positive') as any,
-            replyStatus: (r.reply_status === 'replied' ? 'replied' : 'pending') as any,
+            replyStatus: (r.reply_status === 'replied' ? 'replied' : (r.reply_status === 'draft' ? 'draft' : 'pending')) as any,
+            replyText: r.reply_text || undefined,
             tags: Array.isArray(r.topics) ? r.topics : ['Customer Review'],
           }));
         }

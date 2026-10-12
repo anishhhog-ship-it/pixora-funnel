@@ -285,7 +285,7 @@ export async function POST(req: NextRequest) {
         const supabaseAdmin = getSupabaseAdminClient();
         const { data: bData } = await (supabaseAdmin as any)
           .from('businesses')
-          .select('id, name, address, city, phone, website, google_place_id, google_review_url, category, rating, reviews_count')
+          .select('id, name, address, city, phone, website, category')
           .eq('id', businessId)
           .maybeSingle();
 
@@ -295,11 +295,12 @@ export async function POST(req: NextRequest) {
           .eq('business_id', businessId)
           .maybeSingle();
 
-        if (bData && (bData.google_place_id || bData.google_review_url || cData?.google_location_id)) {
-          const locId = cData?.google_location_id || bData.google_place_id || 'locations/linked_profile';
-          const accId = cData?.google_account_id || 'accounts/google_business_profile';
-          const reviewUrl = bData.google_review_url || 
-            (bData.google_place_id ? `https://search.google.com/local/writereview?placeid=${bData.google_place_id}` : undefined);
+        if (bData && cData?.google_location_id) {
+          const locId = cData.google_location_id;
+          const accId = cData.google_account_id || 'accounts/google_business_profile';
+          const reviewUrl = locId.startsWith('ChI')
+            ? `https://search.google.com/local/writereview?placeid=${locId}`
+            : undefined;
 
           accounts.push({
             accountId: accId,
@@ -318,9 +319,9 @@ export async function POST(req: NextRequest) {
                 city: bData.city || 'Jaipur',
                 phone: bData.phone || '',
                 website: bData.website || undefined,
-                rating: bData.rating || 5.0,
-                reviewsCount: bData.reviews_count || 120,
-                mapsUrl: bData.google_place_id ? `https://www.google.com/maps/place/?q=place_id:${bData.google_place_id}` : undefined,
+                rating: 5.0,
+                reviewsCount: 120,
+                mapsUrl: locId.startsWith('ChI') ? `https://www.google.com/maps/place/?q=place_id:${locId}` : undefined,
                 reviewUrl,
                 menuEnabled: true,
                 servicesEnabled: false,

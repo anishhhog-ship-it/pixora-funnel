@@ -724,11 +724,27 @@ export default function SettingsPage() {
   const handleSyncGoogleReviews = async () => {
     if (!activeBiz) return;
     setIsSyncingGoogle(true);
-    const bizId = activeBiz.businessId || activeBiz.id || '';
-    await googleBusinessProfileService.syncReviews(bizId);
-    const status = await googleBusinessProfileService.getConnectionStatus(activeBiz);
-    setGoogleInfo(status);
-    setIsSyncingGoogle(false);
+    setGoogleLinkError(null);
+    setGoogleLinkSuccess(null);
+    try {
+      const bizId = activeBiz.businessId || activeBiz.id || '';
+      const result = await googleBusinessProfileService.syncReviews(bizId);
+      if (result.success) {
+        setGoogleLinkSuccess(result.message || `${result.syncedCount} Google reviews synchronized successfully.`);
+        setTimeout(() => setGoogleLinkSuccess(null), 4000);
+      } else if (result.status === 'access_pending') {
+        setGoogleIntegrationStatus('access_pending');
+        setGoogleApiWarning(result.message);
+      } else {
+        setGoogleLinkError(result.message);
+      }
+      const status = await googleBusinessProfileService.getConnectionStatus(activeBiz);
+      setGoogleInfo(status);
+    } catch (err: any) {
+      setGoogleLinkError(err?.message || 'Failed to sync Google reviews.');
+    } finally {
+      setIsSyncingGoogle(false);
+    }
   };
 
   // =========================================================================
