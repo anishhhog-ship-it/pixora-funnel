@@ -33,7 +33,7 @@ export async function getValidGoogleToken(businessId: string): Promise<GoogleAut
 
   try {
     const supabaseAdmin = getSupabaseAdminClient();
-    const { data: conn, error: connError } = await supabaseAdmin
+    const { data: conn, error: connError } = await (supabaseAdmin as any)
       .from('google_connections')
       .select('*')
       .eq('business_id', businessId)
@@ -81,7 +81,7 @@ export async function getValidGoogleToken(businessId: string): Promise<GoogleAut
     if (!tokenRes.ok) {
       if (tokenData.error === 'invalid_grant') {
         // User revoked access or token expired
-        await supabaseAdmin
+        await (supabaseAdmin as any)
           .from('google_connections')
           .update({ status: 'expired', updated_at: new Date().toISOString() })
           .eq('business_id', businessId);

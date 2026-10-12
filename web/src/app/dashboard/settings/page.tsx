@@ -481,10 +481,20 @@ export default function SettingsPage() {
     }
   };
 
+  const handleConnectGoogleOAuth = () => {
+    const bizId = activeBiz?.businessId || activeBiz?.id || '';
+    if (!bizId) {
+      setGoogleLinkError('Please select a business before authorizing with Google.');
+      return;
+    }
+    googleBusinessProfileService.initiateOAuth(bizId, '/dashboard/settings');
+  };
+
   const handleLoadGoogleAccounts = async () => {
     setIsLoadingAccounts(true);
     try {
-      const accounts = await googleBusinessProfileService.getAccounts();
+      const bizId = activeBiz?.businessId || activeBiz?.id || '';
+      const accounts = await googleBusinessProfileService.getAccounts({ businessId: bizId });
       setGoogleAccountsList(accounts);
     } catch (err: any) {
       console.warn('Could not load Google Business accounts:', err);
@@ -2031,32 +2041,52 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleLoadGoogleAccounts}
-                disabled={isLoadingAccounts}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 hover:bg-emerald-100 text-xs font-semibold transition cursor-pointer disabled:opacity-60 shrink-0"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingAccounts ? 'animate-spin' : ''}`} />
-                <span>{isLoadingAccounts ? 'Fetching...' : 'Fetch Accounts List'}</span>
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleConnectGoogleOAuth}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-white text-xs font-semibold transition cursor-pointer shadow-xs"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Connect with Google (OAuth)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLoadGoogleAccounts}
+                  disabled={isLoadingAccounts}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 hover:bg-emerald-100 text-xs font-semibold transition cursor-pointer disabled:opacity-60"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingAccounts ? 'animate-spin' : ''}`} />
+                  <span>{isLoadingAccounts ? 'Fetching...' : 'Fetch Accounts List'}</span>
+                </button>
+              </div>
             </div>
 
             {/* List of Accounts and Locations to Activate */}
             <div className="space-y-4">
               {googleAccountsList.length === 0 ? (
-                <div className="p-4 rounded-xl bg-stone-50 border border-stone-200 text-center space-y-2">
-                  <p className="text-xs text-stone-600 font-medium">
-                    Click &ldquo;Fetch Accounts List&rdquo; to discover all accessible business profiles linked to your Google account.
+                <div className="p-5 rounded-xl bg-stone-50 border border-stone-200 text-center space-y-3">
+                  <p className="text-xs text-stone-600 font-medium max-w-md mx-auto">
+                    Authorize Pixora Funnel to access your Google Business Profile to discover accounts, load verified locations, and manage customer reviews.
                   </p>
-                  <button
-                    type="button"
-                    onClick={handleLoadGoogleAccounts}
-                    disabled={isLoadingAccounts}
-                    className="px-4 py-2 bg-emerald-950 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl transition cursor-pointer"
-                  >
-                    Fetch Accessible Accounts
-                  </button>
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleConnectGoogleOAuth}
+                      className="px-4 py-2 bg-emerald-950 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Authorize Google Account (OAuth)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLoadGoogleAccounts}
+                      disabled={isLoadingAccounts}
+                      className="px-4 py-2 bg-white border border-stone-300 hover:bg-stone-50 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
+                    >
+                      {isLoadingAccounts ? 'Fetching...' : 'Fetch Accessible Accounts'}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 googleAccountsList.map((acc, aIdx) => (
@@ -3528,15 +3558,25 @@ export default function SettingsPage() {
                         Retrieved via My Business Account Management API
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleLoadGoogleAccounts}
-                      disabled={isLoadingAccounts}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer flex items-center gap-1"
-                    >
-                      <RefreshCw className={`w-3 h-3 ${isLoadingAccounts ? 'animate-spin' : ''}`} />
-                      <span>Refresh</span>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={handleConnectGoogleOAuth}
+                        className="px-2.5 py-1.5 rounded-lg bg-emerald-950 text-white text-[11px] font-bold hover:bg-emerald-900 transition cursor-pointer flex items-center gap-1"
+                      >
+                        <Lock className="w-3 h-3" />
+                        <span>OAuth Login</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleLoadGoogleAccounts}
+                        disabled={isLoadingAccounts}
+                        className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer flex items-center gap-1"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${isLoadingAccounts ? 'animate-spin' : ''}`} />
+                        <span>Refresh</span>
+                      </button>
+                    </div>
                   </div>
 
                   {isLoadingAccounts ? (
@@ -3551,15 +3591,25 @@ export default function SettingsPage() {
                       <Store className="w-8 h-8 text-slate-400 mx-auto" />
                       <p className="text-xs font-bold text-slate-800">No accounts loaded yet</p>
                       <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-                        Click below to fetch accessible Business Profile accounts associated with your credentials.
+                        Authorize with your Google account via OAuth 2.0 to load verified locations.
                       </p>
-                      <button
-                        type="button"
-                        onClick={handleLoadGoogleAccounts}
-                        className="px-4 py-2 bg-emerald-950 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl transition cursor-pointer"
-                      >
-                        Fetch Accessible Accounts
-                      </button>
+                      <div className="flex items-center justify-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={handleConnectGoogleOAuth}
+                          className="px-4 py-2 bg-emerald-950 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Lock className="w-3.5 h-3.5" />
+                          <span>Authorize with Google (OAuth)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleLoadGoogleAccounts}
+                          className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
+                        >
+                          Fetch Accounts
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     googleAccountsList.map((acc, aIdx) => (

@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
     // Query existing connection so we don't clear an existing refresh token if Google didn't reissue one
     let finalEncryptedToken = encryptedRefreshToken;
     if (!finalEncryptedToken) {
-      const { data: existingConn } = await supabaseAdmin
+      const { data: existingConn } = await (supabaseAdmin as any)
         .from('google_connections')
         .select('encrypted_refresh_token')
         .eq('business_id', businessId)
@@ -125,7 +125,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const { error: dbError } = await supabaseAdmin.from('google_connections').upsert(
+    const { error: dbError } = await (supabaseAdmin as any).from('google_connections').upsert(
       {
         business_id: businessId,
         provider: 'google',
@@ -143,7 +143,7 @@ export async function GET(req: NextRequest) {
       console.error('Failed to update google_connections in Supabase:', dbError);
     }
 
-    await supabaseAdmin.from('google_integrations').upsert(
+    await (supabaseAdmin as any).from('google_integrations').upsert(
       {
         business_id: businessId,
         google_account_id: accountEmail || 'google_business_user',
