@@ -7,13 +7,8 @@
  */
 
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
 import SeoSchema from "@/components/SeoSchema";
-
-const LandingPageClient = dynamic(() => import("@/components/LandingPageClient"), {
-  ssr: false,
-  loading: () => <div className="min-h-screen bg-white" />,
-});
+import LandingPageWrapper from "@/components/LandingPageWrapper";
 
 const BASE_URL = "https://funnel.pixoraautomations.com";
 
@@ -47,7 +42,7 @@ export default function HomePage() {
       <SeoSchema />
 
       {/* All interactive client-side landing page components */}
-      <LandingPageClient />
+      <LandingPageWrapper />
     </>
   );
 }
