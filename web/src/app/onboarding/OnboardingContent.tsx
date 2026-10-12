@@ -359,6 +359,20 @@ export default function OnboardingContent() {
         // ALWAYS default to Step 1 (connect) on refresh!
         setCurrentSection('connect');
       }
+
+      // Check for Google OAuth callback parameters
+      const googleStatus = searchParams.get('google_status');
+      const googleMsg = searchParams.get('google_message');
+      if (googleStatus === 'connected') {
+        setGoogleApiNotice('Google Business Profile account authorized and connected successfully!');
+      } else if (googleStatus === 'access_pending') {
+        setGoogleApiNotice(
+          googleMsg ||
+          'Google Business Profile OAuth authorized! API access approval is currently pending on project pixora-funnel-511104. Location routing is active via direct Place link.'
+        );
+      } else if (googleStatus && googleStatus !== 'connected') {
+        if (googleMsg) setGoogleApiNotice(googleMsg);
+      }
     }
   }, [searchParams]);
 
@@ -660,6 +674,26 @@ export default function OnboardingContent() {
 
       setLiveBusinessId(business.businessId);
       businessService.setActiveBusinessSlug(slug);
+
+      // Persist location mapping to google_connections and google_integrations
+      const finalReviewUrl =
+        resolvedPlace?.placeId && resolvedPlace.placeId.startsWith('ChI')
+          ? `https://search.google.com/local/writereview?placeid=${resolvedPlace.placeId}`
+          : resolvedPlace?.googleMapsUri || website;
+
+      if (business.businessId && finalReviewUrl) {
+        try {
+          await googleBusinessProfileService.linkGoogleProfile(business.businessId, {
+            reviewUrl: finalReviewUrl,
+            placeId: resolvedPlace?.placeId,
+            mapsUrl: resolvedPlace?.googleMapsUri || website,
+            accountId: (resolvedPlace as any)?.accountId,
+            locationId: (resolvedPlace as any)?.locationId || resolvedPlace?.placeId,
+          });
+        } catch (linkErr) {
+          console.warn('Could not persist Google link during onboarding completion:', linkErr);
+        }
+      }
 
       // Create Funnel
       await funnelService.createFunnel(business.businessId, slug);

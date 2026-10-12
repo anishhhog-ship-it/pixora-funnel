@@ -19,6 +19,8 @@ export interface GoogleBusinessDetails {
   menuEnabled: boolean;
   servicesEnabled: boolean;
   productsEnabled: boolean;
+  accountId?: string;
+  locationId?: string;
 }
 
 // Preset samples across different local business verticals

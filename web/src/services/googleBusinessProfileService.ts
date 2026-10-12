@@ -159,7 +159,13 @@ export const googleBusinessProfileService = {
    */
   linkGoogleProfile: async (
     businessId: string, 
-    payload: { reviewUrl: string; placeId?: string; mapsUrl?: string }
+    payload: { 
+      reviewUrl: string; 
+      placeId?: string; 
+      mapsUrl?: string;
+      accountId?: string;
+      locationId?: string;
+    }
   ): Promise<{ success: boolean; message: string }> => {
     const cleanReviewUrl = (payload.reviewUrl || '').trim();
     if (!cleanReviewUrl) {
@@ -167,7 +173,7 @@ export const googleBusinessProfileService = {
     }
 
     // Derive place ID if not explicitly passed
-    let placeId = payload.placeId;
+    let placeId = payload.placeId || payload.locationId;
     if (!placeId && cleanReviewUrl.includes('placeid=')) {
       const match = cleanReviewUrl.match(/placeid=([a-zA-Z0-9_-]+)/);
       if (match) placeId = match[1];
@@ -175,6 +181,9 @@ export const googleBusinessProfileService = {
 
     if (isSupabaseConfigured() && businessId && !businessId.startsWith('biz_')) {
       try {
+        const now = new Date().toISOString();
+
+        // 1. Update businesses table
         await supabase
           .from('businesses')
           .update({
@@ -184,13 +193,48 @@ export const googleBusinessProfileService = {
           })
           .eq('id', businessId);
 
+        // 2. Update google_connections table
+        const { data: existingConn } = await supabase
+          .from('google_connections')
+          .select('id, encrypted_refresh_token')
+          .eq('business_id', businessId)
+          .maybeSingle();
+
+        if (existingConn) {
+          await supabase
+            .from('google_connections')
+            .update({
+              google_account_id: payload.accountId || undefined,
+              google_location_id: payload.locationId || placeId,
+              status: 'connected',
+              last_synced_at: now,
+              updated_at: now,
+            })
+            .eq('business_id', businessId);
+        } else {
+          await supabase
+            .from('google_connections')
+            .insert({
+              business_id: businessId,
+              provider: 'google',
+              google_account_id: payload.accountId || 'google_places_profile',
+              google_location_id: payload.locationId || placeId,
+              status: 'connected',
+              connected_at: now,
+              last_synced_at: now,
+              updated_at: now,
+            });
+        }
+
+        // 3. Update google_integrations table
         await supabase
           .from('google_integrations')
           .upsert({
             business_id: businessId,
-            google_location_id: placeId,
+            google_account_id: payload.accountId || undefined,
+            google_location_id: payload.locationId || placeId,
             status: 'Connected',
-            last_synced_at: new Date().toISOString(),
+            last_synced_at: now,
           }, { onConflict: 'business_id' });
       } catch (err: any) {
         console.warn('Could not record google link in Supabase:', err?.message);
@@ -279,9 +323,19 @@ export const googleBusinessProfileService = {
   },
 
   /**
-   * Get all managed Google Business accounts via My Business Account Management API
+   * Get all managed Google Business accounts and integration status diagnostics
    */
-  getAccounts: async (options?: { accessToken?: string; searchQuery?: string; businessId?: string }): Promise<GoogleBusinessAccount[]> => {
+  getAccountsAndStatus: async (options?: { 
+    accessToken?: string; 
+    searchQuery?: string; 
+    businessId?: string;
+  }): Promise<{
+    accounts: GoogleBusinessAccount[];
+    integrationStatus: 'connected' | 'access_pending' | 'requires_auth';
+    apiWarning: string | null;
+    requiresOAuth: boolean;
+    googleConsoleUrl?: string;
+  }> => {
     try {
       if (typeof window !== 'undefined') {
         const res = await fetch('/api/google/accounts', {
@@ -296,15 +350,38 @@ export const googleBusinessProfileService = {
 
         if (res.ok) {
           const data = await res.json();
-          if (data.success && Array.isArray(data.accounts)) {
-            return data.accounts as GoogleBusinessAccount[];
-          }
+          return {
+            accounts: Array.isArray(data.accounts) ? (data.accounts as GoogleBusinessAccount[]) : [],
+            integrationStatus: data.integrationStatus || (data.requiresOAuth ? 'requires_auth' : 'connected'),
+            apiWarning: data.apiWarning || null,
+            requiresOAuth: Boolean(data.requiresOAuth),
+            googleConsoleUrl: data.googleConsoleUrl,
+          };
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.warn('Could not fetch accounts from /api/google/accounts:', e);
+      return {
+        accounts: [],
+        integrationStatus: 'requires_auth',
+        apiWarning: e?.message || 'Failed to load Google Business accounts',
+        requiresOAuth: true,
+      };
     }
-    return [];
+    return {
+      accounts: [],
+      integrationStatus: 'requires_auth',
+      apiWarning: null,
+      requiresOAuth: true,
+    };
+  },
+
+  /**
+   * Get all managed Google Business accounts via My Business Account Management API
+   */
+  getAccounts: async (options?: { accessToken?: string; searchQuery?: string; businessId?: string }): Promise<GoogleBusinessAccount[]> => {
+    const res = await googleBusinessProfileService.getAccountsAndStatus(options);
+    return res.accounts;
   },
 
   /**

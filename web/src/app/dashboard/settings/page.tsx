@@ -165,6 +165,9 @@ export default function SettingsPage() {
   const [googleConsoleNotice, setGoogleConsoleNotice] = useState<string | null>(null);
   const [googleActiveMode, setGoogleActiveMode] = useState<'search' | 'accounts' | 'direct_link'>('search');
   const [googleAccountsList, setGoogleAccountsList] = useState<GoogleBusinessAccount[]>([]);
+  const [googleIntegrationStatus, setGoogleIntegrationStatus] = useState<'connected' | 'access_pending' | 'requires_auth' | null>(null);
+  const [googleApiWarning, setGoogleApiWarning] = useState<string | null>(null);
+  const [googleOAuthStatusBanner, setGoogleOAuthStatusBanner] = useState<{ type: 'success' | 'warning' | 'info'; message: string } | null>(null);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
   const [isSavingGoogleLink, setIsSavingGoogleLink] = useState(false);
   const [googleLinkError, setGoogleLinkError] = useState<string | null>(null);
@@ -316,6 +319,43 @@ export default function SettingsPage() {
         setProductsEnabled(biz.theme?.productsEnabled ?? catConfig.productsEnabled);
       }
     });
+
+    // Check if redirected back from Google OAuth 2.0 callback
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const googleStatus = params.get('google_status');
+      const googleMsg = params.get('google_message');
+      const googleEmail = params.get('google_email');
+
+      if (googleStatus === 'connected') {
+        setGoogleOAuthStatusBanner({
+          type: 'success',
+          message: `Google Business Profile successfully connected${googleEmail ? ` (${googleEmail})` : ''}!`,
+        });
+        handleLoadGoogleAccounts();
+      } else if (googleStatus === 'access_pending') {
+        setGoogleOAuthStatusBanner({
+          type: 'warning',
+          message: googleMsg || 'Google OAuth authorized! Google Business Profile API access approval is currently pending on Google Cloud project pixora-funnel-511104. Location routing is active via direct Place link.',
+        });
+        handleLoadGoogleAccounts();
+      } else if (googleStatus === 'credentials_missing') {
+        setGoogleOAuthStatusBanner({
+          type: 'warning',
+          message: googleMsg || 'Google OAuth 2.0 Client ID is not configured in server environment.',
+        });
+      } else if (googleStatus === 'cancelled') {
+        setGoogleOAuthStatusBanner({
+          type: 'info',
+          message: 'Google authorization was cancelled by the user.',
+        });
+      } else if (googleStatus) {
+        setGoogleOAuthStatusBanner({
+          type: 'warning',
+          message: googleMsg || 'Google authorization could not be completed.',
+        });
+      }
+    }
   }, []);
 
   const activeCategoryConfig = BUSINESS_CATEGORIES[selectedCategoryId] || normalizeBusinessCategory(selectedCategoryId);
@@ -494,8 +534,10 @@ export default function SettingsPage() {
     setIsLoadingAccounts(true);
     try {
       const bizId = activeBiz?.businessId || activeBiz?.id || '';
-      const accounts = await googleBusinessProfileService.getAccounts({ businessId: bizId });
-      setGoogleAccountsList(accounts);
+      const result = await googleBusinessProfileService.getAccountsAndStatus({ businessId: bizId });
+      setGoogleAccountsList(result.accounts);
+      setGoogleIntegrationStatus(result.integrationStatus);
+      setGoogleApiWarning(result.apiWarning);
     } catch (err: any) {
       console.warn('Could not load Google Business accounts:', err);
     } finally {
@@ -529,7 +571,7 @@ export default function SettingsPage() {
       if (result.googleApiError) {
         setGoogleConsoleNotice(
           result.googleApiError.message ||
-          'Places API (New) requires activation in your Google Cloud Console project 234396771853.'
+          'Places API (New) requires activation in your Google Cloud Console project pixora-funnel-511104.'
         );
       } else {
         setGoogleConsoleNotice(null);
@@ -576,7 +618,7 @@ export default function SettingsPage() {
           website: target.website || activeBiz.website,
           rating: target.rating || activeBiz.rating || 5.0,
           reviewsCount: target.reviewCount || activeBiz.reviewsCount || 0,
-          googlePlaceId: target.placeId,
+          googlePlaceId: target.locationId || target.placeId,
           googleReviewUrl: finalReviewUrl,
           coverImage: target.photoUrl || activeBiz.coverImage,
         };
@@ -589,12 +631,14 @@ export default function SettingsPage() {
         reviewUrl: finalReviewUrl,
         placeId: target.placeId,
         mapsUrl: target.googleMapsUri || finalReviewUrl,
+        accountId: target.accountId,
+        locationId: target.locationId || target.placeId,
       });
 
       if (activeBiz) {
         const status = await googleBusinessProfileService.getConnectionStatus({
           ...activeBiz,
-          googlePlaceId: target.placeId,
+          googlePlaceId: target.locationId || target.placeId,
           googleReviewUrl: finalReviewUrl,
         });
         setGoogleInfo(status);
@@ -2062,6 +2106,53 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {googleOAuthStatusBanner && (
+              <div className={cn(
+                'p-4 rounded-xl border flex items-start justify-between gap-3 text-xs leading-relaxed',
+                googleOAuthStatusBanner.type === 'success'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                  : googleOAuthStatusBanner.type === 'warning'
+                  ? 'bg-amber-50 border-amber-200 text-amber-900'
+                  : 'bg-blue-50 border-blue-200 text-blue-900'
+              )}>
+                <div className="flex items-start gap-2.5">
+                  {googleOAuthStatusBanner.type === 'success' ? (
+                    <CheckCircle className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                  )}
+                  <div>
+                    <p className="font-bold">
+                      {googleOAuthStatusBanner.type === 'success' ? 'Google Account Connected' : 'Google OAuth Status'}
+                    </p>
+                    <p className="mt-0.5 text-[11px] opacity-90">{googleOAuthStatusBanner.message}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setGoogleOAuthStatusBanner(null)}
+                  className="text-stone-400 hover:text-stone-700 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {googleIntegrationStatus === 'access_pending' && (
+              <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200/90 text-xs text-amber-900 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                  <span className="font-bold text-amber-950">Google Business Profile API Access Pending Approval</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white text-amber-800 border border-amber-200">
+                    pixora-funnel-511104
+                  </span>
+                </div>
+                <p className="text-[11px] text-amber-800 leading-relaxed">
+                  Your Google Account is securely connected. Google requires developer approval for Google Business Profile API access on project <strong>pixora-funnel-511104</strong> before live reviews can be synced. In the meantime, you can search and activate your business location below via Place ID for automatic 5-star review routing!
+                </p>
+              </div>
+            )}
+
             {/* List of Accounts and Locations to Activate */}
             <div className="space-y-4">
               {googleAccountsList.length === 0 ? (
@@ -2149,6 +2240,8 @@ export default function SettingsPage() {
                               onClick={() =>
                                 handleApplyGoogleProfile({
                                   placeId: loc.locationId,
+                                  locationId: loc.locationId,
+                                  accountId: loc.accountId,
                                   name: loc.name,
                                   category: loc.category,
                                   categorySlug: loc.categorySlug,
@@ -3652,6 +3745,8 @@ export default function SettingsPage() {
                                 onClick={() =>
                                   handleApplyGoogleProfile({
                                     placeId: loc.locationId,
+                                    locationId: loc.locationId,
+                                    accountId: loc.accountId,
                                     name: loc.name,
                                     category: loc.category,
                                     categorySlug: loc.categorySlug,
