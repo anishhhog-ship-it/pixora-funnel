@@ -212,5 +212,38 @@ export const replyService = {
       approvalRequired: true,
       sensitiveIssueReview: true,
     };
-  }
+  },
+
+  updateRules: async (params: {
+    businessId: string;
+    ratingMin?: number;
+    ratingMax?: number;
+    autoReplyEnabled?: boolean;
+    approvalRequired?: boolean;
+    sensitiveIssueReview?: boolean;
+  }): Promise<boolean> => {
+    if (isSupabaseConfigured() && params.businessId && !params.businessId.startsWith('biz_')) {
+      try {
+        const { error } = await supabase
+          .from('reply_rules')
+          .upsert(
+            {
+              business_id: params.businessId,
+              rating_min: params.ratingMin ?? 4,
+              rating_max: params.ratingMax ?? 5,
+              auto_reply_enabled: params.autoReplyEnabled ?? false,
+              approval_required: params.approvalRequired ?? true,
+              sensitive_issue_review: params.sensitiveIssueReview ?? true,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'business_id' }
+          );
+
+        return !error;
+      } catch (err) {
+        console.warn('Could not update reply rules in Supabase:', err);
+      }
+    }
+    return true;
+  },
 };

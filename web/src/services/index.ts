@@ -1188,19 +1188,64 @@ export const reviewService = {
     }
   },
 
-  addReply: async (reviewId: string, replyText: string, replyType: 'manual' | 'auto' = 'manual'): Promise<Review | null> => {
-    if (isSupabaseConfigured() && !reviewId.startsWith('rev_')) {
+  addReply: async (
+    reviewId: string,
+    replyText: string,
+    replyType: 'manual' | 'auto' = 'manual',
+    businessId?: string
+  ): Promise<Review | null> => {
+    let resolvedBizId = businessId;
+    if (!resolvedBizId && isBrowser) {
       try {
-        await supabase.from('review_replies').insert({
-          google_review_id: reviewId,
-          reply_text: replyText,
-          reply_type: replyType,
-          status: 'posted',
+        const stored = localStorage.getItem('pixora_active_business');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          resolvedBizId = parsed.id || parsed.businessId;
+        }
+      } catch (e) {}
+    }
+
+    if (resolvedBizId && typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/google/reviews/reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessId: resolvedBizId,
+            googleReviewId: reviewId,
+            replyText,
+            source: replyType,
+            mode: 'publish',
+          }),
         });
-        await supabase
-          .from('google_reviews')
-          .update({ reply_status: 'replied' })
-          .eq('google_review_id', reviewId);
+        const data = await res.json();
+        const replyStatus = data.status === 'posted' ? 'replied' : 'draft';
+        return {
+          reviewId,
+          businessId: resolvedBizId,
+          reviewerName: 'Verified Customer',
+          rating: 5,
+          text: '',
+          date: new Date().toISOString(),
+          source: 'google',
+          status: 'published',
+          sentiment: 'positive',
+          replyStatus,
+          replyText,
+          tags: ['Customer Review'],
+        };
+      } catch (err) {
+        console.warn('API review reply error, falling back:', err);
+      }
+    }
+
+    if (isSupabaseConfigured() && !reviewId.startsWith('rev_') && resolvedBizId) {
+      try {
+        await supabase.from('google_reviews').update({
+          reply_status: 'draft',
+          reply_text: replyText,
+          updated_at: new Date().toISOString(),
+        }).eq('google_review_id', reviewId);
       } catch (err) {
         console.warn('Could not save reply to Supabase:', err);
       }
@@ -1214,6 +1259,7 @@ export const reviewService = {
           const idx = list.findIndex(r => r.reviewId === reviewId);
           if (idx >= 0) {
             list[idx].replyStatus = 'replied';
+            list[idx].replyText = replyText;
             localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(list));
             return list[idx];
           }

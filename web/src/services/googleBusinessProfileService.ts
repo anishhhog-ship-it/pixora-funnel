@@ -440,17 +440,104 @@ export const googleBusinessProfileService = {
   },
 
   /**
-   * Google review reply posting
+   * Google review reply posting via official GMB API v4
    */
   postReply: async (params: {
     businessId: string;
     googleReviewId: string;
     replyText: string;
-  }): Promise<{ success: boolean; status: 'posted' | 'draft' | 'failed'; message: string }> => {
+    source?: 'manual' | 'smart' | 'auto';
+    mode?: 'publish' | 'draft';
+  }): Promise<{
+    success: boolean;
+    status: 'posted' | 'draft' | 'access_pending' | 'requires_auth' | 'trial_restricted' | 'api_error';
+    message: string;
+    reviewId?: string;
+    replyText?: string;
+  }> => {
+    try {
+      if (typeof window !== 'undefined') {
+        const res = await fetch('/api/google/reviews/reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params),
+        });
+
+        const data = await res.json();
+        return {
+          success: Boolean(data.success),
+          status: data.status || (data.success ? 'posted' : 'api_error'),
+          message: data.message || (data.success ? 'Reply published to Google Maps.' : 'Failed to publish reply.'),
+          reviewId: data.reviewId,
+          replyText: data.replyText,
+        };
+      }
+    } catch (err: any) {
+      console.warn('Could not contact /api/google/reviews/reply:', err);
+      return {
+        success: false,
+        status: 'api_error',
+        message: err.message || 'Network exception while posting Google review reply.',
+      };
+    }
+
     return {
-      success: true,
-      status: 'posted',
-      message: 'Reply queued for Google Review sync.',
+      success: false,
+      status: 'api_error',
+      message: 'Client environment unavailable.',
+    };
+  },
+
+  /**
+   * Batch evaluate or trigger auto-reply worker for business
+   */
+  triggerAutoReply: async (businessId: string): Promise<{
+    success: boolean;
+    status: string;
+    processed: number;
+    posted: number;
+    drafted: number;
+    skipped: number;
+    message: string;
+  }> => {
+    try {
+      if (typeof window !== 'undefined') {
+        const res = await fetch('/api/google/reviews/auto-reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ businessId }),
+        });
+        const data = await res.json();
+        return {
+          success: Boolean(data.success),
+          status: data.status || 'unknown',
+          processed: data.processed || 0,
+          posted: data.posted || 0,
+          drafted: data.drafted || 0,
+          skipped: data.skipped || 0,
+          message: data.message || 'Auto-reply evaluation completed.',
+        };
+      }
+    } catch (err: any) {
+      return {
+        success: false,
+        status: 'api_error',
+        processed: 0,
+        posted: 0,
+        drafted: 0,
+        skipped: 0,
+        message: err.message || 'Failed to trigger auto-reply evaluation.',
+      };
+    }
+
+    return {
+      success: false,
+      status: 'api_error',
+      processed: 0,
+      posted: 0,
+      drafted: 0,
+      skipped: 0,
+      message: 'Client environment unavailable.',
     };
   },
 };

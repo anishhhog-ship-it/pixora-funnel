@@ -14,6 +14,7 @@ export default function ReviewsPage() {
   const [replyText, setReplyText] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
   const [replyMode, setReplyMode] = useState<'suggestion' | 'custom'>('suggestion');
   const [activeBiz, setActiveBiz] = useState<Business | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
@@ -78,31 +79,86 @@ export default function ReviewsPage() {
   };
 
   const handlePost = async () => {
-    if (!selected || !activeBiz) return;
-    const updated = await reviewService.addReply(
-      selected.reviewId,
-      replyText || 'Thank you for your valuable feedback!',
-      'manual'
-    );
-    if (updated) {
-      setReviews(prev => prev.map(r => r.reviewId === updated.reviewId ? updated : r));
-      setSelected(updated);
-    } else {
-      setReviews(prev => prev.map(r => r.reviewId === selected.reviewId ? { ...r, replyStatus: 'replied' as const } : r));
-      setSelected(prev => prev ? { ...prev, replyStatus: 'replied' as const } : null);
+    if (!selected || !activeBiz || isPosting) return;
+    const bizId = activeBiz.businessId || activeBiz.id || '';
+    const textToPost = replyText || 'Thank you for your valuable feedback!';
+    setIsPosting(true);
+    setActionNotice(null);
+
+    try {
+      const result = await googleBusinessProfileService.postReply({
+        businessId: bizId,
+        googleReviewId: selected.reviewId,
+        replyText: textToPost,
+        source: 'manual',
+        mode: 'publish',
+      });
+
+      if (result.status === 'posted') {
+        const updatedReview: Review = {
+          ...selected,
+          replyStatus: 'replied',
+          replyText: textToPost,
+        };
+        setReviews(prev => prev.map(r => r.reviewId === selected.reviewId ? updatedReview : r));
+        setSelected(updatedReview);
+        setActionNotice('Reply published to Google Maps live! 🎉');
+      } else if (result.status === 'access_pending') {
+        const draftReview: Review = {
+          ...selected,
+          replyStatus: 'draft',
+          replyText: textToPost,
+        };
+        setReviews(prev => prev.map(r => r.reviewId === selected.reviewId ? draftReview : r));
+        setSelected(draftReview);
+        setActionNotice('Reply saved locally as a draft. Google My Business API access approval is pending on project pixora-funnel-511104.');
+      } else if (result.status === 'requires_auth') {
+        setActionNotice('Google authorization required to publish live. Link profile in Settings.');
+      } else {
+        setActionNotice(result.message || 'Could not publish reply.');
+      }
+    } catch (err: any) {
+      setActionNotice(err?.message || 'Error while posting review reply.');
+    } finally {
+      setIsPosting(false);
+      setTimeout(() => setActionNotice(null), 6000);
     }
-    setReplyText('');
-    setActionNotice('Reply recorded and queued for Google sync! ✅');
-    setTimeout(() => setActionNotice(null), 4000);
+  };
+
+  const handleSaveDraft = async () => {
+    if (!selected || !activeBiz || !replyText.trim()) return;
+    const bizId = activeBiz.businessId || activeBiz.id || '';
+    try {
+      await googleBusinessProfileService.postReply({
+        businessId: bizId,
+        googleReviewId: selected.reviewId,
+        replyText: replyText.trim(),
+        source: 'manual',
+        mode: 'draft',
+      });
+      const draftReview: Review = {
+        ...selected,
+        replyStatus: 'draft',
+        replyText: replyText.trim(),
+      };
+      setReviews(prev => prev.map(r => r.reviewId === selected.reviewId ? draftReview : r));
+      setSelected(draftReview);
+      setActionNotice('Reply saved as draft! ✍️');
+      setTimeout(() => setActionNotice(null), 4000);
+    } catch (err: any) {
+      setActionNotice('Failed to save draft.');
+    }
   };
 
   const repliedCount = reviews.filter(r => r.replyStatus === 'replied' || r.replyStatus === 'auto_replied').length;
+  const draftCount = reviews.filter(r => r.replyStatus === 'draft').length;
   const pendingCount = reviews.filter(r => r.replyStatus === 'pending').length;
   const negativeCount = reviews.filter(r => r.sentiment === 'negative' || r.rating <= 2).length;
 
   const tabs = [
     `All Reviews (${reviews.length})`,
     `Replied (${repliedCount})`,
+    `Drafts (${draftCount})`,
     `Pending (${pendingCount})`,
     `Negative (${negativeCount})`
   ];
@@ -110,8 +166,9 @@ export default function ReviewsPage() {
   const filteredReviews = reviews.filter(r => {
     const matchSearch = r.reviewerName.toLowerCase().includes(search.toLowerCase()) || r.text.toLowerCase().includes(search.toLowerCase());
     if (activeTab === 1) return (r.replyStatus === 'replied' || r.replyStatus === 'auto_replied') && matchSearch;
-    if (activeTab === 2) return r.replyStatus === 'pending' && matchSearch;
-    if (activeTab === 3) return (r.sentiment === 'negative' || r.rating <= 2) && matchSearch;
+    if (activeTab === 2) return r.replyStatus === 'draft' && matchSearch;
+    if (activeTab === 3) return r.replyStatus === 'pending' && matchSearch;
+    if (activeTab === 4) return (r.sentiment === 'negative' || r.rating <= 2) && matchSearch;
     return matchSearch;
   });
 
@@ -385,13 +442,23 @@ export default function ReviewsPage() {
                 </div>
               )}
 
-              {replyText && selected.replyStatus === 'pending' && (
-                <button
-                  onClick={handlePost}
-                  className="w-full text-white text-sm font-semibold py-2.5 rounded-xl transition-colors hover:opacity-90 cursor-pointer bg-blue-600"
-                >
-                  Save & Post Reply
-                </button>
+              {replyText && (selected.replyStatus === 'pending' || selected.replyStatus === 'draft') && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveDraft}
+                    disabled={isPosting}
+                    className="flex-1 text-slate-700 bg-slate-100 hover:bg-slate-200 text-xs font-semibold py-2.5 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    Save Draft
+                  </button>
+                  <button
+                    onClick={handlePost}
+                    disabled={isPosting}
+                    className="flex-1 text-white text-xs font-semibold py-2.5 rounded-xl transition-colors hover:opacity-90 cursor-pointer bg-blue-600 disabled:opacity-50"
+                  >
+                    {isPosting ? 'Posting...' : 'Post Reply ✈'}
+                  </button>
+                </div>
               )}
             </div>
 
@@ -421,18 +488,27 @@ export default function ReviewsPage() {
                 </div>
                 <span className="text-[10px] text-gray-400">{replyText.length}/500</span>
               </div>
-              {selected.replyStatus === 'pending' ? (
-                <button
-                  onClick={handlePost}
-                  disabled={!replyText.trim()}
-                  className="w-full text-white text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                  style={{ background: 'blue-600' }}
-                >
-                  <span>✈</span> Post Reply
-                </button>
+              {(selected.replyStatus === 'pending' || selected.replyStatus === 'draft') ? (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveDraft}
+                    disabled={isPosting || !replyText.trim()}
+                    className="flex-1 text-slate-700 bg-slate-100 hover:bg-slate-200 text-xs font-semibold py-2.5 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    Save Draft
+                  </button>
+                  <button
+                    onClick={handlePost}
+                    disabled={!replyText.trim() || isPosting}
+                    className="flex-1 text-white text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 bg-blue-600 hover:bg-blue-700"
+                  >
+                    {isPosting ? 'Posting...' : 'Post to Google ✈'}
+                  </button>
+                </div>
               ) : (
-                <div className="bg-blue-50 text-green-700 text-xs font-semibold py-2.5 rounded-xl text-center flex items-center justify-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5" /> Reply has been posted
+                <div className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold py-2.5 rounded-xl text-center flex items-center justify-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Reply published on Google</span>
                 </div>
               )}
             </div>

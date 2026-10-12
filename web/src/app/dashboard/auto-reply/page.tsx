@@ -27,7 +27,7 @@ import {
   Key
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { replyEngine, reviewService, businessService } from '@/services';
+import { replyEngine, reviewService, businessService, replyService } from '@/services';
 import { Review, Business } from '@/types';
 
 const TABS = ['Settings', 'Reply Templates', 'Review Categories', 'Smart Customisation', 'Activity Log'];
@@ -169,8 +169,8 @@ export default function AutoReplyPage() {
     }
   };
 
-  const handleSave = () => {
-    const bizId = activeBiz?.businessId || businessService.getActiveBusinessId();
+  const handleSave = async () => {
+    const bizId = activeBiz?.businessId || await businessService.getActiveBusinessId();
     // Auto-reply can ONLY be enabled on an active plan
     const actualEnabled = isTrial ? false : isEnabled;
     const config = {
@@ -184,6 +184,13 @@ export default function AutoReplyPage() {
       updatedAt: new Date().toISOString(),
     };
     localStorage.setItem(`pixora_autoreply_${bizId}`, JSON.stringify(config));
+
+    if (bizId && !bizId.startsWith('biz_')) {
+      await replyService.updateRules({
+        businessId: bizId,
+        autoReplyEnabled: actualEnabled,
+      });
+    }
     
     if (isTrial) {
       setSaveMessage('Preferences saved! Note: Auto Reply remains OFF for trial accounts and will activate once an active plan is activated.');
