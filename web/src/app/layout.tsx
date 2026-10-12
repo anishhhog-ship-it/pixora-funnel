@@ -137,7 +137,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var o=Element.prototype.setAttribute;Element.prototype.setAttribute=function(n,v){if(n==='bis_skin_checked'||n==='bis_register'||n==='bis_size'||n.indexOf('bis_')===0)return;return o.apply(this,arguments);};}catch(e){}})();`,
+            __html: `(function(){try{var o=Element.prototype.setAttribute;Element.prototype.setAttribute=function(n,v){if(n==='bis_skin_checked'||n==='bis_register'||n==='bis_size'||(n&&n.indexOf('bis_')===0))return;return o.apply(this,arguments);};if(typeof MutationObserver!=='undefined'){var clean=function(node){if(node&&node.removeAttribute){if(node.hasAttribute('bis_skin_checked'))node.removeAttribute('bis_skin_checked');if(node.hasAttribute('bis_register'))node.removeAttribute('bis_register');if(node.hasAttribute('bis_size'))node.removeAttribute('bis_size');}};var obs=new MutationObserver(function(mutations){for(var i=0;i<mutations.length;i++){var m=mutations[i];if(m.type==='attributes'&&m.attributeName&&(m.attributeName==='bis_skin_checked'||m.attributeName.indexOf('bis_')===0)){clean(m.target);}else if(m.type==='childList'&&m.addedNodes){for(var j=0;j<m.addedNodes.length;j++){var n=m.addedNodes[j];if(n.nodeType===1){clean(n);if(n.querySelectorAll){var nested=n.querySelectorAll('[bis_skin_checked],[bis_register],[bis_size]');for(var k=0;k<nested.length;k++)clean(nested[k]);}}}}}});obs.observe(document.documentElement,{attributes:true,childList:true,subtree:true,attributeFilter:['bis_skin_checked','bis_register','bis_size']});}}catch(e){}})();`,
           }}
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
