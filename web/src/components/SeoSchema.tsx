@@ -175,7 +175,7 @@ const faqSchema = {
       name: "How does Pixora Funnel pricing work?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Pixora Funnel offers two transparent 1-year plans with zero monthly SaaS fees: Standard Plan at ₹2,599/year (software only for 1 year, without physical NFC card) and Pro Plan at ₹2,999/year (software for 1 year + Custom NFC Smart Tap Review Card delivered to your doorstep). Both plans activate the 24/7 AI Auto Reply system.",
+        text: "Pixora Funnel offers two transparent plans with zero monthly SaaS fees: Standard Plan at ₹2,599/year (software only, without physical NFC card) and Pro Plan at ₹2,999 where the first 100 accounts receive Lifetime Free access forever (includes full software suite + Custom NFC Smart Tap Review Card delivered to your doorstep). Both plans activate the 24/7 AI Auto Reply system.",
       },
     },
     {

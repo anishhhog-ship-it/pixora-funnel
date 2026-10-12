@@ -39,7 +39,7 @@ export default function Footer() {
               <div>Hosted at <span className="text-slate-300 font-mono">funnel.pixoraautomations.com</span></div>
               <div className="flex items-center gap-3 pt-1">
                 <a
-                  href="https://wa.me/919257378047?text=Hi%20Pixora!%20I%20have%20an%20inquiry%20regarding%20the%201-Year%20Plans%20(₹2,599%20or%20₹2,999%20with%20NFC%20Card)."
+                  href="https://wa.me/919257378047?text=Hi%20Pixora!%20I%20have%20an%20inquiry%20regarding%20the%20Plans%20(₹2,599%20or%20₹2,999%20Lifetime%20Free%20Plan%20with%20NFC%20Card)."
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-semibold"

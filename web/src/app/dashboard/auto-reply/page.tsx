@@ -352,15 +352,15 @@ export default function AutoReplyPage() {
             {/* Plan 2: 2,999 With NFC */}
             <div className="p-4 rounded-2xl bg-blue-50/70 border-2 border-blue-600 shadow-2xs flex flex-col justify-between relative overflow-hidden">
               <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-extrabold px-3 py-0.5 rounded-bl-xl uppercase tracking-wider">
-                Recommended
+                First 100 Accounts Offer
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Plan Option 2 · Best Value</span>
+                  <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Plan Option 2 · Lifetime Free</span>
                 </div>
                 <div className="flex items-baseline gap-2 mb-1.5">
                   <span className="text-2xl font-extrabold text-blue-900">₹2,999</span>
-                  <span className="text-xs text-blue-700 font-medium">/ 1 Year (With NFC Card)</span>
+                  <span className="text-xs text-blue-700 font-bold">/ Lifetime Free Access</span>
                 </div>
                 
                 {/* Visual snippet with NFC card photo */}
@@ -380,27 +380,31 @@ export default function AutoReplyPage() {
                 </div>
 
                 <div className="text-[11px] text-slate-800 space-y-1 mb-4">
+                  <div className="flex items-center gap-1.5 text-blue-900 font-bold">
+                    <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>First 100 Accounts: Lifetime Free Access!</span>
+                  </div>
                   <div className="flex items-center gap-1.5 text-emerald-700 font-bold">
                     <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     <span>Includes Physical NFC Review Card (Delivered)</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-emerald-700 font-semibold">
                     <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>Auto Reply System Activated</span>
+                    <span>Auto Reply System Activated for Life</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>1 Year Software Validity + Doorstep Delivery</span>
+                    <span>Zero Annual Renewal Fees Forever</span>
                   </div>
                 </div>
               </div>
               <a
-                href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I want to activate the ₹2,999 1-Year Plan (With NFC Review Card) for ${bizName} to turn on Auto Reply.`)}`}
+                href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I want to claim the ₹2,999 Lifetime Free Access Plan (First 100 Accounts Offer + NFC Review Card) for ${bizName} to turn on Auto Reply.`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold text-center transition-colors shadow-sm"
               >
-                Activate ₹2,999 Plan (With NFC Card)
+                Claim ₹2,999 Lifetime Plan (With NFC Card)
               </a>
             </div>
           </div>
@@ -718,16 +722,16 @@ export default function AutoReplyPage() {
               {/* Option 2: 2,999 With NFC */}
               <div className="p-5 rounded-2xl bg-blue-50/80 border-2 border-blue-600 flex flex-col justify-between relative shadow-sm">
                 <div className="absolute -top-3 right-4 bg-blue-600 text-white text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider">
-                  Best Value
+                  Lifetime Deal · First 100
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider block mb-1">Pro Plan + NFC</span>
                   <div className="flex items-baseline gap-1.5 mb-1">
                     <span className="text-3xl font-extrabold text-blue-900">₹2,999</span>
-                    <span className="text-xs text-blue-700 font-semibold">/ 1 Year</span>
+                    <span className="text-xs text-blue-700 font-bold">/ Lifetime Free</span>
                   </div>
                   <span className="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800 mb-2">
-                    With NFC Card · 1 Year
+                    First 100 Accounts · Lifetime Free + NFC Card
                   </span>
 
                   {/* NFC Card Mockup Image */}
@@ -749,25 +753,29 @@ export default function AutoReplyPage() {
                   <div className="text-xs text-slate-700 space-y-1.5 mb-4">
                     <div className="flex items-center gap-1.5 text-blue-900 font-bold">
                       <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      <span>First 100 Accounts: Lifetime Free Software</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-emerald-700 font-semibold">
+                      <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                       <span>Physical NFC Review Card Delivered</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-emerald-700 font-semibold">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Auto Reply System Activated</span>
+                      <span>Auto Reply System Activated for Life</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>1 Year Software Access + Support</span>
+                      <span>Zero Annual Renewal Fees Forever</span>
                     </div>
                   </div>
                 </div>
                 <a
-                  href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I would like to activate the ₹2,999 1-Year Plan (With NFC Review Card) for ${bizName}.`)}`}
+                  href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I would like to claim the ₹2,999 Lifetime Free Access Plan (First 100 Accounts Offer + NFC Review Card) for ${bizName}.`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md"
                 >
-                  <span>Activate ₹2,999 Plan + NFC</span>
+                  <span>Claim ₹2,999 Lifetime Plan + NFC</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </a>
               </div>

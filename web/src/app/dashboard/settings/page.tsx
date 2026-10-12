@@ -3287,10 +3287,10 @@ export default function SettingsPage() {
                 </a>
               </div>
 
-              {/* Plan 2: 2,999 With NFC Card (Best Value) */}
+              {/* Plan 2: 2,999 With NFC Card (Lifetime Deal for First 100 Accounts) */}
               <div className="bg-blue-50/60 rounded-2xl border-2 border-blue-600 p-6 shadow-md flex flex-col justify-between space-y-5 relative">
                 <div className="absolute -top-3 right-6 bg-blue-600 text-white text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
-                  🔥 Best Value
+                  🔥 Lifetime Deal · First 100
                 </div>
 
                 <div>
@@ -3299,16 +3299,16 @@ export default function SettingsPage() {
                       Plan 2 · Software + NFC
                     </span>
                     <span className="text-[10px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded">
-                      1 Year + Card
+                      Lifetime Free
                     </span>
                   </div>
 
                   <div className="flex items-baseline gap-1.5 mb-1">
                     <span className="text-3xl font-extrabold text-blue-900">₹2,999</span>
-                    <span className="text-xs text-blue-700 font-semibold">/ 1 Year</span>
+                    <span className="text-xs text-blue-700 font-bold">/ Lifetime Free</span>
                   </div>
                   <p className="text-xs font-semibold text-blue-800">
-                    With NFC Review Card · Doorstep Delivery
+                    First 100 Accounts: Lifetime Free Access + NFC Review Card
                   </p>
 
                   {/* NFC Review Card Mockup */}
@@ -3329,15 +3329,19 @@ export default function SettingsPage() {
                   <div className="text-xs text-slate-700 space-y-2">
                     <div className="flex items-center gap-2 text-blue-950 font-bold">
                       <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      <span>First 100 Accounts: Lifetime Free Software Access</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-blue-950 font-medium">
+                      <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                       <span>Custom NFC Smart Tap Review Card Included</span>
                     </div>
                     <div className="flex items-center gap-2 text-emerald-700 font-semibold">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Auto Reply System Activated</span>
+                      <span>Auto Reply System Activated for Life</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 text-slate-700 font-medium">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>1 Year Software Access + Unlimited QR Scans</span>
+                      <span>Zero Annual Renewal Fees Forever</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -3347,12 +3351,12 @@ export default function SettingsPage() {
                 </div>
 
                 <a
-                  href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I would like to activate the ₹2,999 1-Year Plan (With NFC Review Card) for ${activeBiz?.name || 'my business'}.`)}`}
+                  href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I would like to claim the ₹2,999 Lifetime Free Access Plan (First 100 Accounts Offer + NFC Review Card) for ${activeBiz?.name || 'my business'}.`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
                 >
-                  <span>Order Plan 2 with NFC Card (₹2,999)</span>
+                  <span>Claim Lifetime Plan 2 with NFC Card (₹2,999)</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </a>
               </div>

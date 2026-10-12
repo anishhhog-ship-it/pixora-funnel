@@ -993,19 +993,19 @@ export default function DashboardContent({ children }: { children: React.ReactNo
               {/* Option 2: 2,999 With NFC */}
               <div className="p-5 rounded-2xl bg-blue-50/70 border-2 border-blue-600 flex flex-col justify-between relative shadow-sm">
                 <div className="absolute -top-3 right-4 bg-blue-600 text-white text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider">
-                  🔥 Best Value
+                  🔥 Lifetime Deal · First 100
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Plan 2 · Software + NFC</span>
-                    <span className="text-[10px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded">1 Year + Card</span>
+                    <span className="text-[10px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded">Lifetime Free</span>
                   </div>
                   <div className="flex items-baseline gap-1.5 mb-1">
                     <span className="text-3xl font-extrabold text-blue-900">₹2,999</span>
-                    <span className="text-xs text-blue-700 font-semibold">/ 1 Year</span>
+                    <span className="text-xs text-blue-700 font-bold">/ Lifetime Free</span>
                   </div>
                   <p className="text-xs font-semibold text-blue-700 mb-2">
-                    With NFC Review Card · Doorstep Delivery
+                    First 100 Accounts: Lifetime Free Access + NFC Card
                   </p>
 
                   {/* NFC Review Card Mockup Image */}
@@ -1027,15 +1027,19 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                   <div className="text-xs text-slate-700 space-y-1.5 mb-4">
                     <div className="flex items-center gap-1.5 text-blue-950 font-bold">
                       <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      <span>First 100 Accounts: Lifetime Free Access</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-blue-950 font-medium">
+                      <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                       <span>Custom NFC Review Card Included</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-emerald-700 font-semibold">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Auto Reply System Activated</span>
+                      <span>Auto Reply System Activated for Life</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 text-slate-700 font-medium">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>1 Year Software Access + Support</span>
+                      <span>Zero Annual Renewal Fees Forever</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -1045,12 +1049,12 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                 </div>
 
                 <a
-                  href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I would like to activate the ₹2,999 1-Year Plan (With NFC Review Card) for ${bizName}.`)}`}
+                  href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I would like to claim the ₹2,999 Lifetime Free Access Plan (First 100 Accounts Offer + NFC Review Card) for ${bizName}.`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
                 >
-                  <span>Activate with NFC Card (₹2,999)</span>
+                  <span>Claim Lifetime with NFC Card (₹2,999)</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </a>
               </div>

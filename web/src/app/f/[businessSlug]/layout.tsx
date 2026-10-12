@@ -180,7 +180,7 @@ export default async function FunnelLayout({
                 </p>
                 <div className="pt-1 space-y-1 text-[11px] text-slate-700 font-medium">
                   <div>• <strong>₹2,599:</strong> 1-Year Plan (Without NFC Card)</div>
-                  <div>• <strong>₹2,999:</strong> 1-Year Plan (With NFC Smart Review Card)</div>
+                  <div>• <strong>₹2,999:</strong> Lifetime Free Access (First 100 Accounts Offer + NFC Smart Review Card)</div>
                 </div>
               </div>
 
@@ -188,14 +188,14 @@ export default async function FunnelLayout({
               <div className="space-y-2 pt-1">
                 <a
                   href={`https://wa.me/919257378047?text=${encodeURIComponent(
-                    `Hi! The free trial for ${business.name} has ended. I want to activate the ₹2,999 1-Year Plan with NFC Review Card to unlock our scanner.`
+                    `Hi! The free trial for ${business.name} has ended. I want to claim the ₹2,999 Lifetime Free Access Plan (First 100 Accounts Offer with NFC Review Card) to unlock our scanner.`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Unlock with NFC Card (₹2,999 / Year)</span>
+                  <span>Unlock Lifetime + NFC Card (₹2,999)</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </a>
 
