@@ -127,33 +127,48 @@ export const REVIEW_FRAGMENTS = {
   ]
 };
 
+import { getReviewsForCategory } from './categoryReviews';
+
 /**
- * Generates dynamic, combinatorially unique reviews.
- * 40 openings * 40 bodies * 40 closings = 64,000 unique combinations per business!
+ * Generates dynamic, category-tailored, and combinatorially unique reviews.
+ * Seamlessly integrates the massive industry library (clothes, perfumes, offices, real estate, etc.)
+ * with combinator synthesis for infinite variations!
  */
 export function generateCombinatorialReviews(count: number, businessName: string, category?: string, highlight?: string): string[] {
   const result: string[] = [];
-  
-  for (let i = 0; i < count; i++) {
-    // Pick random fragments
+
+  // 1. First check if we have tailored reviews from our massive category library
+  const categoryReviews = getReviewsForCategory(category || '', businessName);
+  if (categoryReviews.length > 0) {
+    // Shuffle and pick
+    const shuffled = [...categoryReviews].sort(() => 0.5 - Math.random());
+    for (let i = 0; i < Math.min(count, shuffled.length); i++) {
+      let rText = shuffled[i];
+      if (highlight && highlight.trim().length > 0 && i === 0) {
+        rText += ` Especially loved: ${highlight.trim()}.`;
+      }
+      result.push(rText);
+    }
+  }
+
+  // 2. If we still need more reviews, synthesize from combinatorial fragments
+  while (result.length < count) {
     const opening = REVIEW_FRAGMENTS.openings[Math.floor(Math.random() * REVIEW_FRAGMENTS.openings.length)];
     const body = REVIEW_FRAGMENTS.bodies[Math.floor(Math.random() * REVIEW_FRAGMENTS.bodies.length)];
     const closing = REVIEW_FRAGMENTS.closings[Math.floor(Math.random() * REVIEW_FRAGMENTS.closings.length)];
-    
-    // Inject the highlight / keyword if provided
+
     let specificDetail = '';
-    if (highlight && highlight.trim().length > 0 && i === 0) {
+    if (highlight && highlight.trim().length > 0 && result.length === 0) {
       specificDetail = ` Especially loved: ${highlight.trim()}.`;
-    } else if (category && Math.random() > 0.5) {
-      // 50% chance to mention the category specifically to make it feel tailored
+    } else if (category && Math.random() > 0.4) {
       specificDetail = ` One of the best ${category.toLowerCase()} spots around.`;
     }
-    
-    // Replace {biz} tag
-    let reviewText = `${opening} ${body}${specificDetail} ${closing}`.replace(/{biz}/g, businessName);
-    
-    result.push(reviewText);
+
+    const reviewText = `${opening} ${body}${specificDetail} ${closing}`.replace(/{biz}/g, businessName);
+    if (!result.includes(reviewText)) {
+      result.push(reviewText);
+    }
   }
-  
-  return result;
+
+  return result.slice(0, count);
 }

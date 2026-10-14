@@ -1,4 +1,5 @@
 import { generateCombinatorialReviews } from './reviewCombinator';
+import { supabase } from '@/lib/supabase/client';
 
 export interface QuickReview {
   badge: string;
@@ -22,14 +23,49 @@ export function generateSmartReviews(
 }
 
 /**
+ * Async version that also queries custom templates stored in Supabase review_category_templates.
+ */
+export async function generateSmartReviewsAsync(
+  count: number = 3,
+  businessName: string = 'this business',
+  rawCategory: string = '',
+  customerInput: string = '',
+  _businessId = 'default',
+): Promise<string[]> {
+  try {
+    const baseReviews = generateCombinatorialReviews(count, businessName, rawCategory, customerInput);
+
+    // Attempt to fetch custom templates for this category
+    if (rawCategory && typeof window !== 'undefined') {
+      const { data: customTemplates } = await supabase
+        .from('review_category_templates')
+        .select('content, category')
+        .ilike('category', `%${rawCategory}%`)
+        .limit(5);
+
+      if (customTemplates && customTemplates.length > 0) {
+        const customized = (customTemplates as Array<{ content: string }>).map((t) => t.content.replace(/{biz}/g, businessName));
+        // Prepend custom template to results
+        const blended = [...customized, ...baseReviews];
+        return Array.from(new Set(blended)).slice(0, count);
+      }
+    }
+
+    return baseReviews;
+  } catch {
+    return generateCombinatorialReviews(count, businessName, rawCategory, customerInput);
+  }
+}
+
+/**
  * Get ready-made quick reviews with badges from the library.
  */
 export async function getQuickReviews(
   businessName: string = 'this business',
   rawCategory: string = '',
-  _businessId = 'default',
+  businessId = 'default',
 ): Promise<QuickReview[]> {
-  const reviews = generateCombinatorialReviews(3, businessName, rawCategory);
+  const reviews = await generateSmartReviewsAsync(3, businessName, rawCategory, '', businessId);
   const badges = [
     { badge: 'Top Service', badgeColor: '#059669' },
     { badge: 'Highly Recommended', badgeColor: '#2563EB' },

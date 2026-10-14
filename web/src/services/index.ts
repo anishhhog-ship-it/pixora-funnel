@@ -2100,8 +2100,8 @@ export const reviewEngine = {
     category?: string,
     businessId?: string
   ): Promise<string[]> => {
-    const { generateSmartReviews } = await import('@/data/reviewLibrary');
-    return generateSmartReviews(3, businessName, category || '', input.trim(), businessId || 'default');
+    const { generateSmartReviewsAsync } = await import('@/data/reviewLibrary');
+    return generateSmartReviewsAsync(3, businessName, category || '', input.trim(), businessId || 'default');
   },
 
   getQuickReviews: async (
