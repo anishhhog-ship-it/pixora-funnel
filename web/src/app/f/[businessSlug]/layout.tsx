@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import Image from 'next/image';
 import { Lock, AlertTriangle, ArrowRight, PhoneCall, Sparkles } from 'lucide-react';
+import UnlockFunnelClient from './UnlockFunnelClient';
 
 // Luxury Lotus Floral SVG Mark (matches reference screenshot)
 function LotusBrandIcon({ className = "w-10 h-10", fill = "#D4AF37" }: { className?: string; fill?: string }) {
@@ -39,12 +40,15 @@ export default async function FunnelLayout({
     if (host.includes('localhost') || host.includes('127.0.0.1')) {
       isLocal = true;
     }
-  } catch (e) {}
+  } catch {}
 
+  // The server route intentionally compares the trial against request time.
+  // eslint-disable-next-line react-hooks/purity
+  const requestNow = Date.now();
   const isExpired = !isLocal && (
     business.planStatus === 'expired' ||
     (business.trialExpiresAt &&
-      new Date(business.trialExpiresAt).getTime() <= Date.now() &&
+      new Date(business.trialExpiresAt).getTime() <= requestNow &&
       business.planStatus !== 'active')
   );
 
@@ -57,7 +61,7 @@ export default async function FunnelLayout({
   const logoUrl = business.theme?.logo || business.logo;
 
   return (
-    <div className="min-h-screen flex flex-col relative text-gray-900 overflow-x-hidden font-sans select-none">
+    <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-slate-950 font-sans text-gray-900">
       
       {/* ── Full Bleed Background Ambience (Responsive Desktop & Mobile) ── */}
       <div className="fixed inset-0 w-full h-full z-0 pointer-events-none">
@@ -67,7 +71,6 @@ export default async function FunnelLayout({
             src={desktop} 
             alt={`${business.name} Background`} 
             fill 
-            unoptimized
             priority
             className="object-cover object-center"
           />
@@ -78,7 +81,6 @@ export default async function FunnelLayout({
             src={mobile} 
             alt={`${business.name} Mobile Background`} 
             fill 
-            unoptimized
             priority
             className="object-cover object-center"
           />
@@ -86,7 +88,7 @@ export default async function FunnelLayout({
 
         {/* Dynamic Category Vignette & Contrast Overlay */}
         <div 
-          className="absolute inset-0 backdrop-blur-[0.5px]"
+          className="absolute inset-0 backdrop-blur-[1px]"
           style={{
             background: overlay.gradient || `rgba(0, 0, 0, ${overlay.opacity || 0.65})`,
           }}
@@ -94,8 +96,8 @@ export default async function FunnelLayout({
       </div>
 
       {/* ── Top Floating Language Selector ── */}
-      <div className="relative z-20 w-full max-w-md mx-auto px-4 pt-3 flex justify-end">
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 hover:bg-black/60 border border-white/20 text-white text-xs font-medium backdrop-blur-md transition shadow-xs cursor-pointer">
+      <div className="relative z-20 mx-auto flex w-full max-w-md justify-end px-4 pt-3">
+        <div className="flex items-center gap-1.5 rounded-full border border-white/20 bg-black/35 px-3 py-1.5 text-xs font-medium text-white shadow-sm backdrop-blur-md" aria-label="Language: English">
           <svg className="w-3.5 h-3.5 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10" />
             <line x1="2" y1="12" x2="22" y2="12" />
@@ -109,12 +111,12 @@ export default async function FunnelLayout({
       </div>
 
       {/* ── Main Content Container ── */}
-      <div className="relative z-10 flex-grow flex flex-col pt-2 pb-6 px-4 max-w-md mx-auto w-full">
+      <div className="relative z-10 mx-auto flex w-full max-w-md flex-grow flex-col px-4 pb-6 pt-3">
         
         {/* Brand Header */}
-        <header className="flex flex-col items-center mb-6 text-white text-center">
+        <header className="mb-7 flex flex-col items-center text-center text-white">
           {hasCustomLogo && logoUrl ? (
-            <div className="w-14 h-14 relative mb-2 rounded-2xl overflow-hidden shadow-lg border border-white/20 bg-white/10 backdrop-blur-md">
+              <div className="relative mb-2 h-14 w-14 overflow-hidden rounded-2xl border border-white/20 bg-white/10 shadow-lg backdrop-blur-md">
               <Image 
                 src={logoUrl} 
                 alt={`${business.name} Logo`} 
@@ -124,13 +126,13 @@ export default async function FunnelLayout({
               />
             </div>
           ) : (
-            <div className="mb-1 flex items-center justify-center">
+            <div className="mb-1 flex items-center justify-center drop-shadow-[0_5px_12px_rgba(212,175,55,0.25)]">
               <LotusBrandIcon className="w-12 h-12" fill={secondaryColor} />
             </div>
           )}
 
           <h1 
-            className="text-3xl sm:text-4xl font-serif font-bold tracking-tight mb-0.5 text-[#F7F2E7]"
+            className="font-serif text-3xl font-bold tracking-tight text-[#F7F2E7] sm:text-4xl"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
           >
             {business.name}
@@ -150,7 +152,7 @@ export default async function FunnelLayout({
         {/* Page Body */}
         <main className="flex-grow flex flex-col justify-center">
           {isExpired ? (
-            <div className="w-full max-w-sm mx-auto my-auto p-6 sm:p-7 rounded-[32px] bg-white/95 backdrop-blur-md shadow-2xl border border-rose-200 text-slate-900 text-center animate-in zoom-in-95 duration-300">
+            <div className="mx-auto my-auto w-full max-w-sm rounded-[32px] border border-rose-200 bg-white/95 p-6 text-center text-slate-900 shadow-2xl backdrop-blur-md animate-in zoom-in-95 duration-300 sm:p-7">
               {/* Lock Badge Icon */}
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-rose-500 to-rose-600 text-white flex items-center justify-center shadow-lg shadow-rose-500/25">
                 <Lock className="w-8 h-8" />
@@ -176,39 +178,18 @@ export default async function FunnelLayout({
                   <span>How to Unlock Your Funnel:</span>
                 </p>
                 <p className="text-[12px] text-amber-800 leading-relaxed">
-                  Activate an active 1-year plan to re-activate your customer review system and turn on AI Auto Reply:
+                  Activate an active 2-year plan to re-activate your customer review system and turn on AI Auto Reply:
                 </p>
                 <div className="pt-1 space-y-1 text-[11px] text-slate-700 font-medium">
-                  <div>• <strong>₹2,599:</strong> 1-Year Plan (Without NFC Card)</div>
+                  <div>• <strong>₹2,599:</strong> 2-Year Plan (Without NFC Card)</div>
                   <div>• <strong>₹2,999:</strong> Lifetime Free Access (First 100 Accounts Offer + NFC Smart Review Card)</div>
                 </div>
               </div>
 
               {/* Purchase & Unlock Buttons Redirecting to 9257378047 */}
-              <div className="space-y-2 pt-1">
-                <a
-                  href={`https://wa.me/919257378047?text=${encodeURIComponent(
-                    `Hi! The free trial for ${business.name} has ended. I want to claim the ₹2,999 Lifetime Free Access Plan (First 100 Accounts Offer with NFC Review Card) to unlock our scanner.`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Unlock Lifetime + NFC Card (₹2,999)</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </a>
+              <UnlockFunnelClient businessId={business.id || businessSlug} businessName={business.name || 'Your Business'} />
 
-                <a
-                  href={`https://wa.me/919257378047?text=${encodeURIComponent(
-                    `Hi! The free trial for ${business.name} has ended. I want to activate the ₹2,599 1-Year Plan (Without NFC Card) to unlock our scanner.`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
-                >
-                  <span>Unlock 1-Year Plan without NFC (₹2,599)</span>
-                </a>
+              <div className="space-y-2 pt-1">
 
                 <a
                   href={`https://wa.me/919257378047?text=${encodeURIComponent(
@@ -237,7 +218,7 @@ export default async function FunnelLayout({
       </div>
 
       {/* ── Global Wave Footer ── */}
-      <footer className="relative z-10 w-full text-center py-5 mt-auto overflow-hidden">
+      <footer className="relative z-10 mt-auto w-full overflow-hidden py-5 text-center">
         <div 
           className="w-full h-16 absolute bottom-0 -z-10 rounded-t-[100%] scale-150 transform translate-y-7 shadow-2xl border-t border-[#D4AF37]/30"
           style={{ backgroundColor: primaryColor }}

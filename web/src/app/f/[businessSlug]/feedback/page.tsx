@@ -34,12 +34,15 @@ export default function PrivateFeedbackPage() {
   const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedRating = sessionStorage.getItem('temp_rating');
-    if (storedRating) {
-      setRating(parseInt(storedRating, 10));
-    }
+    Promise.resolve().then(() => {
+      const storedRating = sessionStorage.getItem('temp_rating');
+      if (storedRating) setRating(parseInt(storedRating, 10));
+      const storedExp = sessionStorage.getItem('temp_experience');
+      if (storedExp) setMessage(storedExp);
+    });
     businessService.getBusinessBySlug(businessSlug).then(setBusiness);
     analyticsService.trackEvent('negative_feedback_intercepted', { slug: businessSlug });
   }, [businessSlug]);
@@ -55,42 +58,48 @@ export default function PrivateFeedbackPage() {
     if (!message.trim() && selectedTags.length === 0) return;
 
     setIsSubmitting(true);
-    await reviewService.submitPrivateFeedback({
-      businessId: business?.businessId || 'biz_custom',
-      businessSlug,
-      rating,
-      tags: selectedTags,
-      message,
-      customerName: name.trim() || 'Anonymous Guest',
-      customerPhone: phone.trim() || 'Not provided',
-    });
+    setSubmitError(null);
+    try {
+      await reviewService.submitPrivateFeedback({
+        businessId: business?.businessId || 'biz_custom',
+        businessSlug,
+        rating,
+        tags: selectedTags,
+        message,
+        customerName: name.trim() || 'Anonymous Guest',
+        customerPhone: phone.trim() || 'Not provided',
+      });
 
-    analyticsService.trackEvent('negative_feedback_resolved', { slug: businessSlug, rating });
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+      analyticsService.trackEvent('negative_feedback_resolved', { slug: businessSlug, rating });
+      setIsSubmitted(true);
+    } catch {
+      setSubmitError('We could not send your note right now. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const bizName = business?.name || 'our team';
 
   return (
-    <div className="flex flex-col animate-in fade-in duration-500 pb-12 w-full max-w-md mx-auto relative z-10 px-2">
+    <div className="relative z-10 mx-auto flex w-full max-w-md flex-col px-2 pb-12 animate-in fade-in duration-500">
       {/* Header Notice */}
       <div className="flex items-center justify-between mb-6 px-3">
         <button 
           onClick={() => router.back()} 
-          className="text-white/80 hover:text-white flex items-center text-xs font-medium transition-colors"
+           className="funnel-focus-ring flex items-center rounded-md text-xs font-medium text-white/80 transition-colors hover:text-white"
         >
           <ArrowLeft className="w-4 h-4 mr-1" /> Back
         </button>
-        <div className="flex items-center gap-1.5 bg-black/25 backdrop-blur-md px-3 py-1 rounded-full text-[11px] text-emerald-300 font-medium border border-white/10">
+        <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/25 px-3 py-1 text-[11px] font-medium text-emerald-300 backdrop-blur-md">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
           <span>Private Resolution Shield</span>
         </div>
       </div>
 
       {!isSubmitted ? (
-        <Card className="w-full rounded-[2rem] p-6 shadow-2xl border-0 bg-[#FDFBF7] text-gray-900">
-          <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-800">
+         <Card className="w-full rounded-[2rem] border border-white/60 bg-[#FDFBF7] p-6 text-gray-900 shadow-[0_24px_70px_rgba(0,0,0,0.22)] sm:p-7">
+           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
             <HeartHandshake className="w-6 h-6" />
           </div>
 
@@ -121,12 +130,13 @@ export default function PrivateFeedbackPage() {
               <div className="flex flex-wrap gap-1.5">
                 {ISSUE_TAGS.map((tag) => {
                   const active = selectedTags.includes(tag);
-                  return (
+                   return (
                     <button
                       key={tag}
                       type="button"
                       onClick={() => toggleTag(tag)}
-                      className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
+                      aria-pressed={active}
+                      className={`funnel-focus-ring rounded-full border px-3 py-1.5 text-xs transition-all ${
                         active 
                           ? 'bg-[#0B3D2E] text-white border-[#0B3D2E] shadow-sm scale-[1.02]' 
                           : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
@@ -145,7 +155,7 @@ export default function PrivateFeedbackPage() {
               </label>
               <Textarea
                 placeholder="Please describe your experience in detail. Your feedback goes directly to the owner/manager..."
-                className="min-h-[110px] bg-white border-gray-200 rounded-xl text-sm focus-visible:ring-[#0B3D2E] resize-none"
+                 className="funnel-focus-ring min-h-[110px] resize-none rounded-xl border-gray-200 bg-white text-sm focus-visible:ring-[#0B3D2E]"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 required
@@ -159,7 +169,7 @@ export default function PrivateFeedbackPage() {
                 </label>
                 <Input
                   placeholder="e.g. Rahul Verma"
-                  className="bg-white border-gray-200 rounded-xl text-xs h-9"
+                   className="funnel-focus-ring h-9 rounded-xl border-gray-200 bg-white text-xs"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
@@ -170,7 +180,7 @@ export default function PrivateFeedbackPage() {
                 </label>
                 <Input
                   placeholder="+91 92573..."
-                  className="bg-white border-gray-200 rounded-xl text-xs h-9"
+                   className="funnel-focus-ring h-9 rounded-xl border-gray-200 bg-white text-xs"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />
@@ -180,21 +190,28 @@ export default function PrivateFeedbackPage() {
             <div className="pt-2">
               <Button
                 type="submit"
-                className="w-full text-base bg-[#0B3D2E] hover:bg-[#082e22] text-white shadow-lg rounded-xl h-12"
+                 className="funnel-focus-ring h-12 w-full rounded-xl text-base text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
+                 style={{ backgroundColor: business?.theme?.primaryColor || '#0B3D2E' }}
                 disabled={isSubmitting || (!message.trim() && selectedTags.length === 0)}
               >
                 {isSubmitting ? 'Sending directly to Owner...' : 'Send Private Feedback →'}
               </Button>
             </div>
 
+            {submitError && (
+              <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-center text-xs text-rose-700" role="alert">
+                {submitError}
+              </p>
+            )}
+
             <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-500 pt-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>100% Private. This will <strong>never</strong> be published on Google.</span>
+             <span>Private feedback stays in this business&apos;s resolution flow.</span>
             </div>
           </form>
         </Card>
       ) : (
-        <Card className="w-full rounded-[2rem] p-7 shadow-2xl border-0 bg-[#FDFBF7] text-gray-900 text-center animate-in zoom-in-95 duration-300">
+         <Card className="w-full rounded-[2rem] border border-white/60 bg-[#FDFBF7] p-7 text-center text-gray-900 shadow-[0_24px_70px_rgba(0,0,0,0.22)] animate-in zoom-in-95 duration-300">
           <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-700">
             <CheckCircle2 className="w-10 h-10" />
           </div>
@@ -206,20 +223,21 @@ export default function PrivateFeedbackPage() {
 
           <div className="bg-white border border-gray-200 rounded-2xl p-4 text-left mb-6 shadow-sm">
             <p className="text-xs font-semibold text-gray-800 mb-1">What happens next?</p>
-            <ul className="text-xs text-gray-600 space-y-1.5 list-disc pl-4">
-              <li>Our store manager reviews your notes immediately.</li>
-              {phone ? (
-                <li>We will reach out to you at <span className="font-semibold text-gray-800">{phone}</span> with an apology and a resolution.</li>
-              ) : (
-                <li>Our kitchen and floor staff will take corrective action.</li>
-              )}
-              <li>No negative review was posted to your public Google profile.</li>
+             <ul className="list-disc space-y-1.5 pl-4 text-xs text-gray-600">
+               <li>Your note is available to the business team through its private inbox.</li>
+               {phone ? (
+                 <li>The team can use the contact details you shared at <span className="font-semibold text-gray-800">{phone}</span> to follow up.</li>
+               ) : (
+                 <li>The team can review the issue and decide on the appropriate follow-up.</li>
+               )}
+               <li>Your private note is not published as a Google review.</li>
             </ul>
           </div>
 
           <Button
             onClick={() => router.push(`/f/${businessSlug}`)}
-            className="w-full bg-[#0B3D2E] hover:bg-[#082e22] text-white rounded-xl h-11"
+             className="funnel-focus-ring h-11 w-full rounded-xl text-white transition-all hover:-translate-y-0.5 hover:shadow-lg"
+             style={{ backgroundColor: business?.theme?.primaryColor || '#0B3D2E' }}
           >
             Return to Home
           </Button>

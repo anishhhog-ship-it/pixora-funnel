@@ -76,6 +76,7 @@ import {
   FontStyle
 } from '@/services';
 import { Business, User } from '@/types';
+import { PortalErrorState, PortalLoadingState } from '@/components/client-portal/PortalUI';
 
 function InstagramIcon({ className = "w-4 h-4 text-pink-500" }: { className?: string }) {
   return (
@@ -139,6 +140,14 @@ const NOTIFS = [
 ];
 
 export default function SettingsPage() {
+  useEffect(() => {
+    const handleActivated = () => {
+      setActiveBiz(prev => prev ? { ...prev, planStatus: 'active' } : null);
+      setShowGatewayModal(false);
+    };
+    window.addEventListener('pixora:dashboard_activated', handleActivated);
+    return () => window.removeEventListener('pixora:dashboard_activated', handleActivated);
+  }, []);
   const [activeTab, setActiveTab] = useState(0);
   const [activeBiz, setActiveBiz] = useState<Business | null>(null);
   const [notifs, setNotifs] = useState(NOTIFS.map(n => n.checked));
@@ -208,10 +217,19 @@ export default function SettingsPage() {
   const [isSavingAccount, setIsSavingAccount] = useState(false);
   const [accountSavedSuccess, setAccountSavedSuccess] = useState(false);
   const [passwordResetSent, setPasswordResetSent] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   // Tab 6: Billing & License Activation State
   const [licenseKeyInput, setLicenseKeyInput] = useState('');
   const [isActivatingLicenseKey, setIsActivatingLicenseKey] = useState(false);
+  const [showGatewayModal, setShowGatewayModal] = useState(false);
+  const [gatewayPlan, setGatewayPlan] = useState({
+    planId: 'plan_2year_software',
+    planName: 'Standard 2-Year Plan',
+    amount: 2599,
+  });
   const [licenseKeySuccess, setLicenseKeySuccess] = useState<string | null>(null);
   const [licenseKeyError, setLicenseKeyError] = useState<string | null>(null);
 
@@ -240,6 +258,8 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    setIsLoading(true);
+    setLoadError(null);
     const slug = businessService.getActiveBusinessSlug();
     const user = authService.getCurrentUser();
     if (user) {
@@ -319,6 +339,11 @@ export default function SettingsPage() {
         setServicesEnabled(biz.theme?.servicesEnabled ?? catConfig.servicesEnabled);
         setProductsEnabled(biz.theme?.productsEnabled ?? catConfig.productsEnabled);
       }
+      setIsLoading(false);
+    }).catch((err) => {
+      console.error('Failed to load settings:', err);
+      setLoadError('Settings are temporarily unavailable.');
+      setIsLoading(false);
     });
 
     // Check if redirected back from Google OAuth 2.0 callback
@@ -357,7 +382,7 @@ export default function SettingsPage() {
         });
       }
     }
-  }, []);
+  }, [loadAttempt]);
 
   const activeCategoryConfig = BUSINESS_CATEGORIES[selectedCategoryId] || normalizeBusinessCategory(selectedCategoryId);
   const isFood = isFoodAndDiningBusiness(selectedCategoryId || activeBiz?.category);
@@ -366,6 +391,13 @@ export default function SettingsPage() {
   const isRestaurant = activeBiz?.category?.toLowerCase().includes('restaurant') || activeBiz?.category?.toLowerCase().includes('cafe') || false;
   const profileLabel = isRestaurant ? 'Restaurant Profile' : 'Business Profile';
   const TABS = [profileLabel, 'Integrations', 'Notifications', 'Business Hours', 'Appearance', 'Account', 'Billing'];
+  const isLocallyActiveSettings = typeof window !== 'undefined' && activeBiz && (
+    localStorage.getItem(`pixora_plan_active_${activeBiz.id}`) === 'true' ||
+    localStorage.getItem(`pixora_plan_active_${activeBiz.businessId}`) === 'true' ||
+    localStorage.getItem(`pixora_plan_active_${activeBiz.slug}`) === 'true'
+  );
+  const isAccountUpgradedInSettings = activeBiz?.planStatus === 'active' || Boolean(isLocallyActiveSettings);
+
 
   // Handle changing business category
   const handleCategoryChange = (catId: string) => {
@@ -915,7 +947,7 @@ export default function SettingsPage() {
         const updatedBiz: Business = {
           ...activeBiz,
           planStatus: 'active',
-          trialExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+          trialExpiresAt: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString(),
         };
         setActiveBiz(updatedBiz);
       }
@@ -928,7 +960,7 @@ export default function SettingsPage() {
   };
 
   const handleDownloadInvoice = (item: string) => {
-    const content = `PIXORA TECHNOLOGIES PRIVATE LIMITED\nTAX INVOICE & LICENSE RECEIPT\n----------------------------------------\nItem: ${item}\nBusiness: ${activeBiz?.name || 'Client'}\nDate: ${new Date().toLocaleDateString()}\nStatus: PAID / ACTIVE\nLicense Model: 1-Year Full Commercial\nSupport Desk: support@pixora.in | +91 92573 78047\n----------------------------------------\nThank you for choosing Pixora!`;
+    const content = `PIXORA TECHNOLOGIES PRIVATE LIMITED\nTAX INVOICE & LICENSE RECEIPT\n----------------------------------------\nItem: ${item}\nBusiness: ${activeBiz?.name || 'Client'}\nDate: ${new Date().toLocaleDateString()}\nStatus: PAID / ACTIVE\nLicense Model: 2-Year Full Commercial\nSupport Desk: support@pixora.in | +91 92573 78047\n----------------------------------------\nThank you for choosing Pixora!`;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -939,6 +971,14 @@ export default function SettingsPage() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  if (isLoading) {
+    return <PortalLoadingState label="Loading workspace settings" />;
+  }
+
+  if (loadError) {
+    return <PortalErrorState description={loadError} onRetry={() => setLoadAttempt((attempt) => attempt + 1)} />;
+  }
 
   return (
     <div className="pb-10 max-w-7xl mx-auto">
@@ -3087,7 +3127,7 @@ export default function SettingsPage() {
                 Subscription, Plans &amp; License Key Activation
               </h2>
               <p className="text-xs text-stone-500 mt-1 max-w-2xl">
-                Activate your dashboard instantly using an admin license key or review your active 1-year commercial plan status.
+                Activate your dashboard instantly using an admin license key or review your active 2-year commercial plan status.
               </p>
             </div>
 
@@ -3118,7 +3158,7 @@ export default function SettingsPage() {
                       ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
                       : "bg-amber-100 text-amber-800 border-amber-300"
                   )}>
-                    {activeBiz?.planStatus === 'active' ? 'Active · 1-Year Full License' : '1-Day Free Evaluation Trial'}
+                    {activeBiz?.planStatus === 'active' ? 'Active · 2-Year Full License' : '1-Day Free Evaluation Trial'}
                   </span>
                 </div>
                 <h3 className="text-lg font-bold">
@@ -3132,7 +3172,7 @@ export default function SettingsPage() {
                 )}>
                   {activeBiz?.planStatus === 'active'
                     ? 'Your account has full commercial access to automated review routing, AI auto-reply, digital menu scans, and priority support.'
-                    : 'Your trial gives a live demonstration of the customer funnel. Enter your admin-issued license key below to activate 1 full year.'}
+                    : 'Your trial gives a live demonstration of the customer funnel. Enter your admin-issued license key below to activate 2 full years.'}
                 </p>
               </div>
 
@@ -3157,7 +3197,23 @@ export default function SettingsPage() {
           </div>
 
           {/* Instant License Key Activation Container */}
-          <div className="bg-white rounded-2xl border-2 border-emerald-800/40 p-6 sm:p-7 shadow-xs space-y-5">
+          {isAccountUpgradedInSettings ? (
+            <div className="bg-emerald-50/80 border border-emerald-200 rounded-2xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-emerald-950">2-Year Commercial License Active</h4>
+                  <p className="text-xs text-emerald-800 mt-0.5">Your account has full commercial access to automated review routing, AI auto-reply, digital menu scans, and priority support.</p>
+                </div>
+              </div>
+              <span className="self-start sm:self-auto px-3 py-1 rounded-full bg-emerald-600 text-white text-[11px] font-bold shrink-0">
+                Active · 2 Years
+              </span>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border-2 border-emerald-800/40 p-6 sm:p-7 shadow-xs space-y-5">
             <div className="flex items-start gap-3.5">
               <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center shrink-0">
                 <Key className="w-5 h-5" />
@@ -3167,7 +3223,7 @@ export default function SettingsPage() {
                   Activate Dashboard with License Key
                 </h3>
                 <p className="text-xs text-stone-500 mt-0.5">
-                  Our core model: Admin issues a unique 1-year license key upon order confirmation. Enter it below to unlock your dashboard instantly.
+                  Our core model: Admin issues a unique 2-year license key upon order confirmation. Enter it below to unlock your dashboard instantly.
                 </p>
               </div>
             </div>
@@ -3186,7 +3242,7 @@ export default function SettingsPage() {
                     className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-300 focus:border-emerald-800 focus:bg-white rounded-xl text-sm font-mono font-bold tracking-widest text-slate-900 uppercase outline-none transition"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-stone-400 uppercase">
-                    1-Year Key
+                    2-Year Key
                   </span>
                 </div>
 
@@ -3224,13 +3280,14 @@ export default function SettingsPage() {
               )}
             </form>
           </div>
+          )}
 
           {/* Pricing Plans Overview (Both Plans Displayed in Full) */}
           <div className="space-y-4">
             <div>
               <h3 className="font-bold text-slate-900 text-base">Annual Commercial Plans</h3>
               <p className="text-xs text-stone-500 mt-0.5">
-                Transparent 1-year pricing. Zero monthly subscriptions or hidden gateway charges.
+                Transparent 2-year pricing. Zero monthly subscriptions or hidden gateway charges.
               </p>
             </div>
 
@@ -3242,12 +3299,12 @@ export default function SettingsPage() {
                     <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider bg-stone-100 px-2 py-0.5 rounded">
                       Plan 1 · Software Suite
                     </span>
-                    <span className="text-[10px] font-bold text-stone-600">1 Year License</span>
+                    <span className="text-[10px] font-bold text-stone-600">2 Years License</span>
                   </div>
 
                   <div className="flex items-baseline gap-1.5 mb-1">
                     <span className="text-3xl font-extrabold text-slate-900">₹2,599</span>
-                    <span className="text-xs text-slate-500 font-semibold">/ 1 Year</span>
+                    <span className="text-xs text-slate-500 font-semibold">/ 2 Years</span>
                   </div>
                   <p className="text-xs font-semibold text-slate-600">
                     Without NFC Card · Full Software Suite
@@ -3264,7 +3321,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>1 Year Software License &amp; Unlimited Scans</span>
+                      <span>2 Years Software License &amp; Unlimited Scans</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -3276,15 +3333,29 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <a
-                  href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I would like to activate the ₹2,599 1-Year Plan (Without NFC Card) for ${activeBiz?.name || 'my business'}.`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
-                >
-                  <span>Order Plan 1 (₹2,599) via WhatsApp</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </a>
+                {isAccountUpgradedInSettings ? (
+                  <div className="w-full py-3 px-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-xs flex items-center justify-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
+                    <span>Plan Activated · 2-Year Commercial License</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGatewayPlan({
+                        planId: 'plan_2year_software',
+                        planName: 'Standard 2-Year Plan',
+                        amount: 2599,
+                      });
+                      setShowGatewayModal(true);
+                    }}
+                    className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-sm"
+                  >
+                    <CreditCard className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Pay & Activate Plan 1 Online (₹2,599)</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
 
               {/* Plan 2: 2,999 With NFC Card (Lifetime Deal for First 100 Accounts) */}
@@ -3350,15 +3421,29 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <a
-                  href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I would like to claim the ₹2,999 Lifetime Free Access Plan (First 100 Accounts Offer + NFC Review Card) for ${activeBiz?.name || 'my business'}.`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
-                >
-                  <span>Claim Lifetime Plan 2 with NFC Card (₹2,999)</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </a>
+                {isAccountUpgradedInSettings ? (
+                  <div className="w-full py-3 px-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 font-bold text-xs flex items-center justify-center gap-2">
+                    <Check className="w-4 h-4 text-blue-600 stroke-[3]" />
+                    <span>License Active · Included in Account</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGatewayPlan({
+                        planId: 'plan_pro_nfc_lifetime',
+                        planName: 'Pro Plan + NFC Card (Lifetime Deal)',
+                        amount: 2999,
+                      });
+                      setShowGatewayModal(true);
+                    }}
+                    className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Claim & Pay Plan 2 Online (₹2,999)</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -3393,14 +3478,14 @@ export default function SettingsPage() {
               {activeBiz?.planStatus === 'active' && (
                 <div className="p-3.5 flex items-center justify-between text-xs hover:bg-stone-50/50 transition">
                   <div>
-                    <p className="font-bold text-slate-900">1-Year Commercial Software License</p>
+                    <p className="font-bold text-slate-900">2-Year Commercial Software License</p>
                     <p className="text-[10px] text-stone-500">
                       Valid through {new Date(activeBiz.trialExpiresAt || Date.now()).toLocaleDateString()} · Active
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleDownloadInvoice('1-Year Commercial Software License')}
+                    onClick={() => handleDownloadInvoice('2-Year Commercial Software License')}
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:underline cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />

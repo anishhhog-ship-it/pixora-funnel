@@ -3,22 +3,16 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Menu, X, ArrowRight, Sparkles } from 'lucide-react';
-import { authService } from '@/services';
+import { Menu, X, ArrowRight } from 'lucide-react';
 import { triggerPwaInstall } from '@/components/PwaInstallPrompt';
 import { smoothScrollTo } from '@/lib/scrollUtils';
 
 export default function Navbar() {
-  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('hero');
 
   useEffect(() => {
-    setIsLoggedIn(authService.isAuthenticated());
-
     const handleScroll = () => {
       if (window.scrollY > 20) {
         setScrolled(true);
@@ -47,8 +41,8 @@ export default function Navbar() {
     <header
       className={`sticky top-0 z-50 transition-all duration-200 ${
         scrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100 py-3'
-          : 'bg-white border-b border-slate-100/80 py-4'
+          ? 'border-b border-slate-200/80 bg-white/90 py-3 shadow-[0_8px_28px_rgba(15,23,42,0.06)] backdrop-blur-xl'
+          : 'border-b border-slate-100/80 bg-white/80 py-4 backdrop-blur-md'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -62,7 +56,7 @@ export default function Navbar() {
                 smoothScrollTo('#top');
               }
             }}
-            className="flex items-center gap-2 group cursor-pointer"
+            className="public-focus-ring flex items-center gap-2 rounded-xl group cursor-pointer"
             title="Scroll to Top"
           >
             <Image
@@ -83,7 +77,8 @@ export default function Navbar() {
                 e.preventDefault();
                 smoothScrollTo('#features');
               }}
-              className={`transition-colors cursor-pointer py-1 relative ${
+              aria-current={activeSection === 'features' ? 'location' : undefined}
+              className={`public-focus-ring relative cursor-pointer rounded-md py-1 transition-colors ${
                 activeSection === 'features' 
                   ? 'text-blue-600 font-bold' 
                   : 'text-slate-600 hover:text-blue-600'
@@ -101,7 +96,8 @@ export default function Navbar() {
                 e.preventDefault();
                 smoothScrollTo('#industries');
               }}
-              className={`transition-colors cursor-pointer py-1 relative ${
+              aria-current={activeSection === 'industries' ? 'location' : undefined}
+              className={`public-focus-ring relative cursor-pointer rounded-md py-1 transition-colors ${
                 activeSection === 'industries' 
                   ? 'text-blue-600 font-bold' 
                   : 'text-slate-600 hover:text-blue-600'
@@ -119,7 +115,8 @@ export default function Navbar() {
                 e.preventDefault();
                 smoothScrollTo('#how-it-works');
               }}
-              className={`transition-colors cursor-pointer py-1 relative ${
+              aria-current={activeSection === 'how-it-works' ? 'location' : undefined}
+              className={`public-focus-ring relative cursor-pointer rounded-md py-1 transition-colors ${
                 activeSection === 'how-it-works' 
                   ? 'text-blue-600 font-bold' 
                   : 'text-slate-600 hover:text-blue-600'
@@ -137,7 +134,8 @@ export default function Navbar() {
                 e.preventDefault();
                 smoothScrollTo('#pricing');
               }}
-              className={`transition-colors cursor-pointer py-1 relative ${
+              aria-current={activeSection === 'pricing' ? 'location' : undefined}
+              className={`public-focus-ring relative cursor-pointer rounded-md py-1 transition-colors ${
                 activeSection === 'pricing' 
                   ? 'text-blue-600 font-bold' 
                   : 'text-slate-600 hover:text-blue-600'
@@ -155,7 +153,8 @@ export default function Navbar() {
                 e.preventDefault();
                 smoothScrollTo('#faq');
               }}
-              className={`transition-colors cursor-pointer py-1 relative ${
+              aria-current={activeSection === 'faq' ? 'location' : undefined}
+              className={`public-focus-ring relative cursor-pointer rounded-md py-1 transition-colors ${
                 activeSection === 'faq' 
                   ? 'text-blue-600 font-bold' 
                   : 'text-slate-600 hover:text-blue-600'
@@ -172,14 +171,14 @@ export default function Navbar() {
           <div className="hidden sm:flex items-center gap-3">
             <Link
               href="/login"
-              className="text-[13px] font-medium text-slate-700 hover:text-slate-900 px-4 py-2 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50/80 transition-all shadow-2xs"
+              className="public-focus-ring rounded-lg border border-slate-200 px-4 py-2 text-[13px] font-medium text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-50/80 hover:text-slate-900"
             >
               Login
             </Link>
 
             <Link
               href="/onboarding"
-              className="text-[13px] font-semibold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-all shadow-sm hover:shadow hover:scale-[1.01] active:scale-[0.99] flex items-center gap-1.5"
+              className="public-focus-ring flex items-center gap-1.5 rounded-lg bg-slate-950 px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md active:translate-y-0 active:scale-[0.99]"
             >
               <span>Start 1 Day Free Trial</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -191,21 +190,23 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => triggerPwaInstall()}
-              className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer"
+              className="public-focus-ring flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-800"
             >
               <span>Install App</span>
             </button>
             <Link
               href="/onboarding"
-              className="text-xs font-semibold text-white bg-blue-600 px-2.5 py-1.5 rounded-lg shadow-sm"
+              className="public-focus-ring rounded-lg bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm"
             >
               Free Trial
             </Link>
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-1.5 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100"
+              className="public-focus-ring rounded-lg p-1.5 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900"
               aria-label="Toggle Navigation Menu"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation-drawer"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -214,7 +215,7 @@ export default function Navbar() {
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden pt-4 pb-6 border-t border-slate-100 mt-3 space-y-3 animate-in fade-in duration-200">
+          <div id="mobile-navigation-drawer" className="mt-3 space-y-3 border-t border-slate-100 pt-4 pb-6 animate-in fade-in duration-200 md:hidden">
             <div className="flex flex-col space-y-2 text-sm font-medium text-slate-700">
               <a
                 href="#features"
@@ -223,7 +224,7 @@ export default function Navbar() {
                   setMobileMenuOpen(false);
                   smoothScrollTo('#features');
                 }}
-                className="px-3 py-2 rounded-lg hover:bg-slate-50 cursor-pointer flex items-center justify-between"
+                className="public-focus-ring flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
               >
                 <span>Features</span>
                 <span className="text-xs text-slate-400">↓</span>
@@ -235,7 +236,7 @@ export default function Navbar() {
                   setMobileMenuOpen(false);
                   smoothScrollTo('#industries');
                 }}
-                className="px-3 py-2 rounded-lg hover:bg-slate-50 cursor-pointer flex items-center justify-between"
+                className="public-focus-ring flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
               >
                 <span>Industries</span>
                 <span className="text-xs text-slate-400">↓</span>
@@ -247,7 +248,7 @@ export default function Navbar() {
                   setMobileMenuOpen(false);
                   smoothScrollTo('#how-it-works');
                 }}
-                className="px-3 py-2 rounded-lg hover:bg-slate-50 cursor-pointer flex items-center justify-between"
+                className="public-focus-ring flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
               >
                 <span>How It Works</span>
                 <span className="text-xs text-slate-400">↓</span>
@@ -259,7 +260,7 @@ export default function Navbar() {
                   setMobileMenuOpen(false);
                   smoothScrollTo('#pricing');
                 }}
-                className="px-3 py-2 rounded-lg hover:bg-slate-50 cursor-pointer flex items-center justify-between"
+                className="public-focus-ring flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
               >
                 <span>Pricing</span>
                 <span className="text-xs text-slate-400">↓</span>
@@ -271,7 +272,7 @@ export default function Navbar() {
                   setMobileMenuOpen(false);
                   smoothScrollTo('#faq');
                 }}
-                className="px-3 py-2 rounded-lg hover:bg-slate-50 cursor-pointer flex items-center justify-between"
+                className="public-focus-ring flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
               >
                 <span>Resources & FAQ</span>
                 <span className="text-xs text-slate-400">↓</span>
@@ -285,21 +286,21 @@ export default function Navbar() {
                   setMobileMenuOpen(false);
                   triggerPwaInstall();
                 }}
-                className="w-full text-center text-sm font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 py-2.5 rounded-xl hover:bg-emerald-100 flex items-center justify-center gap-2 cursor-pointer"
+                className="public-focus-ring flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 py-2.5 text-center text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
               >
                 <span>📲 Install Mobile App on Phone</span>
               </button>
               <Link
                 href="/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center text-sm font-semibold text-slate-700 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50"
+                className="public-focus-ring w-full rounded-xl border border-slate-200 py-2.5 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
                 Login to Client Portal
               </Link>
               <Link
                 href="/onboarding"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 py-2.5 rounded-xl shadow-sm flex items-center justify-center gap-1.5"
+                className="public-focus-ring flex w-full items-center justify-center gap-1.5 rounded-xl bg-slate-950 py-2.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
               >
                 <span>Start 1 Day Free Trial</span>
                 <ArrowRight className="w-3.5 h-3.5" />

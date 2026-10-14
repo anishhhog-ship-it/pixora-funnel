@@ -2,18 +2,43 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
+import { verifyAdminAccess } from '@/services/adminService';
 import Link from 'next/link';
 import { 
   BarChart2, Users, Building2, Key, Clock, Layout, Star, MessageSquare, 
   QrCode, Package, ImageIcon, Activity, FileText, Settings, ShieldCheck, 
-  Search, Bell, HelpCircle, ArrowRight, Crown, HeadphonesIcon
+  Search, Bell, HelpCircle, Crown, CreditCard, Menu as MenuIcon, X, ExternalLink
 } from 'lucide-react';
+
+const ADMIN_NAV_ITEMS = [
+  { href: '/admin', label: 'Overview', icon: BarChart2 },
+  { href: '/sales', label: 'Sales Operations', icon: Activity },
+  { href: '/sales/team', label: 'Sales Team', icon: Users },
+  { href: '/admin/customers', label: 'Customers', icon: Users },
+  { href: '/admin/businesses', label: 'Businesses', icon: Building2 },
+  { href: '/admin/activations', label: 'Activations', icon: Key },
+  { href: '/admin/trials', label: 'Trials & Plans', icon: Clock },
+  { href: '/admin/modules', label: 'Modules & Features', icon: Layout },
+  { href: '/admin/google-integrations', label: 'Google Integrations', icon: Star },
+  { href: '/admin/reviews', label: 'Reviews Monitoring', icon: Star },
+  { href: '/admin/qr-codes', label: 'QR Codes', icon: QrCode },
+  { href: '/admin/orders', label: 'Orders & Products', icon: Package },
+  { href: '/admin/payments', label: 'Payment Approvals', icon: CreditCard },
+  { href: '/admin/category-visuals', label: 'Category Visuals', icon: ImageIcon },
+  { href: '/admin/support', label: 'Support Tickets', icon: MessageSquare },
+  { href: '/admin/analytics', label: 'Analytics', icon: Activity },
+  { href: '/admin/system-health', label: 'System Health', icon: ShieldCheck },
+  { href: '/admin/audit-logs', label: 'Audit Logs', icon: FileText },
+  { href: '/admin/settings', label: 'Admin Settings', icon: Settings },
+] as const;
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showMobileNav, setShowMobileNav] = useState(false);
+  const [adminIdentity, setAdminIdentity] = useState({ email: 'Admin', role: 'Super Administrator' });
 
   useEffect(() => {
     async function checkAuth() {
@@ -22,8 +47,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         router.push('/admin-login');
         return;
       }
-      setIsAdmin(true);
-      setLoading(false);
+       const access = await verifyAdminAccess(session.access_token);
+       if (!access.isAdmin) {
+         router.push('/dashboard');
+         return;
+       }
+       setAdminIdentity({
+         email: access.email || 'Admin',
+         role: access.role === 'super_admin' ? 'Super Administrator' : access.role === 'support_agent' ? 'Support Agent' : 'Administrator',
+       });
+       setIsAdmin(true);
+       setLoading(false);
     }
     checkAuth();
   }, [router]);
@@ -35,12 +69,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!isAdmin) return null;
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden text-slate-900 font-sans">
+    <div className="admin-shell relative flex h-screen overflow-hidden bg-[#F8FAFC] font-sans text-slate-900">
       {/* Sidebar */}
-      <aside className="w-[260px] bg-white border-r border-slate-200 flex flex-col z-20 flex-shrink-0">
-        <div className="h-20 px-6 flex items-center justify-between border-b border-transparent">
+      <aside className="z-20 hidden w-[276px] flex-shrink-0 flex-col border-r border-slate-200/80 bg-white lg:flex">
+        <div className="flex h-20 items-center justify-between border-b border-slate-100 px-6">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl leading-none">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-xl font-bold leading-none text-white shadow-lg shadow-slate-950/15">
               P
             </div>
             <div className="flex flex-col">
@@ -48,43 +82,66 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span className="font-bold text-[10px] tracking-[0.2em] text-slate-500 uppercase leading-none mt-0.5">FUNNEL</span>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 bg-amber-50 px-2 py-1 rounded-md border border-amber-100">
+          <div className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1">
             <Crown className="w-3 h-3 text-amber-500 fill-amber-500" />
             <span className="text-[10px] font-bold text-amber-700">Super Admin</span>
           </div>
         </div>
         
-        <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-0.5 scrollbar-hide">
-          <NavLink href="/admin" icon={<BarChart2 />} active={pathname === '/admin'}>Overview</NavLink>
-          <NavLink href="/admin/customers" icon={<Users />} active={pathname.includes('/customers')}>Customers</NavLink>
-          <NavLink href="/admin/businesses" icon={<Building2 />} active={pathname.includes('/businesses')}>Businesses</NavLink>
-          <NavLink href="/admin/activations" icon={<Key />} active={pathname.includes('/activations')}>Activations</NavLink>
-          <NavLink href="/admin/trials" icon={<Clock />} active={pathname.includes('/trials')}>Trials & Plans</NavLink>
-          <NavLink href="/admin/modules" icon={<Layout />} active={pathname.includes('/modules')}>Modules & Features</NavLink>
-          <NavLink href="/admin/google-integrations" icon={<Star />} active={pathname.includes('/google-integrations')}>Google Integrations</NavLink>
-          <NavLink href="/admin/reviews" icon={<Star />} active={pathname.includes('/reviews')}>Reviews Monitoring</NavLink>
-          <NavLink href="/admin/qr-codes" icon={<QrCode />} active={pathname.includes('/qr-codes')}>QR Codes</NavLink>
-          <NavLink href="/admin/orders" icon={<Package />} active={pathname.includes('/orders')}>Orders & Products</NavLink>
-          <NavLink href="/admin/category-visuals" icon={<ImageIcon />} active={pathname.includes('/category-visuals')}>Category Visuals</NavLink>
-          <NavLink href="/admin/support" icon={<MessageSquare />} active={pathname.includes('/support')}>Support Tickets</NavLink>
-          <NavLink href="/admin/analytics" icon={<Activity />} active={pathname.includes('/analytics')}>Analytics</NavLink>
-          <NavLink href="/admin/system-health" icon={<ShieldCheck />} active={pathname.includes('/system-health')}>System Health</NavLink>
-          <NavLink href="/admin/audit-logs" icon={<FileText />} active={pathname.includes('/audit-logs')}>Audit Logs</NavLink>
-          <NavLink href="/admin/settings" icon={<Settings />} active={pathname.includes('/settings')}>Admin Settings</NavLink>
+        <nav className="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-4 py-5" aria-label="Super admin navigation">
+          <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Control center</p>
+          {ADMIN_NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            return <NavLink key={item.href} href={item.href} icon={<Icon />} active={item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)}>{item.label}</NavLink>;
+          })}
         </nav>
 
+        <div className="border-t border-slate-100 p-4">
+          <Link href="/dashboard" className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+            <ExternalLink className="h-4 w-4 text-slate-400 transition group-hover:text-blue-600" />
+            <span>Open client portal</span>
+          </Link>
+        </div>
+
       </aside>
+
+      {showMobileNav && (
+        <>
+          <button type="button" aria-label="Close admin navigation" className="fixed inset-0 z-40 bg-slate-950/40 lg:hidden" onClick={() => setShowMobileNav(false)} />
+          <aside className="fixed inset-y-0 left-0 z-50 flex w-[min(88vw,320px)] flex-col border-r border-slate-200 bg-white shadow-2xl lg:hidden">
+            <div className="flex h-20 items-center justify-between border-b border-slate-100 px-5">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-xl font-bold text-white">P</div>
+                <div>
+                  <p className="text-sm font-bold text-slate-950">Pixora</p>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400">Control center</p>
+                </div>
+              </div>
+              <button type="button" onClick={() => setShowMobileNav(false)} className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900" aria-label="Close admin navigation"><X className="h-5 w-5" /></button>
+            </div>
+            <nav className="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-4 py-5" aria-label="Mobile super admin navigation">
+              {ADMIN_NAV_ITEMS.map((item) => {
+                const Icon = item.icon;
+                return <NavLink key={item.href} href={item.href} icon={<Icon />} active={item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)} onClick={() => setShowMobileNav(false)}>{item.label}</NavLink>;
+              })}
+            </nav>
+            <div className="border-t border-slate-100 p-4"><Link href="/dashboard" onClick={() => setShowMobileNav(false)} className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-3 text-xs font-semibold text-slate-700"><ExternalLink className="h-4 w-4 text-blue-600" />Open client portal</Link></div>
+          </aside>
+        </>
+      )}
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col relative overflow-hidden">
         {/* Header */}
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-8 z-10 flex-shrink-0">
-           <div className="flex-1 max-w-2xl">
+         <header className="z-10 flex h-20 shrink-0 items-center justify-between gap-3 border-b border-slate-200/80 bg-white/85 px-4 backdrop-blur-xl sm:px-8">
+           <div className="flex min-w-0 flex-1 items-center gap-3 lg:max-w-2xl">
+             <button type="button" onClick={() => setShowMobileNav(true)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white lg:hidden" aria-label="Open admin navigation"><MenuIcon className="h-5 w-5" /></button>
              <div className="relative group">
                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"/>
-               <input 
-                 type="text" 
-                 placeholder="Search customers, businesses, orders, or anything..." 
+                <input
+                  type="text"
+                  placeholder="Search customers, businesses, orders..."
+                  aria-label="Search admin workspace"
                  className="w-full pl-10 pr-12 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700"
                />
                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
@@ -94,29 +151,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
              </div>
            </div>
            
-           <div className="flex items-center gap-5 ml-8">
-             <button className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-50">
-               <Bell className="w-5 h-5" />
-               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
-             </button>
-             <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-50">
-               <HelpCircle className="w-5 h-5" />
+             <div className="ml-2 flex shrink-0 items-center gap-1.5 sm:ml-8 sm:gap-4">
+              <button type="button" className="relative rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600" aria-label="Notifications">
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+              </button>
+              <button type="button" className="hidden rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600 sm:block" aria-label="Help and documentation">
+                <HelpCircle className="w-5 h-5" />
              </button>
              
              <div className="w-px h-8 bg-slate-200 mx-2"></div>
              
-             <div className="flex items-center gap-3 cursor-pointer group">
-               <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" alt="Admin" className="w-9 h-9 rounded-full object-cover ring-2 ring-slate-100 group-hover:ring-blue-100 transition-all" />
-               <div className="text-left hidden md:block">
-                  <div className="text-sm font-bold text-slate-900 leading-tight">Admin</div>
-                  <div className="text-[11px] font-medium text-slate-500">Super Administrator</div>
+              <div className="group flex cursor-default items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white ring-2 ring-slate-100 transition-all group-hover:ring-blue-100" aria-hidden="true">{adminIdentity.email.slice(0, 1).toUpperCase()}</div>
+                 <div className="hidden text-left xl:block">
+                   <div className="max-w-[150px] truncate text-sm font-bold leading-tight text-slate-900">{adminIdentity.email}</div>
+                   <div className="text-[11px] font-medium text-slate-500">{adminIdentity.role}</div>
                </div>
              </div>
            </div>
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-y-auto p-8">
+          <div className="admin-content custom-scrollbar flex-1 overflow-y-auto p-4 sm:p-8">
           {children}
         </div>
       </main>
@@ -124,18 +181,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 }
 
-function NavLink({ href, icon, children, active }: { href: string, icon: any, children: React.ReactNode, active: boolean }) {
+function NavLink({ href, icon, children, active, onClick }: { href: string, icon: React.ReactNode, children: React.ReactNode, active: boolean, onClick?: () => void }) {
   return (
     <Link 
       href={href} 
-      className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
+      onClick={onClick}
+      className={`group flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-[13px] font-semibold transition-all duration-200 ${
         active 
-          ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
-          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+          ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+          : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950'
       }`}
+      aria-current={active ? 'page' : undefined}
     >
-      <span className={`w-4 h-4 ${active ? 'text-white' : 'text-slate-400'}`}>{icon}</span>
+      <span className={`h-4 w-4 transition-colors ${active ? 'text-white' : 'text-slate-400 group-hover:text-slate-700'}`}>{icon}</span>
       {children}
+      {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden="true" />}
     </Link>
   );
 }

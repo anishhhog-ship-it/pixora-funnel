@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -14,8 +14,6 @@ import {
   Users, 
   Settings, 
   Crown, 
-  HelpCircle, 
-  Share2, 
   Bell,
   ExternalLink,
   ChevronDown,
@@ -24,11 +22,9 @@ import {
   Check,
   ShieldCheck,
   Clock,
-  AlertTriangle,
   LogOut,
   User as UserIcon,
   X,
-  Download,
   Store,
   Key,
   CheckCircle2,
@@ -37,9 +33,11 @@ import {
   Smartphone,
   ArrowRight,
   BookOpen,
-  LifeBuoy
+  LifeBuoy,
+  Menu as MenuIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PORTAL_FOCUS_RING } from '@/components/client-portal/PortalUI';
 import { 
   authService, 
   businessService, 
@@ -49,26 +47,30 @@ import {
   NotificationItem 
 } from '@/services';
 import { Business } from '@/types';
-import PwaInstallPrompt, { triggerPwaInstall } from '@/components/PwaInstallPrompt';
+import PaymentGatewayModal from '@/components/payment/PaymentGatewayModal';
+import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 
-const SIDEBAR_ITEMS = [
-  { label: 'Dashboard', icon: Home, href: '/dashboard' },
-  { label: 'Reviews', icon: Star, href: '/dashboard/reviews' },
-  { label: 'Auto Reply', icon: MessageSquare, href: '/dashboard/auto-reply' },
-  { label: 'Menu Management', icon: UtensilsCrossed, href: '/dashboard/menu' },
-  { label: 'QR Codes', icon: QrCode, href: '/dashboard/qr' },
-  { label: 'Analytics', icon: BarChart2, href: '/dashboard/analytics' },
-  { label: 'Customers', icon: Users, href: '/dashboard/customers' },
-  { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
-];
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
 
-const MOBILE_NAV_ITEMS = [
-  { label: 'Home', icon: Home, href: '/dashboard' },
-  { label: 'Reviews', icon: Star, href: '/dashboard/reviews' },
-  { label: 'QR Stand', icon: QrCode, href: '/dashboard/qr' },
-  { label: 'Menu', icon: UtensilsCrossed, href: '/dashboard/menu' },
-  { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
-];
+function CreditCard({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect width="20" height="14" x="2" y="5" rx="2" />
+      <line x1="2" x2="22" y1="10" y2="10" />
+    </svg>
+  );
+}
 
 function PageTitle(pathname: string, businessName: string) {
   const map: Record<string, { title: string; subtitle: string }> = {
@@ -124,7 +126,14 @@ export default function DashboardContent({ children }: { children: React.ReactNo
   const [noBusinessAttached, setNoBusinessAttached] = useState(false);
   const [showBizSwitcher, setShowBizSwitcher] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showMobileNav, setShowMobileNav] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showGatewayModal, setShowGatewayModal] = useState(false);
+  const [gatewayPlan, setGatewayPlan] = useState({
+    planId: 'plan_2year_software',
+    planName: 'Standard 2-Year Plan',
+    amount: 2599,
+  });
 
   // Live Notifications State
   const [showNotifications, setShowNotifications] = useState(false);
@@ -146,7 +155,6 @@ export default function DashboardContent({ children }: { children: React.ReactNo
 
   // Live Trial Countdown State
   const [trialTimeText, setTrialTimeText] = useState('Trial · 18h 42m remaining');
-  const [isTrialExpired, setIsTrialExpired] = useState(false);
 
   // First-Time Sign-In Phone Number Prompt State
   const [showFirstTimePhoneModal, setShowFirstTimePhoneModal] = useState(false);
@@ -230,13 +238,11 @@ export default function DashboardContent({ children }: { children: React.ReactNo
 
         if (isPlanActive) {
           matched.planStatus = 'active';
-          setTrialTimeText('Active · 1 Year License Valid');
-          setIsTrialExpired(false);
+          setTrialTimeText('Active · 2 Year License Valid');
         } else {
           // Update trial timer
           const status = trialService.getRemainingTime(matched.trialExpiresAt);
           setTrialTimeText(`Trial · ${status.text}`);
-          setIsTrialExpired(status.isExpired);
         }
         setIsInitializing(false);
 
@@ -259,8 +265,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
 
     // Dashboard activation event listener (e.g. key entered in modal)
     const handleActivatedEvent = () => {
-      setIsTrialExpired(false);
-      setTrialTimeText('Active · 1 Year License Valid');
+      setTrialTimeText('Active · 2 Year License Valid');
       setActiveBusiness(prev => prev ? { ...prev, planStatus: 'active' } : null);
     };
     window.addEventListener('pixora:dashboard_activated', handleActivatedEvent);
@@ -270,7 +275,6 @@ export default function DashboardContent({ children }: { children: React.ReactNo
       if (activeBusiness?.trialExpiresAt && activeBusiness.planStatus !== 'active') {
         const status = trialService.getRemainingTime(activeBusiness.trialExpiresAt);
         setTrialTimeText(`Trial · ${status.text}`);
-        setIsTrialExpired(status.isExpired);
       }
     }, 60000);
 
@@ -279,7 +283,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
       unsubscribeNotifs();
       window.removeEventListener('pixora:dashboard_activated', handleActivatedEvent);
     };
-  }, [queryBiz, activeBusiness?.trialExpiresAt, activeBusiness?.id, router]);
+  }, [queryBiz, activeBusiness?.trialExpiresAt, activeBusiness?.id, activeBusiness?.planStatus, router]);
 
   const handleActivateDashboardLicense = async () => {
     const key = dashboardLicenseKey.trim().toUpperCase();
@@ -299,13 +303,12 @@ export default function DashboardContent({ children }: { children: React.ReactNo
         return;
       }
       setLicenseKeySuccess(res.message);
-      setIsTrialExpired(false);
-      setTrialTimeText('Active · 1 Year License Valid');
+      setTrialTimeText('Active · 2 Year License Valid');
       if (activeBusiness) {
         setActiveBusiness({
           ...activeBusiness,
           planStatus: 'active',
-          trialExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+          trialExpiresAt: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString(),
         });
       }
       setTimeout(() => {
@@ -313,8 +316,8 @@ export default function DashboardContent({ children }: { children: React.ReactNo
         setDashboardLicenseKey('');
         setLicenseKeySuccess(null);
       }, 1600);
-    } catch (err: any) {
-      setLicenseKeyError(err?.message || 'Activation failed. Please contact support.');
+     } catch (err: unknown) {
+      setLicenseKeyError(getErrorMessage(err, 'Activation failed. Please contact support.'));
     } finally {
       setIsActivatingDashboardKey(false);
     }
@@ -346,8 +349,8 @@ export default function DashboardContent({ children }: { children: React.ReactNo
         setShowAddBusinessModal(false);
         router.push('/onboarding?mode=add_location');
       }, 1200);
-    } catch (err: any) {
-      setActivationError(err?.message || 'Failed to activate key. Please contact support.');
+     } catch (err: unknown) {
+       setActivationError(getErrorMessage(err, 'Failed to activate key. Please contact support.'));
     } finally {
       setIsActivatingCode(false);
     }
@@ -401,8 +404,8 @@ export default function DashboardContent({ children }: { children: React.ReactNo
       }
 
       setShowFirstTimePhoneModal(false);
-    } catch (err: any) {
-      setFirstTimePhoneError(err?.message || 'Failed to save phone number. Please try again.');
+     } catch (err: unknown) {
+       setFirstTimePhoneError(getErrorMessage(err, 'Failed to save phone number. Please try again.'));
     } finally {
       setIsSavingFirstTimePhone(false);
     }
@@ -423,9 +426,6 @@ export default function DashboardContent({ children }: { children: React.ReactNo
   const bizName = activeBusiness?.name || 'Your Business';
   const bizCategory = activeBusiness?.category || 'Pure Veg Restaurant';
   const bizSlug = activeBusiness?.slug || 'your-business';
-  const primaryColor = activeBusiness?.theme?.primaryColor || '#0B3D2E';
-  const secondaryColor = activeBusiness?.theme?.secondaryColor || '#D4AF37';
-
   const { title, subtitle } = PageTitle(pathname, bizName);
 
   const getInitials = (name: string) => {
@@ -485,13 +485,20 @@ export default function DashboardContent({ children }: { children: React.ReactNo
     );
   }
 
+  const isLocallyActive = typeof window !== 'undefined' && activeBusiness && (
+    localStorage.getItem(`pixora_plan_active_${activeBusiness.id}`) === 'true' ||
+    localStorage.getItem(`pixora_plan_active_${activeBusiness.businessId}`) === 'true' ||
+    localStorage.getItem(`pixora_plan_active_${activeBusiness.slug}`) === 'true'
+  );
+  const isAccountUpgraded = activeBusiness?.planStatus === 'active' || Boolean(isLocallyActive);
+
   return (
-    <div className="flex h-screen overflow-hidden font-[Inter,sans-serif] bg-slate-50 text-slate-900" suppressHydrationWarning>
+    <div className="flex h-screen overflow-hidden bg-slate-50 font-[Inter,sans-serif] text-slate-900" suppressHydrationWarning>
       {/* Sidebar */}
-      <aside className="w-[260px] flex-shrink-0 hidden md:flex flex-col h-full bg-white border-r border-slate-200 transition-all duration-300">
+      <aside className="hidden h-full w-[272px] flex-shrink-0 flex-col border-r border-slate-200/80 bg-white md:flex">
         {/* Platform Brand */}
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center">
-          <Link href="/" className="flex items-center gap-2 group">
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+          <Link href="/" className={cn('group flex items-center gap-2', PORTAL_FOCUS_RING)} aria-label="Pixora home">
             <Image
               src="/pixora-logo.png"
               alt="Pixora Funnel"
@@ -500,10 +507,13 @@ export default function DashboardContent({ children }: { children: React.ReactNo
               className="h-8 w-auto object-contain transition-opacity group-hover:opacity-90"
             />
           </Link>
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">
+            Portal
+          </span>
         </div>
 
         {/* Nav Links */}
-        <nav className="flex-1 px-4 py-6 overflow-y-auto custom-scrollbar space-y-1">
+        <nav className="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-4 py-6" aria-label="Client portal navigation">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
@@ -514,31 +524,36 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                 key={item.href}
                 href={href}
                 className={cn(
-                  'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all',
+                  'group flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-medium transition-all',
                   isActive
-                    ? 'bg-blue-50 text-blue-700 shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'border-blue-100 bg-blue-50 text-blue-700 shadow-[0_8px_18px_-14px_rgba(37,99,235,0.8)]'
+                    : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950',
+                  PORTAL_FOCUS_RING,
                 )}
+                aria-current={isActive ? 'page' : undefined}
               >
                 <Icon 
-                  className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-blue-600" : "text-slate-400")}
+                  className={cn('h-4.5 w-4.5 flex-shrink-0 transition-colors', isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600')}
                 />
                 <span className="truncate">{item.label}</span>
+                {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-600" aria-hidden="true" />}
               </Link>
             );
           })}
         </nav>
 
         {/* Pinned Bottom Nav Option */}
-        <div className="p-3 border-t border-slate-100 bg-white">
+        <div className="border-t border-slate-100 bg-white p-4">
           <Link
             href={queryBiz ? `/dashboard/support?business=${queryBiz}` : '/dashboard/support'}
             className={cn(
-              'flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group',
+              'group flex items-center justify-between rounded-xl border px-3.5 py-3 text-sm font-medium transition-all',
               pathname === '/dashboard/support'
-                ? 'bg-blue-50 text-blue-700 font-semibold shadow-2xs'
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                ? 'border-blue-100 bg-blue-50 font-semibold text-blue-700 shadow-2xs'
+                : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900',
+              PORTAL_FOCUS_RING,
             )}
+            aria-current={pathname === '/dashboard/support' ? 'page' : undefined}
           >
             <div className="flex items-center gap-3 truncate">
               <LifeBuoy
@@ -549,7 +564,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
               />
               <span className="truncate">Client Support</span>
             </div>
-            <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
+            <span className="flex shrink-0 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span>24/7</span>
             </span>
@@ -557,82 +572,155 @@ export default function DashboardContent({ children }: { children: React.ReactNo
         </div>
       </aside>
 
+      {/* Mobile navigation drawer */}
+      {showMobileNav && (
+        <>
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            className="fixed inset-0 z-40 bg-slate-950/35 md:hidden"
+            onClick={() => setShowMobileNav(false)}
+          />
+          <aside className="fixed inset-y-0 left-0 z-50 flex w-[min(86vw,320px)] flex-col border-r border-slate-200 bg-white shadow-2xl md:hidden">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-5">
+              <Link
+                href={queryBiz ? `/dashboard?business=${queryBiz}` : '/dashboard'}
+                onClick={() => setShowMobileNav(false)}
+                className={cn('flex items-center gap-2', PORTAL_FOCUS_RING)}
+                aria-label="Go to dashboard home"
+              >
+                <Image src="/pixora-logo.png" alt="Pixora Funnel" width={150} height={40} className="h-7 w-auto object-contain" />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowMobileNav(false)}
+                className={cn('rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900', PORTAL_FOCUS_RING)}
+                aria-label="Close navigation menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-4 py-5" aria-label="Mobile client portal navigation">
+              {sidebarItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+                const href = queryBiz ? `${item.href}?business=${queryBiz}` : item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={href}
+                    onClick={() => setShowMobileNav(false)}
+                    className={cn(
+                      'flex items-center gap-3 rounded-xl border px-3.5 py-3 text-sm font-medium transition',
+                      isActive ? 'border-blue-100 bg-blue-50 font-semibold text-blue-700' : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50',
+                      PORTAL_FOCUS_RING,
+                    )}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <Icon className={cn('h-5 w-5', isActive ? 'text-blue-600' : 'text-slate-400')} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="border-t border-slate-100 p-4">
+              <Link
+                href={queryBiz ? `/dashboard/support?business=${queryBiz}` : '/dashboard/support'}
+                onClick={() => setShowMobileNav(false)}
+                className={cn('flex items-center gap-3 rounded-xl bg-slate-50 px-3.5 py-3 text-sm font-semibold text-slate-700', PORTAL_FOCUS_RING)}
+              >
+                <LifeBuoy className="h-5 w-5 text-blue-600" />
+                <span>Client Support</span>
+              </Link>
+            </div>
+          </aside>
+        </>
+      )}
+
       {/* Main Container */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Top 1-Day Trial / Active License Strip */}
-        <div className="bg-slate-900 px-6 py-2 text-white flex items-center justify-between text-xs border-b border-slate-800 shrink-0">
-          <div className="flex items-center gap-2.5 truncate mr-3">
-            {activeBusiness?.planStatus === 'active' ? (
-              <span className="bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 font-bold px-2.5 py-0.5 rounded-full text-[11px] flex items-center gap-1.5 shrink-0">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>1-Year Plan Active</span>
-              </span>
-            ) : (
-              <span className="bg-blue-600/30 text-blue-300 border border-blue-500/40 font-bold px-2.5 py-0.5 rounded-full text-[11px] flex items-center gap-1.5 shrink-0">
+      <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
+        {/* Top 1-Day Trial Strip (hidden after account activation) */}
+        {!isAccountUpgraded && (
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white sm:px-6">
+            <div className="mr-3 flex min-w-0 items-center gap-2.5 truncate">
+              <span className="flex shrink-0 items-center gap-1.5 rounded-full border border-blue-500/40 bg-blue-600/30 px-2.5 py-0.5 text-[11px] font-bold text-blue-300">
                 <Clock className="w-3 h-3 text-blue-400" />
                 <span>{trialTimeText}</span>
               </span>
-            )}
 
-            <span className="text-slate-300 truncate hidden sm:inline text-xs">
-              {activeBusiness?.planStatus === 'active'
-                ? 'Full 1-year software license active. Customer QR review funnel and 24/7 AI Auto-Replies are running.'
-                : 'Full feature trial active. Customer QR table scans and Google auto-replies are live.'}
-            </span>
-          </div>
+              <span className="hidden truncate text-xs text-slate-300 xl:inline">
+                Full feature trial active. Customer QR table scans and Google auto-replies are live.
+              </span>
+            </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            {activeBusiness?.planStatus === 'active' ? (
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
               <button
+                type="button"
                 onClick={() => setShowUpgradeModal(true)}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1 rounded-lg text-xs transition-transform hover:scale-105 shadow-xs cursor-pointer flex items-center gap-1"
-              >
-                <Check className="w-3.5 h-3.5" />
-                <span>Account Active ✓</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => setShowUpgradeModal(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1 rounded-lg text-xs transition-transform hover:scale-105 shadow-xs cursor-pointer flex items-center gap-1.5"
+                className={cn('flex items-center gap-1.5 rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-bold text-white shadow-xs transition hover:bg-blue-700 sm:px-3', PORTAL_FOCUS_RING)}
+                aria-label="Activate plan or enter license key"
               >
                 <Key className="w-3 h-3 text-amber-300" />
-                <span>Activate Plan / License Key →</span>
+                <span className="hidden sm:inline">Activate Plan / License Key</span>
+                <span className="sm:hidden">Activate</span>
               </button>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Top Header */}
-        <header className="bg-white flex items-center justify-between px-6 py-4 shrink-0 border-b border-slate-200">
-          <div className="flex items-center flex-1 max-w-md">
-            <div className="relative w-full">
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 py-3 sm:px-6 sm:py-4" aria-label="Client portal header">
+          <div className="flex min-w-0 flex-1 items-center gap-3 lg:max-w-md">
+            <button
+              type="button"
+              onClick={() => setShowMobileNav(true)}
+              className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-slate-300 hover:bg-white hover:text-slate-950 md:hidden', PORTAL_FOCUS_RING)}
+              aria-label="Open navigation menu"
+              aria-expanded={showMobileNav}
+            >
+              <MenuIcon />
+            </button>
+            <div className="min-w-0 lg:hidden">
+              <p className="truncate text-sm font-bold text-slate-950">{title}</p>
+              <p className="truncate text-[10px] text-slate-500">{subtitle || 'Client portal'}</p>
+            </div>
+            <div className="relative hidden w-full lg:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input 
                 type="text" 
                 placeholder="Search..." 
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                aria-label="Search client portal"
+                className={cn('w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-700 placeholder-slate-400 transition-all focus:border-blue-500 focus:bg-white', PORTAL_FOCUS_RING)}
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-4 flex-shrink-0">
-            {/* Action Buttons */}
-            <div className="hidden sm:flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setShowUpgradeModal(true)}
-                className="text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
-              >
-                Upgrade Plan
-              </button>
-            </div>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            {/* Action Buttons: Automatically hidden when upgraded */}
+            {!isAccountUpgraded ? (
+              <div className="hidden sm:flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowUpgradeModal(true)}
+                  className={cn('rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100', PORTAL_FOCUS_RING)}
+                >
+                  Upgrade Plan
+                </button>
+              </div>
+            ) : (
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-xs font-bold">
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                <span>Active (2 Years)</span>
+              </div>
+            )}
 
             {/* View Live Funnel Button */}
             <a
               href={`/f/${bizSlug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl px-3 sm:px-3.5 py-1.5 text-xs font-semibold shadow-2xs transition-colors"
+              className={cn('inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-2.5 py-2 text-xs font-semibold text-blue-700 shadow-2xs transition-colors hover:bg-blue-100 sm:px-3.5', PORTAL_FOCUS_RING)}
+              aria-label="Open live customer funnel in a new tab"
             >
               <QrCode className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">View Live Funnel</span>
@@ -641,14 +729,16 @@ export default function DashboardContent({ children }: { children: React.ReactNo
             </a>
 
             {/* Business Switcher Dropdown */}
-            <div className="relative border-l border-slate-200 pl-4 flex items-center gap-3">
+            <div className="relative flex items-center gap-2 border-l border-slate-200 pl-2 sm:gap-3 sm:pl-4">
               <button
                 type="button"
                 onClick={() => {
                   setShowBizSwitcher(!showBizSwitcher);
                   setShowUserMenu(false);
                 }}
-                className="flex items-center gap-3 text-left hover:bg-slate-50 p-1.5 rounded-lg transition"
+                className={cn('flex items-center gap-2 rounded-xl p-1.5 text-left transition hover:bg-slate-50 sm:gap-3', PORTAL_FOCUS_RING)}
+                aria-label={`Switch business. Current business: ${bizName}`}
+                aria-expanded={showBizSwitcher}
               >
                 <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center shrink-0">
                   {activeBusiness?.logo ? (
@@ -661,7 +751,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                   <p className="text-sm font-semibold text-slate-900 truncate max-w-[140px]">{bizName}</p>
                   <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Owner</p>
                 </div>
-                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                <ChevronDown className={cn('h-4 w-4 shrink-0 text-slate-400 transition-transform', showBizSwitcher && 'rotate-180 text-blue-600')} />
               </button>
 
               {showBizSwitcher && (
@@ -684,7 +774,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                             setActiveBusiness(b);
                             businessService.setActiveBusinessSlug(b.slug);
                             setShowBizSwitcher(false);
-                            window.location.href = `/dashboard?business=${b.slug}`;
+                             router.push(`/dashboard?business=${b.slug}`);
                           }}
                           className={cn(
                             'w-full text-left px-3 py-1.5 text-xs flex items-center justify-between hover:bg-gray-50 transition-colors',
@@ -720,7 +810,9 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                   setShowUserMenu(!showUserMenu);
                   setShowBizSwitcher(false);
                 }}
-                className="w-9 h-9 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-full flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
+                className={cn('flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 transition-colors hover:bg-slate-200', PORTAL_FOCUS_RING)}
+                aria-label="Open account menu"
+                aria-expanded={showUserMenu}
               >
                 <UserIcon className="w-4 h-4" />
               </button>
@@ -795,8 +887,10 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                   setShowUserMenu(false);
                   setShowBizSwitcher(false);
                 }}
-                className="relative w-9 h-9 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-xs hover:bg-gray-50 transition-colors cursor-pointer"
+                className={cn('relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white shadow-xs transition-colors hover:bg-slate-50', PORTAL_FOCUS_RING)}
                 title="Notifications from Admin Panel"
+                aria-label={unreadNotifCount > 0 ? `Notifications, ${unreadNotifCount} unread` : 'Notifications'}
+                aria-expanded={showNotifications}
               >
                 <Bell className="w-4 h-4 text-gray-600" />
                 {unreadNotifCount > 0 ? (
@@ -919,12 +1013,24 @@ export default function DashboardContent({ children }: { children: React.ReactNo
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto custom-scrollbar p-3.5 sm:p-6 lg:p-8 pb-28 md:pb-8">
+        <main className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/80 p-3.5 pb-28 sm:p-6 lg:p-8 lg:pb-8">
+          <div className="mx-auto mb-5 flex w-full max-w-[1600px] items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/75 px-4 py-3 shadow-[0_12px_30px_-26px_rgba(15,23,42,0.55)] backdrop-blur sm:px-5">
+            <div className="flex min-w-0 items-center gap-2 text-[11px] font-semibold text-slate-400">
+              <span className="shrink-0 uppercase tracking-[0.16em] text-blue-600">Workspace</span>
+              <span aria-hidden="true">/</span>
+              <span className="truncate text-slate-700">{pathname === '/dashboard' ? 'Overview' : title}</span>
+            </div>
+            <div className="flex shrink-0 items-center gap-2 text-[10px] font-semibold text-slate-500">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.12)]" aria-hidden="true" />
+              <span className="hidden sm:inline">Active business</span>
+              <span className="max-w-[120px] truncate text-slate-800 sm:max-w-[180px]">{bizName}</span>
+            </div>
+          </div>
           {children}
         </main>
 
         {/* Mobile Client App Bottom Tab Bar */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-2 py-2 pb-safe shadow-[0_-6px_20px_rgba(0,0,0,0.06)] flex items-center justify-around">
+        <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-slate-200 bg-white px-2 py-2 pb-safe shadow-[0_-6px_20px_rgba(0,0,0,0.06)] md:hidden" aria-label="Mobile client portal navigation">
           {mobileNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
@@ -935,9 +1041,11 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                 key={item.href}
                 href={href}
                 className={cn(
-                  'flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all',
-                  isActive ? 'text-blue-600 font-semibold' : 'text-slate-500 hover:text-slate-800'
+                  'flex flex-1 flex-col items-center justify-center rounded-xl px-1 py-1.5 transition-all',
+                  isActive ? 'font-semibold text-blue-600' : 'text-slate-500 hover:text-slate-800',
+                  PORTAL_FOCUS_RING,
                 )}
+                aria-current={isActive ? 'page' : undefined}
               >
                 <div 
                   className={cn(
@@ -958,12 +1066,14 @@ export default function DashboardContent({ children }: { children: React.ReactNo
       </div>
 
       {/* Upgrade / Active Plan Selection Modal */}
-      {showUpgradeModal && (
+      {showUpgradeModal && !isAccountUpgraded && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 relative max-h-[92vh] overflow-y-auto no-scrollbar">
+          <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl no-scrollbar sm:p-8" role="dialog" aria-modal="true" aria-labelledby="upgrade-plan-title">
             <button
+              type="button"
               onClick={() => setShowUpgradeModal(false)}
-              className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              className={cn('absolute right-5 top-5 rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700', PORTAL_FOCUS_RING)}
+              aria-label="Close plan options"
             >
               <X className="w-5 h-5" />
             </button>
@@ -972,8 +1082,8 @@ export default function DashboardContent({ children }: { children: React.ReactNo
               <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
                 <Crown className="w-6 h-6" />
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
-                Choose Your 1-Year Active Plan
+              <h3 id="upgrade-plan-title" className="text-xl font-bold text-slate-900 sm:text-2xl">
+                Choose Your 2-Year Active Plan
               </h3>
               <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto">
                 Turn on the <strong>AI Auto Reply System</strong>, keep your branded QR funnel live, and accelerate 5-star Google reviews.
@@ -986,11 +1096,11 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Plan 1 · Software</span>
-                    <span className="text-[10px] font-bold text-slate-700 bg-slate-200 px-2 py-0.5 rounded">1 Year Only</span>
+                    <span className="text-[10px] font-bold text-slate-700 bg-slate-200 px-2 py-0.5 rounded">2 Years Validity</span>
                   </div>
                   <div className="flex items-baseline gap-1.5 mb-1">
                     <span className="text-3xl font-extrabold text-slate-900">₹2,599</span>
-                    <span className="text-xs text-slate-500 font-semibold">/ 1 Year</span>
+                    <span className="text-xs text-slate-500 font-semibold">/ 2 Years</span>
                   </div>
                   <p className="text-xs font-semibold text-slate-600 mb-3">
                     Without NFC Card · Full Software Suite
@@ -1007,7 +1117,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>1 Year Software License</span>
+                      <span>2 Years Software License</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -1019,15 +1129,23 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                   </div>
                 </div>
 
-                <a
-                  href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I would like to activate the ₹2,599 1-Year Plan (Without NFC Card) for ${bizName}.`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUpgradeModal(false);
+                    setGatewayPlan({
+                      planId: 'plan_2year_software',
+                      planName: 'Standard 2-Year Plan',
+                      amount: 2599,
+                    });
+                    setShowGatewayModal(true);
+                  }}
+                  className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
                 >
-                  <span>Activate 1-Year Plan (₹2,599)</span>
+                  <CreditCard className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Pay & Activate Online (₹2,599)</span>
                   <ArrowRight className="w-3.5 h-3.5" />
-                </a>
+                </button>
               </div>
 
               {/* Option 2: 2,999 With NFC */}
@@ -1088,15 +1206,23 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                   </div>
                 </div>
 
-                <a
-                  href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I would like to claim the ₹2,999 Lifetime Free Access Plan (First 100 Accounts Offer + NFC Review Card) for ${bizName}.`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUpgradeModal(false);
+                    setGatewayPlan({
+                      planId: 'plan_pro_nfc_lifetime',
+                      planName: 'Pro Plan + NFC Card (Lifetime Offer)',
+                      amount: 2999,
+                    });
+                    setShowGatewayModal(true);
+                  }}
                   className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
                 >
-                  <span>Claim Lifetime with NFC Card (₹2,999)</span>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Claim & Pay Online (₹2,999)</span>
                   <ArrowRight className="w-3.5 h-3.5" />
-                </a>
+                </button>
               </div>
             </div>
 
@@ -1162,7 +1288,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
       {/* Activate Additional Shop / Business Account Modal */}
       {showAddBusinessModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 relative max-h-[92vh] overflow-y-auto no-scrollbar">
+          <div className="relative max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl no-scrollbar sm:p-8" role="dialog" aria-modal="true" aria-labelledby="add-business-title">
             <button
               type="button"
               onClick={() => {
@@ -1170,7 +1296,8 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                 setActivationError(null);
                 setActivationSuccess(null);
               }}
-              className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              className={cn('absolute right-5 top-5 rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700', PORTAL_FOCUS_RING)}
+              aria-label="Close add business dialog"
             >
               <X className="w-5 h-5" />
             </button>
@@ -1184,7 +1311,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                 <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
                 <span>1 Account = 1 Business Location</span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <h3 id="add-business-title" className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl" style={{ fontFamily: "'Playfair Display', serif" }}>
                 Activate Additional Shop Account
               </h3>
               <p className="text-xs sm:text-sm text-slate-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
@@ -1291,14 +1418,30 @@ export default function DashboardContent({ children }: { children: React.ReactNo
         </div>
       )}
 
+      {/* Live Payment Gateway Modal */}
+      <PaymentGatewayModal
+        isOpen={showGatewayModal}
+        onClose={() => setShowGatewayModal(false)}
+        planId={gatewayPlan.planId}
+        planName={gatewayPlan.planName}
+        amount={gatewayPlan.amount}
+        businessId={activeBusiness?.businessId || activeBusiness?.id || 'active'}
+        businessName={bizName}
+        onSuccess={() => {
+          setActiveBusiness((prev) => (prev ? { ...prev, planStatus: 'active' } : null));
+          setTrialTimeText('Active · 2 Year License Valid');
+        }}
+      />
+
       {/* First-Time Sign-In Phone Prompt Modal */}
       {showFirstTimePhoneModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200 relative">
+          <div className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="phone-setup-title">
             <button
               type="button"
               onClick={handleDismissFirstTimePhone}
-              className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              className={cn('absolute right-4 top-4 rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700', PORTAL_FOCUS_RING)}
+              aria-label="Close phone setup dialog"
             >
               <X className="w-5 h-5" />
             </button>
@@ -1311,7 +1454,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                 <Sparkles className="w-3 h-3 text-emerald-600" />
                 <span>Account Setup</span>
               </span>
-              <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+              <h3 id="phone-setup-title" className="text-xl font-bold tracking-tight text-slate-900">
                 Enter Your Phone Number
               </h3>
               <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">

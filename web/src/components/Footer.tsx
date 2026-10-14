@@ -19,7 +19,7 @@ export default function Footer() {
                 e.preventDefault();
                 smoothScrollTo('#hero');
               }}
-              className="inline-block group cursor-pointer"
+              className="public-focus-ring inline-block rounded-xl group cursor-pointer"
               title="Scroll back to top"
             >
               <Image
@@ -42,13 +42,13 @@ export default function Footer() {
                   href="https://wa.me/919257378047?text=Hi%20Pixora!%20I%20have%20an%20inquiry%20regarding%20the%20Plans%20(₹2,599%20or%20₹2,999%20Lifetime%20Free%20Plan%20with%20NFC%20Card)."
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-semibold"
+                  className="public-focus-ring inline-flex items-center gap-1.5 rounded-md font-semibold text-emerald-400 hover:text-emerald-300"
                 >
                   <span>💬 WhatsApp: +91 92573 78047</span>
                 </a>
                 <a
                   href="tel:9257378047"
-                  className="inline-flex items-center gap-1 text-slate-300 hover:text-white"
+                  className="public-focus-ring inline-flex items-center gap-1 rounded-md text-slate-300 hover:text-white"
                 >
                   <span>📞 Call</span>
                 </a>
@@ -64,7 +64,7 @@ export default function Footer() {
                 <a 
                   href="#features" 
                   onClick={(e) => { e.preventDefault(); smoothScrollTo('#features'); }}
-                  className="hover:text-white transition-colors cursor-pointer"
+                   className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   QR Review Funnel
                 </a>
@@ -73,7 +73,7 @@ export default function Footer() {
                 <a 
                   href="#features" 
                   onClick={(e) => { e.preventDefault(); smoothScrollTo('#features'); }}
-                  className="hover:text-white transition-colors cursor-pointer"
+                   className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Smart AI Suggestions
                 </a>
@@ -82,7 +82,7 @@ export default function Footer() {
                 <a 
                   href="#features" 
                   onClick={(e) => { e.preventDefault(); smoothScrollTo('#features'); }}
-                  className="hover:text-white transition-colors cursor-pointer"
+                   className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Auto Reply System
                 </a>
@@ -91,7 +91,7 @@ export default function Footer() {
                 <a 
                   href="#features" 
                   onClick={(e) => { e.preventDefault(); smoothScrollTo('#features'); }}
-                  className="hover:text-white transition-colors cursor-pointer"
+                   className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Digital Menu Builder
                 </a>
@@ -100,7 +100,7 @@ export default function Footer() {
                 <a 
                   href="#stats" 
                   onClick={(e) => { e.preventDefault(); smoothScrollTo('#stats'); }}
-                  className="hover:text-white transition-colors cursor-pointer"
+                   className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Customer Insights
                 </a>
@@ -116,7 +116,7 @@ export default function Footer() {
                 <a 
                   href="#industries" 
                   onClick={(e) => { e.preventDefault(); smoothScrollTo('#industries'); }}
-                  className="hover:text-white transition-colors cursor-pointer"
+                   className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Restaurants & Cafés
                 </a>
@@ -125,7 +125,7 @@ export default function Footer() {
                 <a 
                   href="#industries" 
                   onClick={(e) => { e.preventDefault(); smoothScrollTo('#industries'); }}
-                  className="hover:text-white transition-colors cursor-pointer"
+                   className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Salons & Spas
                 </a>
@@ -134,7 +134,7 @@ export default function Footer() {
                 <a 
                   href="#industries" 
                   onClick={(e) => { e.preventDefault(); smoothScrollTo('#industries'); }}
-                  className="hover:text-white transition-colors cursor-pointer"
+                   className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Clinics & Healthcare
                 </a>
@@ -143,7 +143,7 @@ export default function Footer() {
                 <a 
                   href="#industries" 
                   onClick={(e) => { e.preventDefault(); smoothScrollTo('#industries'); }}
-                  className="hover:text-white transition-colors cursor-pointer"
+                   className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Retail Stores
                 </a>
@@ -164,13 +164,13 @@ export default function Footer() {
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">Account & Legal</h4>
             <ul className="space-y-2 text-xs sm:text-sm text-slate-400">
-              <li><Link href="/login" className="hover:text-white transition-colors">Client Portal Login</Link></li>
-              <li><Link href="/onboarding" className="hover:text-white transition-colors">Start 1-Day Trial</Link></li>
+               <li><Link href="/login" className="public-focus-ring rounded-sm hover:text-white transition-colors">Client Portal Login</Link></li>
+               <li><Link href="/onboarding" className="public-focus-ring rounded-sm hover:text-white transition-colors">Start 1-Day Trial</Link></li>
               <li>
                 <a 
                   href="#pricing" 
                   onClick={(e) => { e.preventDefault(); smoothScrollTo('#pricing'); }}
-                  className="hover:text-white transition-colors cursor-pointer"
+                   className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Pricing & Hardware
                 </a>
@@ -179,18 +179,18 @@ export default function Footer() {
                 <a 
                   href="#faq" 
                   onClick={(e) => { e.preventDefault(); smoothScrollTo('#faq'); }}
-                  className="hover:text-white transition-colors cursor-pointer"
+                   className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Help & FAQ
                 </a>
               </li>
               <li>
-                <Link href="/privacy" className="hover:text-white transition-colors">
+                <Link href="/privacy" className="public-focus-ring rounded-sm hover:text-white transition-colors">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="hover:text-white transition-colors">
+                <Link href="/terms" className="public-focus-ring rounded-sm hover:text-white transition-colors">
                   Terms of Service
                 </Link>
               </li>
@@ -206,7 +206,7 @@ export default function Footer() {
           </div>
           <div className="flex items-center gap-6">
             <span>Built with precision for local business growth</span>
-            <Link href="/login" className="text-slate-400 hover:text-white transition-colors font-medium">
+             <Link href="/login" className="public-focus-ring rounded-sm font-medium text-slate-400 transition-colors hover:text-white">
               Client Login →
             </Link>
             
@@ -214,7 +214,7 @@ export default function Footer() {
             <button
               type="button"
               onClick={() => smoothScrollTo('#hero')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer border border-slate-700/80 group active:scale-95"
+               className="public-focus-ring inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-700/80 bg-slate-800 px-3 py-1.5 text-slate-300 transition-all hover:bg-slate-700 hover:text-white group active:scale-95"
               title="Smooth scroll up to top"
             >
               <span>Back to Top</span>

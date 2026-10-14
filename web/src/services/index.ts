@@ -155,6 +155,47 @@ export const businessService = {
           runtimeBusinesses[cleanSlug] = mappedBiz;
           return mappedBiz;
         }
+        // 1b. Also check sales_demos so real customer funnels (/f/[slug]) load for sales demos
+        const { data: demo } = await supabase
+          .from('sales_demos')
+          .select('*')
+          .or(`slug.eq.${cleanSlug},slug.eq.demo-${cleanSlug}`)
+          .maybeSingle();
+
+        if (demo) {
+          const mappedDemoBiz: Business = {
+            businessId: demo.id,
+            slug: demo.slug,
+            name: demo.business_name,
+            category: demo.category || 'Local Business',
+            city: 'Jaipur',
+            logo: demo.logo_url || mockData.mockBusiness.logo,
+            coverImage: demo.cover_url || mockData.mockBusiness.coverImage,
+            googlePlaceId: demo.review_destination_url || 'https://maps.google.com',
+            googleReviewUrl: demo.review_destination_url || undefined,
+            ownerName: 'Business Owner',
+            phone: '',
+            email: '',
+            planStatus: 'active',
+            trialExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            qrScans: 0,
+            reviewsCount: 0,
+            createdAt: demo.created_at,
+            theme: {
+              primaryColor: demo.primary_color || '#0B3D2E',
+              secondaryColor: '#D4AF37',
+              accentColor: '#FDFBF7',
+              logo: demo.logo_url || mockData.mockBusiness.logo,
+              coverImage: demo.cover_url || mockData.mockBusiness.coverImage,
+              businessName: demo.business_name,
+              category: demo.category || 'Local Business',
+              tagline: (demo.config as any)?.headline || 'Experience exceptional local service.',
+              menuEnabled: true,
+            },
+          };
+          runtimeBusinesses[cleanSlug] = mappedDemoBiz;
+          return mappedDemoBiz;
+        }
       } catch (err) {
         console.warn('Could not query Supabase businesses by slug:', err);
       }
@@ -404,7 +445,7 @@ export const businessService = {
       return { success: false, message: 'Invalid license key format. Keys must be at least 6 characters.' };
     }
 
-    const oneYearExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+    const twoYearsExpiry = new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString();
 
     // 1. Supabase Cloud Sync
     if (isSupabaseConfigured() && businessIdOrSlug && !businessIdOrSlug.startsWith('biz_')) {
@@ -429,13 +470,13 @@ export const businessService = {
         // Update businesses status to 'active'
         await (supabase as any)
           .from('businesses')
-          .update({ status: 'active', trial_expires_at: oneYearExpiry })
+          .update({ status: 'active', trial_expires_at: twoYearsExpiry })
           .or(`id.eq.${businessIdOrSlug},slug.eq.${businessIdOrSlug}`);
 
         // Update trials
         await (supabase as any)
           .from('trials')
-          .upsert({ business_id: businessIdOrSlug, status: 'active', expires_at: oneYearExpiry });
+          .upsert({ business_id: businessIdOrSlug, status: 'active', expires_at: twoYearsExpiry });
       } catch (err) {
         console.warn('Supabase key activation fallback to local:', err);
       }
@@ -454,7 +495,7 @@ export const businessService = {
           stored[targetKey] = {
             ...stored[targetKey],
             planStatus: 'active',
-            trialExpiresAt: oneYearExpiry,
+            trialExpiresAt: twoYearsExpiry,
           };
           updatedBiz = stored[targetKey];
           saveStoredBusinesses(stored);
@@ -462,7 +503,7 @@ export const businessService = {
           const currentSlug = businessService.getActiveBusinessSlug() || businessIdOrSlug;
           if (runtimeBusinesses[currentSlug]) {
             runtimeBusinesses[currentSlug].planStatus = 'active';
-            runtimeBusinesses[currentSlug].trialExpiresAt = oneYearExpiry;
+            runtimeBusinesses[currentSlug].trialExpiresAt = twoYearsExpiry;
             updatedBiz = runtimeBusinesses[currentSlug];
           }
         }
@@ -473,7 +514,7 @@ export const businessService = {
 
         // Notify all dashboard tabs & listeners
         window.dispatchEvent(new CustomEvent('pixora:dashboard_activated', {
-          detail: { businessId: businessIdOrSlug, key, expiresAt: oneYearExpiry }
+          detail: { businessId: businessIdOrSlug, key, expiresAt: twoYearsExpiry }
         }));
       } catch (e) {
         console.warn('Local activation cache error:', e);
@@ -482,7 +523,7 @@ export const businessService = {
 
     return {
       success: true,
-      message: '✓ Dashboard activated successfully for 1 Year! Full software suite and 24/7 AI Auto-Replies are now live.',
+      message: '✓ Dashboard activated successfully for 2 Years! Full software suite and 24/7 AI Auto-Replies are now live.',
       business: updatedBiz || undefined,
     };
   },
@@ -1037,6 +1078,26 @@ export const businessService = {
 // ============================================================================
 export const reviewService = {
   getReviews: async (businessId: string): Promise<Review[]> => {
+    // 1. Try server-side API endpoint with admin client to bypass client RLS restrictions
+    if (isBrowser) {
+      try {
+        const res = await fetch(`/api/reviews?businessId=${encodeURIComponent(businessId)}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+        });
+        if (res.ok) {
+          const apiData = await res.json();
+          if (apiData.success && Array.isArray(apiData.reviews) && apiData.reviews.length > 0) {
+            return apiData.reviews;
+          }
+        }
+      } catch (apiErr) {
+        console.warn('API review fetch error, falling back to direct client:', apiErr);
+      }
+    }
+
+    // 2. Direct Supabase query fallback
     if (isSupabaseConfigured() && !businessId.startsWith('biz_')) {
       try {
         const { data, error } = await supabase
@@ -1067,6 +1128,7 @@ export const reviewService = {
       }
     }
 
+    // 3. Stored localStorage fallback
     let storedReviews: Review[] = [];
     if (isBrowser) {
       try {
@@ -1102,7 +1164,27 @@ export const reviewService = {
       reviewerImage: review.reviewerImage,
     };
 
-    if (isSupabaseConfigured() && review.businessId && !review.businessId.startsWith('biz_')) {
+    // 1. Try server-side API endpoint with admin privileges
+    if (isBrowser && review.businessId && !review.businessId.startsWith('biz_')) {
+      try {
+        await fetch('/api/reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reviewId: newReview.reviewId,
+            businessId: review.businessId,
+            reviewerName: newReview.reviewerName,
+            rating: newReview.rating,
+            text: newReview.text,
+            reviewerImage: newReview.reviewerImage,
+            source: newReview.source,
+            tags: newReview.tags,
+          }),
+        });
+      } catch (apiErr) {
+        console.warn('API review submit warning:', apiErr);
+      }
+    } else if (isSupabaseConfigured() && review.businessId && !review.businessId.startsWith('biz_')) {
       try {
         await supabase.from('google_reviews').insert({
           business_id: review.businessId,
@@ -1999,12 +2081,29 @@ export const customerService = {
 // REVIEW ENGINE & AUTO REPLY ENGINE (Deterministic Local Algorithms)
 // ============================================================================
 export const reviewEngine = {
-  generateReviewSuggestions: async (input: string, businessName: string = 'this place', category?: string): Promise<string[]> => {
-    // We dynamically import to avoid circular dependencies in index.ts if any
-    const { generateCombinatorialReviews } = await import('@/data/reviewCombinator');
-    const cleanInput = input.trim();
-    return generateCombinatorialReviews(3, businessName, category, cleanInput);
-  }
+  generateReviewSuggestions: async (
+    input: string,
+    businessName: string = 'this place',
+    category?: string,
+    businessId?: string
+  ): Promise<string[]> => {
+    const { generateSmartReviews } = await import('@/data/reviewLibrary');
+    return generateSmartReviews(3, businessName, category || '', input.trim(), businessId || 'default');
+  },
+
+  getQuickReviews: async (
+    businessName: string,
+    category: string,
+    businessId: string
+  ) => {
+    const { getQuickReviews } = await import('@/data/reviewLibrary');
+    return getQuickReviews(businessName, category, businessId);
+  },
+
+  getUsageStats: async (businessId: string) => {
+    const { getUsageStats } = await import('@/data/reviewLibrary');
+    return getUsageStats(businessId);
+  },
 };
 
 export const replyEngine = {

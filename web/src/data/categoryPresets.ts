@@ -350,6 +350,130 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
       base2: 'Best night out in town! Great music, friendly bartenders, and top-tier brews. 5 stars all the way for {biz}!',
       base3: 'Loved the energy, decor, and delicious bar bites at {biz}. Great crowd and prompt service. Highly recommend!'
     }
+  },
+
+  'Hardware & Power Tools': {
+    category: 'Hardware & Power Tools',
+    coverImage: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=1200&h=800&fit=crop',
+    logo: '/placeholder.png',
+    tagline: 'Heavy duty construction hardware, genuine power tools & contractor fasteners.',
+    keywords: ['Genuine Power Tools', 'Heavy Duty Stock', 'Contractor Rates', 'Fasteners & Screws', 'Helpful Advice'],
+    sampleCategories: ['Power Tools', 'Hand Tools & Sets', 'Fasteners & Screws', 'Safety & PPE'],
+    sampleItems: [
+      {
+        name: 'Bosch 13mm Impact Hammer Drill (650W)',
+        description: 'Variable speed rotary hammer drill for masonry, metal & heavy concrete.',
+        price: 3650,
+        image: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      },
+      {
+        name: 'Stainless Steel 304 Anchor Bolts & Screws Set',
+        description: 'Corrosion resistant high-tensile structural fasteners in standard metric sizes.',
+        price: 450,
+        image: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      }
+    ],
+    reviewKeywords: ['Genuine Tools & Drill', 'Contractor Pricing & Bulk Stock', 'Fast Service & Advice'],
+    aiReviewTemplates: {
+      base1: 'Outstanding hardware store at {biz}! Got original branded tools at the best contractor rates in town. Staff knows technical details inside out.',
+      base2: 'Found every single structural fastener and power tool I needed for our site. Excellent inventory and very honest pricing at {biz}!',
+      base3: 'The best hardware store in the region. Smooth billing, quick loading, and genuine brand warranties. 5/5 stars!'
+    }
+  },
+
+  'PVC Pipes & Sanitary': {
+    category: 'PVC Pipes & Sanitary',
+    coverImage: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=1200&h=800&fit=crop',
+    logo: '/placeholder.png',
+    tagline: 'Leading distributor of PVC, CPVC & uPVC pipes, sanitary fittings & water storage tanks.',
+    keywords: ['Leak-Proof Quality', 'All Pipe Sizes', 'Wholesale Rates', 'Fast Loading', 'Plumbing Expertise'],
+    sampleCategories: ['CPVC Hot & Cold', 'uPVC Heavy Duty', 'Drainage & SWR', 'Water Storage Tanks'],
+    sampleItems: [
+      {
+        name: 'CPVC Pro High Pressure Pipe (1-inch, 3m)',
+        description: 'Chlorinated polyvinyl chloride pipe tested up to 28 bar pressure for hot/cold water.',
+        price: 480,
+        image: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      },
+      {
+        name: 'Triple Layer Antibacterial Water Tank (1000L)',
+        description: 'UV stabilized food-grade virgin plastic water storage tank with brass threaded outlet.',
+        price: 5200,
+        image: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      }
+    ],
+    reviewKeywords: ['Durable PVC Pipes & Tanks', 'Wholesale Rates & Stock', 'Prompt Delivery & Loading'],
+    aiReviewTemplates: {
+      base1: 'Highest quality PVC and CPVC pipes available at {biz}! Supplied all plumbing fittings for our 3-story building without a single leak.',
+      base2: 'Best wholesale rates for Astral & Finolex pipes. The team at {biz} accurately calculated the fitting count and saved us money!',
+      base3: 'Excellent customer service, genuine heavy-duty pipe stock, and prompt delivery. Highly recommend {biz} to all plumbers and builders!'
+    }
+  },
+
+  'Electronics & Home Appliances': {
+    category: 'Electronics & Home Appliances',
+    coverImage: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=1200&h=800&fit=crop',
+    logo: '/placeholder.png',
+    tagline: 'Next-gen 4K Smart TVs, smartphones, laptops & energy-efficient home appliances.',
+    keywords: ['Brand Warranty', 'Live Demos', 'Honest Advice', 'Exciting Offers', 'Fast Installation'],
+    sampleCategories: ['Smart TVs & Audio', 'Smartphones & Laptops', 'Air Conditioners & Cooling', 'Kitchen Appliances'],
+    sampleItems: [
+      {
+        name: '55" Ultra HD 4K Dolby Atmos Smart TV',
+        description: 'Quantum Dot display with HDR10+ and 120Hz refresh rate.',
+        price: 42990,
+        image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      },
+      {
+        name: '1.5 Ton 5-Star Dual Inverter Split AC',
+        description: 'Copper coil with fast cooling mode and stabilizer-free operation.',
+        price: 37490,
+        image: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      }
+    ],
+    reviewKeywords: ['Live Product Demo & Advice', 'Best Price & Brand Warranty', 'Fast Delivery & Setup'],
+    aiReviewTemplates: {
+      base1: 'Incredible electronics showroom at {biz}! Staff patiently demonstrated all features and beat online prices with genuine warranty.',
+      base2: 'Purchased our home appliances package from {biz}. Delivery and technician installation were done on the same day flawlessly!',
+      base3: 'Trustworthy dealer for genuine tech and appliances. Transparent billing and great after-sales support. 5/5 stars!'
+    }
+  },
+
+  'Healthcare Clinic & Diagnostics': {
+    category: 'Healthcare Clinic & Diagnostics',
+    coverImage: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1200&h=800&fit=crop',
+    logo: '/placeholder.png',
+    tagline: 'Compassionate family healthcare, accurate diagnosis & state-of-the-art medical care.',
+    keywords: ['Caring Doctor', 'Clean & Sanitized', 'Accurate Diagnosis', 'Minimal Wait Time', 'Quick Relief'],
+    sampleCategories: ['Doctor Consultation', 'Pathology & Blood Tests', 'Pharmacy & Medicines', 'Health Checkups'],
+    sampleItems: [
+      {
+        name: 'Comprehensive Health Screening Panel',
+        description: 'CBC, Lipid Profile, Liver Function, Kidney Function & HbA1c screening with doctor review.',
+        price: 1499,
+        image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      }
+    ],
+    reviewKeywords: ['Doctor Consultation & Care', 'Hygiene & Clean Clinic', 'Quick Relief & Accurate Diagnosis'],
+    aiReviewTemplates: {
+      base1: 'Extremely caring and experienced doctor at {biz}. Took time to listen, explained everything calmly, and treatment provided quick relief.',
+      base2: 'Immaculately clean clinic with polite staff and minimal waiting time. Grateful for the compassionate care at {biz}!',
+      base3: 'The best family clinic in our locality. Accurate diagnosis, affordable consultation, and genuine care for patient wellbeing.'
+    }
   }
 };
 

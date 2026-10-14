@@ -8,8 +8,86 @@ import {
 } from 'lucide-react';
 import { AdminGrowthChart, AdminAccountStatusChart } from './AdminCharts';
 
+interface AdminKpis {
+  totalCustomers: number;
+  totalBusinesses: number;
+  activeDashboards: number;
+  activeTrials: number;
+  suspendedAccounts: number;
+  connectedGoogle: number;
+}
+
+interface AdminTrendSet {
+  totalCustomers: number;
+  totalBusinesses: number;
+  activeDashboards: number;
+  activeTrials: number;
+  suspendedAccounts: number;
+  connectedGoogle: number;
+}
+
+interface GrowthPoint {
+  name: string;
+  newCustomers: number;
+  activeBusinesses: number;
+  qrScans: number;
+  reviews: number;
+}
+
+interface StatusPoint {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface RecentCustomer {
+  initials: string;
+  bg: string;
+  name: string;
+  email: string;
+  business: string;
+  category: string;
+  plan: string;
+  trialStatus: string;
+  trialLeft: string;
+  dash: string;
+  signup: string;
+  active: string;
+}
+
+interface ExpiringTrial {
+  initials: string;
+  bg: string;
+  name: string;
+  category: string;
+  time: string;
+  danger: boolean;
+}
+
+interface RecentOrder {
+  id: string;
+  customer: string;
+  products: string;
+  amount: string;
+  status: string;
+  statusColor: string;
+}
+
+interface AdminDashboardData {
+  kpis: AdminKpis;
+  trends: AdminTrendSet;
+  growthData: GrowthPoint[];
+  accountStatusData: StatusPoint[];
+  totalAccounts: number;
+  recentCustomers: RecentCustomer[];
+  trialExpiring: ExpiringTrial[];
+  recentOrders: RecentOrder[];
+  googleIntegrationStatus: { connected: number; disconnected: number; reconnect: number; pending: number; failed: number; total: number };
+  supportTickets: { open: number; pending: number; resolved: number; high: number };
+}
+
 export default function AdminOverviewPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<AdminDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(30);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -20,7 +98,7 @@ export default function AdminOverviewPage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          const dashboardData = await getAdminDashboardData(session.access_token, days);
+           const dashboardData = await getAdminDashboardData(session.access_token, days) as AdminDashboardData;
           setData(dashboardData);
         }
       } catch (err) {
@@ -42,24 +120,31 @@ export default function AdminOverviewPage() {
   } = data;
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto space-y-6 pb-12">
+    <div className="mx-auto w-full max-w-[1600px] space-y-7 pb-12">
       {/* Header */}
-      <div className="flex justify-between items-end">
+      <div className="relative overflow-hidden rounded-[26px] border border-slate-200/80 bg-white p-5 shadow-[0_18px_55px_-38px_rgba(15,23,42,0.55)] sm:p-7">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-100/60 blur-3xl" />
+        <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
-          <h1 className="text-[28px] font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.12)]" />
+            Live operations workspace
+          </div>
+          <h1 className="flex items-center gap-2 text-[26px] font-bold tracking-tight text-slate-900 sm:text-[30px]">
             Welcome back,<br/>Pixora Funnel Admin <span className="text-2xl">👋</span>
           </h1>
-          <p className="text-[15px] text-slate-500 mt-2">Manage your customers, monitor platform activity, control activations and grow your business.</p>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500 sm:text-[15px]">Manage customers, monitor platform activity, control activations and keep every workspace operating from one source of truth.</p>
         </div>
         <div className="relative">
-          <div 
-            onClick={() => setShowDatePicker(!showDatePicker)}
-            className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm cursor-pointer hover:bg-slate-50 transition-colors"
-          >
+            <button
+              type="button"
+              onClick={() => setShowDatePicker(!showDatePicker)}
+             className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-left shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50/40"
+           >
             <Calendar className="w-4 h-4 text-slate-500" />
             <span className="text-sm font-semibold text-slate-700">Last {days} Days</span>
             <ChevronDown className="w-4 h-4 text-slate-400 ml-2" />
-          </div>
+           </button>
           {showDatePicker && (
             <div className="absolute top-full mt-2 right-0 bg-white border border-slate-200 rounded-xl shadow-lg w-48 z-50 overflow-hidden">
               {[7, 30, 90, 180, 365].map(d => (
@@ -74,10 +159,11 @@ export default function AdminOverviewPage() {
             </div>
           )}
         </div>
+        </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
         <KpiCard icon={<Users className="w-5 h-5 text-blue-600"/>} iconBg="bg-blue-100" value={kpis.totalCustomers.toLocaleString()} label="Total Customers" trend={`${data.trends.totalCustomers >= 0 ? '+' : ''}${data.trends.totalCustomers}%`} trendUp={data.trends.totalCustomers >= 0} />
         <KpiCard icon={<Building2 className="w-5 h-5 text-purple-600"/>} iconBg="bg-purple-100" value={kpis.totalBusinesses.toLocaleString()} label="Total Businesses" trend={`${data.trends.totalBusinesses >= 0 ? '+' : ''}${data.trends.totalBusinesses}%`} trendUp={data.trends.totalBusinesses >= 0} />
         <KpiCard icon={<Monitor className="w-5 h-5 text-emerald-600"/>} iconBg="bg-emerald-100" value={kpis.activeDashboards.toLocaleString()} label="Active Dashboards" trend={`${data.trends.activeDashboards >= 0 ? '+' : ''}${data.trends.activeDashboards}%`} trendUp={data.trends.activeDashboards >= 0} />
@@ -89,7 +175,7 @@ export default function AdminOverviewPage() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Line Chart */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-[0_16px_40px_-32px_rgba(15,23,42,0.55)] sm:p-6 lg:col-span-2">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-lg font-bold text-slate-900">Platform Growth</h2>
             <div className="flex items-center gap-6">
@@ -110,7 +196,7 @@ export default function AdminOverviewPage() {
         </div>
 
         {/* Donut Chart */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 relative">
+        <div className="relative rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-[0_16px_40px_-32px_rgba(15,23,42,0.55)] sm:p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-bold text-slate-900">Account Status</h2>
             <a href="#" className="text-sm font-bold text-blue-600 hover:underline">View All</a>
@@ -122,7 +208,7 @@ export default function AdminOverviewPage() {
       {/* Tables Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Customers */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-[0_16px_40px_-32px_rgba(15,23,42,0.55)] lg:col-span-2">
           <div className="p-6 border-b border-slate-100 flex justify-between items-center">
             <h2 className="text-lg font-bold text-slate-900">Recent Customers</h2>
             <a href="#" className="text-sm font-bold text-blue-600 hover:underline">View All</a>
@@ -143,7 +229,7 @@ export default function AdminOverviewPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {recentCustomers.map((c: any, i: number) => (
+                 {recentCustomers.map((c: RecentCustomer, i: number) => (
                   <tr key={i} className="hover:bg-slate-50/50">
                     <td className="px-6 py-4"><input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" /></td>
                     <td className="px-6 py-4">
@@ -206,13 +292,13 @@ export default function AdminOverviewPage() {
         </div>
 
         {/* Trial Expiring Soon */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-[0_16px_40px_-32px_rgba(15,23,42,0.55)] sm:p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-bold text-slate-900">Trial Expiring Soon</h2>
             <a href="#" className="text-sm font-bold text-blue-600 hover:underline">View All</a>
           </div>
           <div className="space-y-4">
-            {trialExpiring.map((t: any, i: number) => (
+             {trialExpiring.map((t: ExpiringTrial, i: number) => (
               <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${t.bg}`}>{t.initials}</div>
@@ -239,7 +325,7 @@ export default function AdminOverviewPage() {
       {/* Bottom 3 Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Recent Orders */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        <div className="flex flex-col overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-[0_16px_40px_-32px_rgba(15,23,42,0.55)]">
           <div className="p-5 border-b border-slate-100 flex justify-between items-center">
             <h2 className="text-base font-bold text-slate-900">Recent Orders</h2>
             <a href="#" className="text-sm font-bold text-blue-600 hover:underline">View All</a>
@@ -256,7 +342,7 @@ export default function AdminOverviewPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {recentOrders.map((o: any, i: number) => (
+                 {recentOrders.map((o: RecentOrder, i: number) => (
                   <tr key={i} className="hover:bg-slate-50">
                     <td className="px-5 py-3.5 font-bold text-slate-900">{o.id}</td>
                     <td className="px-5 py-3.5 font-medium text-slate-700">{o.customer}</td>
@@ -279,7 +365,7 @@ export default function AdminOverviewPage() {
         </div>
 
         {/* Google Integration Status */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col">
+        <div className="flex flex-col rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-[0_16px_40px_-32px_rgba(15,23,42,0.55)]">
           <div className="flex justify-between items-center mb-5">
             <h2 className="text-base font-bold text-slate-900">Google Integration Status</h2>
             <a href="#" className="text-sm font-bold text-blue-600 hover:underline">View All</a>
@@ -309,7 +395,7 @@ export default function AdminOverviewPage() {
         </div>
 
         {/* Support Tickets */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col">
+        <div className="flex flex-col rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-[0_16px_40px_-32px_rgba(15,23,42,0.55)]">
           <div className="flex justify-between items-center mb-5">
             <h2 className="text-base font-bold text-slate-900">Support Tickets</h2>
             <a href="#" className="text-sm font-bold text-blue-600 hover:underline">View All</a>
@@ -338,9 +424,18 @@ export default function AdminOverviewPage() {
   );
 }
 
-function KpiCard({ icon, iconBg, value, label, trend, trendUp }: any) {
+interface KpiCardProps {
+  icon: React.ReactNode;
+  iconBg: string;
+  value: React.ReactNode;
+  label: string;
+  trend: string;
+  trendUp: boolean;
+}
+
+function KpiCard({ icon, iconBg, value, label, trend, trendUp }: KpiCardProps) {
   return (
-    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
+    <div className="group flex flex-col gap-3 rounded-[22px] border border-slate-200/80 bg-white p-5 shadow-[0_14px_34px_-28px_rgba(15,23,42,0.55)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_20px_38px_-28px_rgba(37,99,235,0.3)]">
       <div className="flex justify-between items-start">
         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${iconBg}`}>
           {icon}

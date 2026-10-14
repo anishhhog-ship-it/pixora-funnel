@@ -33,6 +33,7 @@ import { cn } from '@/lib/utils';
 import { businessService, authService, supportService } from '@/services';
 import { SupportTicket, CallbackRequest } from '@/services/supportService';
 import { Business } from '@/types';
+import { PortalErrorState } from '@/components/client-portal/PortalUI';
 
 const FAQS = [
   {
@@ -45,7 +46,7 @@ const FAQS = [
   },
   {
     q: 'How do I activate the AI Auto-Reply system?',
-    a: 'AI Auto-Replies are activated with our ₹2,599 (1-Year Software) or ₹2,999 (First 100 Accounts Lifetime Free Access + NFC Card) plans. Once activated, the AI automatically drafts polite, SEO-optimized responses to incoming Google reviews in your brand tone, boosting your local search ranking.',
+    a: 'AI Auto-Replies are activated with our ₹2,599 (2-Year Software) or ₹2,999 (First 100 Accounts Lifetime Free Access + NFC Card) plans. Once activated, the AI automatically drafts polite, SEO-optimized responses to incoming Google reviews in your brand tone, boosting your local search ranking.',
   },
   {
     q: 'Can I print custom QR table stands for multiple dining tables or counters?',
@@ -80,6 +81,7 @@ export default function ClientSupportPage() {
   // Tickets list
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [isLoadingTickets, setIsLoadingTickets] = useState(false);
+  const [ticketLoadError, setTicketLoadError] = useState<string | null>(null);
   const [ticketSearch, setTicketSearch] = useState('');
 
   // Callback form state
@@ -111,11 +113,13 @@ export default function ClientSupportPage() {
 
   const loadTickets = async (bizId?: string) => {
     setIsLoadingTickets(true);
+    setTicketLoadError(null);
     try {
       const list = await supportService.getTickets(bizId);
       setTickets(list);
     } catch (e) {
       console.error(e);
+      setTicketLoadError('Support tickets could not be loaded.');
     } finally {
       setIsLoadingTickets(false);
     }
@@ -523,7 +527,13 @@ export default function ClientSupportPage() {
               </button>
             </div>
 
-            {filteredTickets.length === 0 ? (
+            {ticketLoadError ? (
+              <PortalErrorState
+                className="min-h-[260px] border-0 shadow-none"
+                description={ticketLoadError}
+                onRetry={() => loadTickets(activeBusiness?.id)}
+              />
+            ) : filteredTickets.length === 0 ? (
               <div className="text-center py-12 px-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200">
                 <LifeBuoy className="w-10 h-10 text-slate-400 mx-auto mb-2" />
                 <p className="text-sm font-bold text-slate-700">No support tickets found</p>

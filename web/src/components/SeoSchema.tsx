@@ -5,7 +5,7 @@
  * its pricing, FAQs, and org details — enabling rich results & better rankings.
  *
  * Schemas included:
- *  1. SoftwareApplication  → Enables "App" rich results with ratings & price
+ *  1. SoftwareApplication  → Describes the product, features, and offers
  *  2. Organization         → Establishes brand entity for Google's Knowledge Graph
  *  3. FAQPage              → Captures "People Also Ask" / Position Zero snippets
  *  4. WebSite              → Enables Sitelinks SearchBox in Google results
@@ -24,7 +24,7 @@ const softwareApplicationSchema = {
   ],
   url: BASE_URL,
   description:
-    "Pixora Funnel is India's #1 review funnel platform for local businesses. Collect more 5-star Google reviews using smart QR codes and NFC taps, protect your reputation with private feedback filtering, show a digital menu, and get real-time customer analytics — all with no monthly subscription.",
+    "Pixora Funnel is a review funnel platform for local businesses. Create a branded customer journey with smart QR codes and NFC taps, private feedback, digital menus, and customer analytics.",
   applicationCategory: "BusinessApplication",
   applicationSubCategory: "Reputation Management Software",
   operatingSystem: "Web, iOS, Android",
@@ -47,11 +47,11 @@ const softwareApplicationSchema = {
   offers: [
     {
       "@type": "Offer",
-      name: "Standard 1-Year Plan (Without NFC Card)",
+      name: "Standard 2-Year Plan (Without NFC Card)",
       price: "2599",
       priceCurrency: "INR",
       description:
-        "1-year software access. Includes QR review funnel, digital menu, scan analytics, and AI auto reply system. Without physical NFC card.",
+        "2-year software access. Includes QR review funnel, digital menu, scan analytics, and AI auto reply system. Without physical NFC card.",
       availability: "https://schema.org/LimitedAvailability",
       seller: {
         "@type": "Organization",
@@ -60,51 +60,16 @@ const softwareApplicationSchema = {
     },
     {
       "@type": "Offer",
-      name: "Pro 1-Year Plan (With Custom NFC Review Card)",
+      name: "Pro 2-Year Plan (With Custom NFC Review Card)",
       price: "2999",
       priceCurrency: "INR",
       description:
-        "1-year software access + Custom Branded NFC Smart Tap Review Card delivered to your doorstep. Includes QR funnel, auto reply system, digital menu, and analytics.",
+        "2-year software access + Custom Branded NFC Smart Tap Review Card delivered to your doorstep. Includes QR funnel, auto reply system, digital menu, and analytics.",
       availability: "https://schema.org/LimitedAvailability",
       seller: {
         "@type": "Organization",
         name: "Pixora Automations",
       },
-    },
-  ],
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.9",
-    ratingCount: "127",
-    bestRating: "5",
-    worstRating: "1",
-  },
-  review: [
-    {
-      "@type": "Review",
-      reviewRating: {
-        "@type": "Rating",
-        ratingValue: "5",
-      },
-      author: {
-        "@type": "Person",
-        name: "Rahul Sharma",
-      },
-      reviewBody:
-        "Our Google reviews went from 42 to 120+ in just two months using Pixora Funnel. The QR standees are beautiful and customers love the experience.",
-    },
-    {
-      "@type": "Review",
-      reviewRating: {
-        "@type": "Rating",
-        ratingValue: "5",
-      },
-      author: {
-        "@type": "Person",
-        name: "Priya Mehta",
-      },
-      reviewBody:
-        "Best investment for my restaurant. Setup took 5 minutes, and we now rank in the top 3 on Google Maps for our area.",
     },
   ],
 };
@@ -167,7 +132,7 @@ const faqSchema = {
       name: "How does Pixora Funnel work?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Customers scan your table QR code or tap an NFC card. They're greeted by your branded mobile page where they rate their visit. 4-5 star guests get AI-suggested review text and are sent directly to your Google review link. 1-3 star guests submit private feedback to you. The whole journey takes under 30 seconds.",
+        text: "Customers scan your table QR code or tap an NFC card. They're greeted by your branded mobile page where they rate their visit. 4-5 star guests get AI-suggested review text and are sent directly to your Google review link. 1-3 star guests submit private feedback to you.",
       },
     },
     {
@@ -183,15 +148,15 @@ const faqSchema = {
       name: "Can I use Pixora Funnel for my restaurant to get more Google reviews?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. Pixora Funnel is specifically designed to help restaurants, cafés, dhabas, and food outlets increase their Google reviews. Simply place our branded QR standee on each table, and customers can leave a review in under 30 seconds without downloading any app.",
+        text: "Yes. Pixora Funnel is specifically designed to help restaurants, cafés, dhabas, and food outlets invite customer feedback. Place a branded QR standee on each table so customers can open the review journey without downloading an app.",
       },
     },
     {
       "@type": "Question",
-      name: "What is the best review funnel software in India?",
+      name: "What does Pixora Funnel include?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Pixora Funnel is India's leading review funnel platform built specifically for local businesses. It combines QR code review collection, NFC tap cards, AI auto reply system, digital menus, and real-time analytics with no monthly fees starting at ₹2,599/year.",
+        text: "Pixora Funnel combines QR code review collection, NFC tap cards, review writing assistance, digital menus, private feedback, and customer activity views for local businesses. The configured plans are listed on the pricing section.",
       },
     },
     {
@@ -199,7 +164,7 @@ const faqSchema = {
       name: "How can I improve my restaurant's Google Maps ranking?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "The fastest way to improve your restaurant's Google Maps ranking is to increase the number and recency of your Google reviews. Pixora Funnel automates this by guiding every customer through a branded mobile review flow, generating a steady stream of new 5-star reviews that signal to Google that your restaurant is active and trusted.",
+        text: "Review quality and recency can contribute to a business's public presence, but no tool can guarantee a particular Google Maps ranking. Pixora Funnel gives customers a branded way to share their own feedback and continue to the business's Google review page.",
       },
     },
     {
@@ -207,7 +172,7 @@ const faqSchema = {
       name: "Does the customer need to download an app to leave a review?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "No app download is required. Customers simply scan the QR code with their phone camera or tap an NFC card. The review page opens instantly in their browser. The entire process takes under 30 seconds.",
+        text: "No app download is required. Customers scan the QR code with their phone camera or tap an NFC card, and the review page opens in their browser.",
       },
     },
     {
@@ -223,7 +188,7 @@ const faqSchema = {
       name: "Do I need an existing website to use a review funnel?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "No existing website is required. Pixora Funnel provides your business with a fully hosted, branded public page (e.g., funnel.pixoraautomations.com/f/your-business-name) that loads instantly on customer phones.",
+        text: "No existing website is required. Pixora Funnel provides your business with a fully hosted, branded public page (e.g., funnel.pixoraautomations.com/f/your-business-name) that customers can open on their phones.",
       },
     },
     {
@@ -231,7 +196,7 @@ const faqSchema = {
       name: "How quickly can I set up a review funnel for my business?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Setup takes under 5 minutes. Sign up, enter your Google Business Profile link, upload your logo, and your live review funnel is ready. Print or order QR standees from the dashboard and place them on your tables.",
+        text: "Sign up, enter your Google Business Profile link, upload your logo, and follow the guided setup to publish your review funnel. Print or order QR standees from the dashboard and place them on your tables.",
       },
     },
   ],
@@ -243,7 +208,7 @@ const webSiteSchema = {
   name: "Pixora Funnel",
   url: BASE_URL,
   description:
-    "India's #1 review funnel platform for restaurants and local businesses. Get more 5-star Google reviews using QR codes and NFC taps.",
+    "A branded QR and NFC customer feedback and Google review journey for restaurants and local businesses.",
   potentialAction: {
     "@type": "SearchAction",
     target: {

@@ -24,7 +24,7 @@ export default function LandingPageClient() {
   return (
     <div
       suppressHydrationWarning
-      className="min-h-screen bg-white text-slate-900 selection:bg-blue-100 selection:text-blue-900 font-sans antialiased pb-20 md:pb-0"
+      className="min-h-screen bg-[#fbfcff] font-sans text-slate-900 antialiased selection:bg-blue-100 selection:text-blue-900 pb-20 md:pb-0"
     >
       {/* 1. Sticky Desktop & Mobile Header */}
       <Navbar />

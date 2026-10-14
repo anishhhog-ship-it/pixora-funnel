@@ -13,14 +13,15 @@ import {
   MoreHorizontal,
   ArrowRight,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  type LucideIcon
 } from 'lucide-react';
 
 interface Industry {
   id: string;
   name: string;
   categorySlug: string;
-  icon: any;
+  icon: LucideIcon;
   bgColor: string;
   iconColor: string;
   borderHover: string;
@@ -40,8 +41,8 @@ const industries: Industry[] = [
     iconColor: 'text-amber-600',
     borderHover: 'hover:border-amber-300',
     badge: 'Digital Menu + Food Prompts',
-    description: 'Tabletop QR stands for instant reviews before the bill, plus interactive contactless menus.',
-    keyFeature: 'Photo menus, dish recommendations & 5-star Google review boosts',
+     description: 'Tabletop QR stands for review prompts before the bill, plus interactive contactless menus.',
+     keyFeature: 'Photo menus, dish recommendations & a clear Google review handoff',
     sampleSlug: 'your-business',
   },
   {
@@ -80,7 +81,7 @@ const industries: Industry[] = [
     borderHover: 'hover:border-purple-300',
     badge: 'Checkout Counter Taps',
     description: 'NFC tap cards at the billing counter to turn shoppers into verified Google reviewers.',
-    keyFeature: 'Product spotlight, seasonal collections & instant Google Maps ratings',
+     keyFeature: 'Product spotlight, seasonal collections & a clear Google review handoff',
     sampleSlug: 'zara-boutique',
   },
   {
@@ -141,7 +142,7 @@ export default function IndustriesSection() {
   const [selectedIndustry, setSelectedIndustry] = useState<Industry>(industries[0]);
 
   return (
-    <section id="industries" className="py-16 md:py-20 bg-white border-t border-slate-100">
+    <section id="industries" className="border-t border-slate-100 bg-white py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header with pill badge */}
@@ -167,7 +168,8 @@ export default function IndustriesSection() {
               <button
                 key={ind.id}
                 onClick={() => setSelectedIndustry(ind)}
-                className={`flex flex-col items-center justify-center p-3.5 sm:p-4 rounded-xl text-center transition-all duration-200 cursor-pointer border ${
+                aria-pressed={isSelected}
+                className={`public-focus-ring flex cursor-pointer flex-col items-center justify-center rounded-xl border p-3.5 text-center transition-all duration-200 sm:p-4 ${
                   isSelected
                     ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-md bg-white -translate-y-0.5'
                     : 'border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-xs hover:-translate-y-0.5'
@@ -187,7 +189,7 @@ export default function IndustriesSection() {
         </div>
 
         {/* Interactive Industry Deep Dive Panel */}
-        <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-5 sm:p-7 transition-all">
+        <div className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-5 shadow-sm transition-all sm:p-7">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
               <div className="flex items-center gap-3">
@@ -216,14 +218,14 @@ export default function IndustriesSection() {
               <Link
                 href={`/f/${selectedIndustry.sampleSlug}`}
                 target="_blank"
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-300 text-xs font-semibold shadow-2xs transition-colors"
+                  className="public-focus-ring inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:border-blue-300 hover:text-blue-600"
               >
                 <span>Preview {selectedIndustry.name.split('&')[0]} Funnel</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </Link>
               <Link
                 href={`/onboarding?category=${encodeURIComponent(selectedIndustry.categorySlug)}`}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors"
+                className="public-focus-ring inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
               >
                 <span>Get Started for Free</span>
                 <ArrowRight className="w-3.5 h-3.5" />

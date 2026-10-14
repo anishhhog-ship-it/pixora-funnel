@@ -5,6 +5,12 @@ import { Star, QrCode, MousePointerClick, TrendingUp, MapPin, Eye, UtensilsCross
 import { analyticsService, reviewService, menuService, businessService, getCatalogTerminology } from '@/services';
 import { Business, Review, MenuItem, AnalyticsData } from '@/types';
 import { cn } from '@/lib/utils';
+import {
+  PortalCard,
+  PortalErrorState,
+  PortalLoadingState,
+  PortalStatCard,
+} from '@/components/client-portal/PortalUI';
 
 type AnalyticsDateRange = 'all' | 'today' | '7d' | '30d' | '90d';
 
@@ -35,6 +41,8 @@ export default function AnalyticsPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [dateRange, setDateRange] = useState<AnalyticsDateRange>('all');
   const [isDateOpen, setIsDateOpen] = useState(false);
   const dateDropdownRef = useRef<HTMLDivElement>(null);
@@ -53,22 +61,30 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     async function loadData() {
-      const biz = await businessService.getActiveBusiness();
-      setActiveBiz(biz);
-      const bizId = biz?.businessId || await businessService.getActiveBusinessId();
+      setIsLoading(true);
+      setLoadError(null);
+      try {
+        const biz = await businessService.getActiveBusiness();
+        setActiveBiz(biz);
+        const bizId = biz?.businessId || await businessService.getActiveBusinessId();
 
-      const [analyticsData, reviewData, itemsData] = await Promise.all([
-        analyticsService.getAnalytics(bizId),
-        reviewService.getReviews(bizId),
-        menuService.getItems(bizId),
-      ]);
-      setAnalytics(analyticsData);
-      setReviews(reviewData);
-      setMenuItems(itemsData);
-      setIsLoading(false);
+        const [analyticsData, reviewData, itemsData] = await Promise.all([
+          analyticsService.getAnalytics(bizId),
+          reviewService.getReviews(bizId),
+          menuService.getItems(bizId),
+        ]);
+        setAnalytics(analyticsData);
+        setReviews(reviewData);
+        setMenuItems(itemsData);
+      } catch (err) {
+        console.error('Failed to load analytics data:', err);
+        setLoadError('Analytics data is temporarily unavailable.');
+      } finally {
+        setIsLoading(false);
+      }
     }
     loadData();
-  }, []);
+  }, [loadAttempt]);
 
   const isDateInRange = (dateStr?: string) => {
     if (dateRange === 'all') return true;
@@ -112,10 +128,18 @@ export default function AnalyticsPage() {
     return ANALYTICS_DATE_OPTIONS.find(o => o.id === dateRange)?.label || 'All Time';
   };
 
+  if (isLoading) {
+    return <PortalLoadingState label="Loading analytics" />;
+  }
+
+  if (loadError) {
+    return <PortalErrorState description={loadError} onRetry={() => setLoadAttempt((attempt) => attempt + 1)} />;
+  }
+
   return (
     <div className="space-y-6 pb-10">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+      <PortalCard className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center sm:p-6">
         <div>
           <h1 className="text-2xl font-serif font-bold text-gray-900">Analytics & Insights</h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
@@ -165,7 +189,7 @@ export default function AnalyticsPage() {
             </div>
           )}
         </div>
-      </div>
+      </PortalCard>
 
       {/* KPI Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -228,7 +252,7 @@ export default function AnalyticsPage() {
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Rating Distribution */}
-            <div className="lg:col-span-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <PortalCard className="p-6 lg:col-span-6">
               <h3 className="font-bold text-gray-900 mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>
                 Review Ratings Breakdown
               </h3>
@@ -265,10 +289,10 @@ export default function AnalyticsPage() {
                   })}
                 </div>
               )}
-            </div>
+            </PortalCard>
 
             {/* Menu Performance */}
-            <div className="lg:col-span-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <PortalCard className="p-6 lg:col-span-6">
               <h3 className="font-bold text-gray-900 mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>
                 {terminology.isFood ? 'Menu Catalog Summary' : 'Product & Service Catalogue Summary'}
               </h3>
@@ -296,7 +320,7 @@ export default function AnalyticsPage() {
                   ))}
                 </div>
               )}
-            </div>
+            </PortalCard>
           </div>
         </div>
       )}
@@ -305,16 +329,5 @@ export default function AnalyticsPage() {
 }
 
 function StatCard({ icon, bg, value, title, sub }: any) {
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-3">
-      <div className={cn('w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0', bg)}>{icon}</div>
-      <div>
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-bold text-gray-900 leading-none">{value}</span>
-        </div>
-        <p className="text-xs font-semibold text-gray-800 mt-0.5">{title}</p>
-        <p className="text-[10px] text-gray-400">{sub}</p>
-      </div>
-    </div>
-  );
+  return <PortalStatCard icon={icon} iconBackground={bg} value={value} title={title} description={sub} />;
 }

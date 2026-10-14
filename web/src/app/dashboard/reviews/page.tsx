@@ -6,6 +6,12 @@ import { reviewService, replyEngine, businessService, googleBusinessProfileServi
 import { GoogleConnectionBadge, GoogleBadgeStatus } from '@/components/GoogleConnectionBadge';
 import { Review, Business } from '@/types';
 import { cn } from '@/lib/utils';
+import {
+  PortalCard,
+  PortalErrorState,
+  PortalLoadingState,
+  PortalStatCard,
+} from '@/components/client-portal/PortalUI';
 
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -21,47 +27,59 @@ export default function ReviewsPage() {
   const [replyMode, setReplyMode] = useState<'suggestion' | 'custom'>('suggestion');
   const [activeBiz, setActiveBiz] = useState<Business | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     async function loadData() {
-      const biz = await businessService.getActiveBusiness();
-      setActiveBiz(biz);
-      const bizId = biz?.businessId || await businessService.getActiveBusinessId();
+      setIsLoading(true);
+      setLoadError(null);
+      try {
+        const biz = await businessService.getActiveBusiness();
+        setActiveBiz(biz);
+        const bizId = biz?.businessId || await businessService.getActiveBusinessId();
 
-      const [data, connInfo] = await Promise.all([
-        reviewService.getReviews(bizId),
-        googleBusinessProfileService.getConnectionStatus(biz),
-      ]);
+        const [data, connInfo] = await Promise.all([
+          reviewService.getReviews(bizId),
+          googleBusinessProfileService.getConnectionStatus(biz),
+        ]);
 
-      setReviews(data);
-      if (data.length > 0) {
-        setSelected(data[0]);
-        if (data[0].replyText) setReplyText(data[0].replyText);
-      }
+        setReviews(data);
+        if (data.length > 0) {
+          setSelected(data[0]);
+          if (data[0].replyText) setReplyText(data[0].replyText);
+        }
 
-      if (connInfo.status === 'connected') {
-        setGoogleStatus('connected');
-        setLastSyncedAt(connInfo.lastSyncedAt);
-      } else if (connInfo.status === 'reconnect_required') {
-        setGoogleStatus('requires_auth');
-      } else {
-        // Query status diagnostics
-        try {
-          const accountsData = await googleBusinessProfileService.getAccountsAndStatus({ businessId: bizId });
-          if (accountsData.integrationStatus === 'access_pending') {
-            setGoogleStatus('access_pending');
-          } else if (accountsData.accounts.length > 0) {
-            setGoogleStatus('connected');
-          } else {
+        if (connInfo.status === 'connected') {
+          setGoogleStatus('connected');
+          setLastSyncedAt(connInfo.lastSyncedAt);
+        } else if (connInfo.status === 'reconnect_required') {
+          setGoogleStatus('requires_auth');
+        } else {
+          // Query status diagnostics
+          try {
+            const accountsData = await googleBusinessProfileService.getAccountsAndStatus({ businessId: bizId });
+            if (accountsData.integrationStatus === 'access_pending') {
+              setGoogleStatus('access_pending');
+            } else if (accountsData.accounts.length > 0) {
+              setGoogleStatus('connected');
+            } else {
+              setGoogleStatus('not_connected');
+            }
+          } catch {
             setGoogleStatus('not_connected');
           }
-        } catch {
-          setGoogleStatus('not_connected');
         }
+      } catch (err) {
+        console.error('Failed to load reviews:', err);
+        setLoadError('Reviews are temporarily unavailable.');
+      } finally {
+        setIsLoading(false);
       }
     }
     loadData();
-  }, []);
+  }, [loadAttempt]);
 
   const handleSyncGoogle = async () => {
     if (!activeBiz) return;
@@ -214,6 +232,14 @@ export default function ReviewsPage() {
     ? `${Math.round((repliedCount / reviews.length) * 100)}%`
     : '0%';
 
+  if (isLoading) {
+    return <PortalLoadingState label="Loading customer reviews" />;
+  }
+
+  if (loadError) {
+    return <PortalErrorState description={loadError} onRetry={() => setLoadAttempt((attempt) => attempt + 1)} />;
+  }
+
   return (
     <div className="flex flex-col gap-5 pb-10">
       {/* Header Bar */}
@@ -284,7 +310,7 @@ export default function ReviewsPage() {
       {/* Main 2-col grid */}
       <div className="flex flex-col lg:flex-row gap-5 flex-1 min-h-0">
         {/* Review List */}
-        <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col overflow-hidden" style={{ minWidth: 0 }}>
+        <PortalCard className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {/* Tabs */}
           <div className="flex border-b border-gray-100 px-5 pt-4 overflow-x-auto no-scrollbar">
             {tabs.map((tab, i) => (
@@ -382,11 +408,11 @@ export default function ReviewsPage() {
               ))
             )}
           </div>
-        </div>
+        </PortalCard>
 
         {/* Detail Panel */}
         {selected && (
-          <div className="w-full lg:w-80 flex-shrink-0 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+          <PortalCard className="flex w-full flex-shrink-0 flex-col overflow-hidden lg:w-80">
             {/* Reviewer Header */}
             <div className="p-4 border-b border-gray-100">
               <div className="flex justify-between items-start mb-3">
@@ -572,7 +598,7 @@ export default function ReviewsPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </PortalCard>
         )}
       </div>
     </div>
@@ -581,18 +607,7 @@ export default function ReviewsPage() {
 
 // ─── Sub-components ───────────────────────────────────────────
 function StatCard({ icon, bg, value, title, sub }: any) {
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-4">
-      <div className={cn('w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0', bg)}>{icon}</div>
-      <div>
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-bold text-gray-900 leading-none">{value}</span>
-        </div>
-        <p className="text-xs font-semibold text-gray-800 mt-0.5">{title}</p>
-        <p className="text-[10px] text-gray-400">{sub}</p>
-      </div>
-    </div>
-  );
+  return <PortalStatCard icon={icon} iconBackground={bg} value={value} title={title} description={sub} />;
 }
 
 function GoogleBadge() {

@@ -53,7 +53,35 @@ export default function LoginPage() {
           password,
         });
         
-        // Redirect logic based on whether they have businesses
+        // Check if user is an Admin or Salesperson
+        const { supabase } = await import('@/lib/supabase/client');
+        const { data: adminRecord } = await (supabase as any)
+          .from('platform_admins')
+          .select('id, role')
+          .or(`auth_user_id.eq.${user.id},email.ilike.${user.email}`)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (adminRecord || user.email?.toLowerCase() === 'admin@pixoraautomations.com') {
+          setInfoMessage('Admin verified! Opening Super Admin Dashboard...');
+          router.push('/admin');
+          return;
+        }
+
+        const { data: staffRecord } = await (supabase as any)
+          .from('sales_staff')
+          .select('id, role')
+          .or(`auth_user_id.eq.${user.id},email.ilike.${user.email}`)
+          .eq('status', 'active')
+          .maybeSingle();
+
+        if (staffRecord) {
+          setInfoMessage('Sales representative verified! Opening Sales Portal...');
+          router.push('/sales');
+          return;
+        }
+
+        // Redirect logic for client businesses
         const { businessService } = await import('@/services');
         const bizs = await businessService.getBusinessesForUser(user.id);
         

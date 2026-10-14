@@ -35,12 +35,12 @@ export const PLATFORM_CONFIG = {
   supportPhone: '+91 92573 78047',
   supportEmail: 'support@pixoraautomations.com',
   officialDomain: 'funnel.pixoraautomations.com',
-  // Active Plans (1 Year Validity)
+  // Active Plans (2 Years Validity)
   planWithoutNfcPriceINR: 2599,
   planWithNfcPriceINR: 2999,
   lifetimePlanPriceINR: 2599,
   originalWithoutNfcPriceINR: 5999,
   originalWithNfcPriceINR: 6999,
-  planValidity: '1 Year Only',
+  planValidity: '2 Years',
   trialDurationHours: 24,
 };

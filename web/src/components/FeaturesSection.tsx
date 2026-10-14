@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { 
   QrCode, 
   Sparkles, 
@@ -8,13 +7,14 @@ import {
   FileText, 
   BarChart3, 
   Users, 
-  ArrowRight 
+  ArrowRight,
+  type LucideIcon
 } from 'lucide-react';
 import { smoothScrollTo } from '@/lib/scrollUtils';
 
 interface Feature {
   id: string;
-  icon: any;
+  icon: LucideIcon;
   title: string;
   description: string;
   iconBg: string;
@@ -54,7 +54,7 @@ const features: Feature[] = [
     id: 'digital-menu',
     icon: FileText,
     title: 'Digital Menu & Services',
-    description: 'Give customers instant mobile access to menus, service price lists or seasonal products.',
+    description: 'Give customers mobile access to menus, service price lists or seasonal products.',
     iconBg: 'bg-teal-50',
     iconColor: 'text-teal-600',
     badge: 'Contactless'
@@ -81,7 +81,7 @@ const features: Feature[] = [
 
 export default function FeaturesSection() {
   return (
-    <section id="features" className="py-16 md:py-20 bg-slate-50/50 border-t border-slate-100">
+    <section id="features" className="border-t border-slate-100 bg-slate-50/70 py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
@@ -105,7 +105,7 @@ export default function FeaturesSection() {
               e.preventDefault();
               smoothScrollTo('#how-it-works');
             }}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors group shrink-0 cursor-pointer"
+            className="public-focus-ring inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md text-sm font-semibold text-blue-600 transition-colors hover:text-blue-700 group"
           >
             <span>See How It Works</span>
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -119,11 +119,11 @@ export default function FeaturesSection() {
             return (
               <div
                 key={feature.id}
-                className="bg-white border border-slate-200/90 rounded-2xl p-6 transition-all duration-200 hover:shadow-md hover:border-slate-300 hover:-translate-y-1 flex flex-col justify-between group"
+                className="group flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_18px_40px_rgba(30,64,175,0.10)]"
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${feature.iconBg} ${feature.iconColor} transition-transform group-hover:scale-105`}>
+                      <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${feature.iconBg} ${feature.iconColor} transition-transform group-hover:scale-105`}>
                       <Icon className="w-6 h-6" strokeWidth={2.2} />
                     </div>
                     {feature.badge && (
@@ -143,7 +143,7 @@ export default function FeaturesSection() {
                 <button
                   type="button"
                   onClick={() => smoothScrollTo('#showcase')}
-                  className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500 group-hover:text-blue-600 transition-colors cursor-pointer w-full text-left"
+                  className="public-focus-ring mt-6 flex w-full cursor-pointer items-center justify-between border-t border-slate-100 pt-4 text-left text-xs font-semibold text-slate-500 transition-colors group-hover:text-blue-600"
                   title="Scroll to interactive product showcase"
                 >
                   <span>Explore in live showcase</span>

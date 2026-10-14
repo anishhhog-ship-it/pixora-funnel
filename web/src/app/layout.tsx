@@ -16,12 +16,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
 
   title: {
-    default: "Pixora Funnel – #1 Review Funnel for Restaurants & Local Businesses in India",
+    default: "Pixora Funnel – Review Funnels for Restaurants & Local Businesses",
     template: "%s | Pixora Funnel",
   },
 
   description:
-    "Pixora Funnel is India's easiest review funnel platform. Get more Google reviews for your restaurant, café, salon, or clinic using smart QR codes & NFC taps. Lifetime access at ₹2,599 — no monthly fees.",
+    "Pixora Funnel gives restaurants, cafés, salons, clinics, and other local businesses a branded QR and NFC review journey with menus and follow-up workflows.",
 
   keywords: [
     "review funnel",
@@ -61,9 +61,9 @@ export const metadata: Metadata = {
     locale: "en_IN",
     url: BASE_URL,
     siteName: "Pixora Funnel",
-    title: "Pixora Funnel – #1 Review Funnel for Restaurants & Local Businesses in India",
+    title: "Pixora Funnel – Review Funnels for Restaurants & Local Businesses",
     description:
-      "Get more 5-star Google reviews for your restaurant or local business with Pixora Funnel's smart QR & NFC review funnels. Lifetime access at ₹2,599.",
+      "Create a branded QR and NFC customer feedback journey for your restaurant or local business with Pixora Funnel.",
     images: [
       {
         url: "/og-image.png",
@@ -77,9 +77,9 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "Pixora Funnel – #1 Review Funnel for Restaurants in India",
+    title: "Pixora Funnel – Branded Review Funnels for Restaurants",
     description:
-      "Get more 5-star Google reviews using smart QR & NFC taps. Lifetime access at ₹2,599. No monthly fees.",
+      "Create a branded customer feedback and Google review journey using smart QR and NFC taps.",
     images: ["/og-image.png"],
     creator: "@pixoraapp",
     site: "@pixoraapp",

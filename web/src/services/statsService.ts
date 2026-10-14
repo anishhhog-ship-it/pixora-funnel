@@ -1,20 +1,22 @@
 export interface PlatformStats {
-  demosProvided: number;     // Starting baseline: 581
-  liveFunnels: number;       // Starting baseline: 499
-  reviewsDelivered: number;  // Starting baseline: 43,892
-  autoRepliesSent: number;   // Starting baseline: 37,640
+  demosProvided: number;
+  liveFunnels: number;
+  reviewsDelivered: number;
+  autoRepliesSent: number;
   lastUpdated: string;
 }
 
 const STATS_STORAGE_KEY = 'pixora_platform_live_stats';
 const STATS_UPDATE_EVENT = 'pixora_stats_updated';
 
+// Marketing counters start empty until real events are recorded. Never ship
+// fabricated platform totals or persist them as a browser-owned source of truth.
 export const BASELINE_STATS: PlatformStats = {
-  demosProvided: 581,
-  liveFunnels: 499,
-  reviewsDelivered: 43892,
-  autoRepliesSent: 37640,
-  lastUpdated: '2025-01-01T00:00:00.000Z',
+  demosProvided: 0,
+  liveFunnels: 0,
+  reviewsDelivered: 0,
+  autoRepliesSent: 0,
+  lastUpdated: new Date(0).toISOString(),
 };
 
 const isBrowser = typeof window !== 'undefined';

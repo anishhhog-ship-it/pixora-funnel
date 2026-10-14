@@ -11,9 +11,6 @@ import {
   ExternalLink, 
   ArrowRight,
   ShieldCheck,
-  CheckCircle2,
-  ThumbsUp,
-  MessageSquare,
   BarChart3,
   Bot
 } from 'lucide-react';
@@ -32,17 +29,18 @@ export default function ProductShowcase() {
             END-TO-END PLATFORM
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Seamless Customer Journey. Powerful Owner Control.
+            One customer journey. One clear owner view.
           </h2>
           <p className="mt-3 text-slate-600 text-sm sm:text-base leading-relaxed">
-            See how Pixora Funnel bridges the moment of customer delight into lasting Google reputation, automated responses and recurring revenue.
+            See how Pixora Funnel connects a scan, a rating, a review handoff, and owner follow-up in one focused workflow.
           </p>
 
           {/* Toggle pill buttons */}
           <div className="inline-flex p-1 mt-6 rounded-xl bg-slate-100 border border-slate-200">
             <button
               onClick={() => setActiveTab('customer')}
-              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+              aria-pressed={activeTab === 'customer'}
+              className={`public-focus-ring flex items-center gap-2 rounded-lg px-5 py-2 text-xs font-semibold transition-all sm:text-sm ${
                 activeTab === 'customer'
                   ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -53,7 +51,8 @@ export default function ProductShowcase() {
             </button>
             <button
               onClick={() => setActiveTab('business')}
-              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+              aria-pressed={activeTab === 'business'}
+              className={`public-focus-ring flex items-center gap-2 rounded-lg px-5 py-2 text-xs font-semibold transition-all sm:text-sm ${
                 activeTab === 'business'
                   ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -71,7 +70,7 @@ export default function ProductShowcase() {
             {/* Steps & Value Props (5 cols) */}
             <div className="lg:col-span-5 space-y-5">
               <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-100">
-                <span className="text-xs font-bold text-blue-800 uppercase tracking-wider">The 10-Second Funnel</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-800">The customer flow</span>
                 <h3 className="text-xl font-bold text-slate-900 mt-1">Zero Apps. Zero Friction.</h3>
                 <p className="text-xs text-slate-600 mt-1">
                   Customers scan with their phone camera. No app download or registration needed.
@@ -125,14 +124,14 @@ export default function ProductShowcase() {
                 <Link
                   href="/f/your-business"
                   target="_blank"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors"
+                  className="public-focus-ring inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-slate-800"
                 >
                   <span>Test Live Customer Funnel</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </Link>
                 <Link
                   href="/onboarding"
-                  className="text-xs font-semibold text-blue-600 hover:underline"
+                  className="public-focus-ring rounded-md text-xs font-semibold text-blue-600 hover:underline"
                 >
                   Start your funnel in 5 mins →
                 </Link>
@@ -173,7 +172,7 @@ export default function ProductShowcase() {
                       <div className="text-xs font-semibold text-slate-800">How was your visit today?</div>
                       <div className="flex justify-center gap-1.5 py-1">
                         {[1, 2, 3, 4, 5].map((star) => (
-                          <button key={star} className="p-1 hover:scale-110 transition-transform">
+                          <button key={star} type="button" aria-label={`Preview ${star} star rating`} className="public-focus-ring rounded-md p-1 transition-transform hover:scale-110">
                             <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
                           </button>
                         ))}
@@ -190,10 +189,10 @@ export default function ProductShowcase() {
                         <span>1-Tap Review Assistant</span>
                       </div>
                       <div className="space-y-1.5">
-                        <div className="p-2 rounded-lg bg-white border border-slate-200/80 text-[11px] text-slate-700 cursor-pointer hover:border-blue-400">
+                        <div className="rounded-lg border border-slate-200/80 bg-white p-2 text-[11px] text-slate-700">
                           &ldquo;Authentic quality and exemplary hospitality at Your Business. The entire experience was unforgettable!&rdquo;
                         </div>
-                        <div className="p-2 rounded-lg bg-white border border-slate-200/80 text-[11px] text-slate-700 cursor-pointer hover:border-blue-400">
+                        <div className="rounded-lg border border-slate-200/80 bg-white p-2 text-[11px] text-slate-700">
                           &ldquo;Quick service, lovely ambiance and delicious desserts. Will bring family again!&rdquo;
                         </div>
                       </div>
@@ -207,7 +206,7 @@ export default function ProductShowcase() {
 
                     <div className="text-center text-[10px] text-slate-400 flex items-center justify-center gap-1">
                       <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                      <span>Protected by Pixora Funnel™ Smart Filter</span>
+                      <span>Private feedback path available</span>
                     </div>
                   </div>
                 </div>
@@ -241,16 +240,16 @@ export default function ProductShowcase() {
                     {/* Metrics row */}
                     <div className="grid grid-cols-3 gap-2.5">
                       <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
-                        <div className="text-[10px] text-slate-500 font-medium">Google Reviews</div>
-                        <div className="text-base font-bold text-slate-900">128 <span className="text-[10px] text-emerald-600 font-semibold">+24%</span></div>
+                        <div className="text-[10px] font-medium text-slate-500">Google reviews</div>
+                        <div className="text-base font-bold text-slate-900">— <span className="text-[10px] font-semibold text-slate-400">No data yet</span></div>
                       </div>
                       <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
-                        <div className="text-[10px] text-slate-500 font-medium">QR Scans</div>
-                        <div className="text-base font-bold text-slate-900">892 <span className="text-[10px] text-emerald-600 font-semibold">+36%</span></div>
+                        <div className="text-[10px] font-medium text-slate-500">QR scans</div>
+                        <div className="text-base font-bold text-slate-900">— <span className="text-[10px] font-semibold text-slate-400">No data yet</span></div>
                       </div>
                       <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
-                        <div className="text-[10px] text-slate-500 font-medium">Auto-Replies</div>
-                        <div className="text-base font-bold text-slate-900">98% <span className="text-[10px] text-blue-600 font-semibold">Live</span></div>
+                        <div className="text-[10px] font-medium text-slate-500">Auto-replies</div>
+                        <div className="text-base font-bold text-slate-900">— <span className="text-[10px] font-semibold text-slate-400">Not connected</span></div>
                       </div>
                     </div>
 
@@ -261,15 +260,15 @@ export default function ProductShowcase() {
                           <Bot className="w-3.5 h-3.5 text-blue-600" />
                           <span>Smart Auto-Reply in Action</span>
                         </div>
-                        <span className="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-medium">Auto-Synced</span>
+                         <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">Preview mode</span>
                       </div>
                       <div className="p-2 rounded bg-slate-50 text-[11px] text-slate-600 border border-slate-100">
                         <span className="font-semibold text-slate-800">Verified Diner ★★★★★</span>
                         <p className="mt-0.5">&ldquo;Amazing service and delicious food. Highly recommended!&rdquo;</p>
                       </div>
                       <div className="p-2 rounded bg-blue-50/60 text-[11px] text-blue-900 border border-blue-100">
-                        <span className="font-semibold text-blue-950">AI Auto-Reply: </span>
-                        &ldquo;Thank you so much for the 5-star review! We are thrilled you enjoyed your experience. Looking forward to hosting you again soon! 🙏&rdquo;
+                         <span className="font-semibold text-blue-950">Reply draft: </span>
+                         &ldquo;Thank you for sharing your experience. We look forward to welcoming you again.&rdquo;
                       </div>
                     </div>
                   </div>
@@ -300,7 +299,7 @@ export default function ProductShowcase() {
                   <Bot className="w-5 h-5 text-purple-600 shrink-0 mt-0.5" />
                   <div>
                     <h4 className="text-sm font-bold text-slate-900">Intelligent Auto-Reply Engine</h4>
-                    <p className="text-xs text-slate-500">Respond to customer Google reviews instantly with customized, polite AI responses.</p>
+                   <p className="text-xs text-slate-500">Draft customized, polite responses to customer Google reviews in the owner portal.</p>
                   </div>
                 </div>
 
@@ -324,7 +323,7 @@ export default function ProductShowcase() {
               <div className="pt-2">
                 <Link
                   href="/dashboard"
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors"
+                  className="public-focus-ring inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
                 >
                   <span>Explore Client Dashboard</span>
                   <ArrowRight className="w-3.5 h-3.5" />

@@ -15,7 +15,7 @@ const faqs: FaqItem[] = [
   },
   {
     question: 'Do I need an existing website to use Pixora Funnel?',
-    answer: 'No. Pixora Funnel provides you with a hosted, branded public page (e.g. funnel.pixoraautomations.com/f/your-business) that loads instantly on customer phones without requiring any existing domain or web hosting.',
+    answer: 'No. Pixora Funnel provides you with a hosted, branded public page (e.g. funnel.pixoraautomations.com/f/your-business) that customers can open on their phones without requiring an existing domain or web hosting.',
   },
   {
     question: 'How do the pricing plans work?',
@@ -23,7 +23,7 @@ const faqs: FaqItem[] = [
   },
   {
     question: 'Is the Auto Reply system available on trial accounts?',
-    answer: 'The automated Google Review reply system is turned off for trial accounts. During your 1-day free trial, you can preview reply tones and simulate responses in the sandbox. Live automated 24/7 replies to incoming Google reviews will be activated immediately once you activate an active plan (₹2,599 or ₹2,999).',
+    answer: 'The automated Google Review reply system is turned off for trial accounts. During your 1-day free trial, you can preview reply tones and simulate responses in the sandbox. Live replies to incoming Google reviews become available with an active plan (₹2,599 or ₹2,999).',
   },
   {
     question: 'How does the QR funnel work?',
@@ -35,7 +35,7 @@ const faqs: FaqItem[] = [
   },
   {
     question: 'Can I use NFC taps instead of QR codes?',
-    answer: 'Yes. Every Pixora Funnel URL can be accessed via NFC tags. Our ₹2,999 plan comes with a custom-printed, ready-to-use NFC review card delivered to your doorstep so customers can simply tap their phone for 1-second reviews.',
+    answer: 'Yes. Every Pixora Funnel URL can be accessed via NFC tags. Our ₹2,999 plan comes with a custom-printed, ready-to-use NFC review card delivered to your doorstep so customers can tap their phone to open the review journey.',
   },
   {
     question: 'Can I use it for multiple business locations?',
@@ -43,11 +43,11 @@ const faqs: FaqItem[] = [
   },
   {
     question: 'What happens after the 1-day free trial?',
-    answer: 'During your 1-day trial, you have full access to generate your live funnel, print sample QRs, and explore the dashboard. After the demo time expires, you can unlock your funnel and turn on the Auto Reply system by selecting either the ₹2,599 1-year plan (without NFC card) or the ₹2,999 plan (where the first 100 accounts get Lifetime Free access + custom NFC review card). Message admin directly on WhatsApp (+91 92573 78047) for immediate activation.',
+    answer: 'During your 1-day trial, you have full access to generate your live funnel, print sample QRs, and explore the dashboard. After the demo time expires, you can unlock your funnel and turn on the Auto Reply system by selecting either the ₹2,599 2-year plan (without NFC card) or the ₹2,999 plan (where the first 100 accounts get Lifetime Free access + custom NFC review card). Message admin directly on WhatsApp (+91 92573 78047) for immediate activation.',
   },
   {
     question: 'Do customers need to create an account or download an app?',
-    answer: 'Never. Customers simply open their standard phone camera, scan the QR code, and interact via their native browser in under 10 seconds. No app downloads or account logins are required for guests.',
+    answer: 'Never. Customers open their standard phone camera, scan the QR code, and interact through their native browser. No app downloads or account logins are required for guests.',
   },
   {
     question: 'Can I customize my funnel branding?',
@@ -63,7 +63,7 @@ export default function FaqSection() {
   };
 
   return (
-    <section id="faq" className="py-20 md:py-24 bg-slate-50/70 border-t border-slate-100">
+    <section id="faq" className="border-t border-slate-100 bg-slate-50/70 py-20 md:py-24">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
@@ -87,11 +87,14 @@ export default function FaqSection() {
             return (
               <div
                 key={index}
-                className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden transition-all shadow-2xs"
+                className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm transition-all"
               >
                 <button
+                  type="button"
                   onClick={() => toggle(index)}
-                  className="w-full px-6 py-4.5 text-left flex items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors"
+                  aria-expanded={isOpen}
+                  aria-controls={`faq-answer-${index}`}
+                  className="public-focus-ring flex w-full items-center justify-between gap-4 px-6 py-4.5 text-left transition-colors hover:bg-slate-50/70"
                 >
                   <span className="text-sm sm:text-base font-bold text-slate-800">
                     {faq.question}
@@ -104,7 +107,7 @@ export default function FaqSection() {
                 </button>
 
                 {isOpen && (
-                  <div className="px-6 pb-5 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100/70 animate-fadeIn">
+                  <div id={`faq-answer-${index}`} className="border-t border-slate-100/70 px-6 pb-5 pt-1 text-xs leading-relaxed text-slate-600 animate-fadeIn sm:text-sm">
                     {faq.answer}
                   </div>
                 )}
@@ -124,13 +127,13 @@ export default function FaqSection() {
               href="https://wa.me/919257378047?text=Hi%20Pixora!%20I%20have%20a%20question%20about%20Pixora%20Funnel."
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs"
+             className="public-focus-ring inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
             >
               <span>💬 WhatsApp: +91 92573 78047</span>
             </a>
             <a
               href="tel:9257378047"
-              className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition"
+              className="public-focus-ring inline-flex items-center gap-1 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-800 transition hover:bg-slate-200"
             >
               <span>📞 Call</span>
             </a>

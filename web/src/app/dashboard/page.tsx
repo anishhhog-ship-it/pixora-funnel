@@ -35,6 +35,11 @@ import { GoogleConnectionBadge, GoogleBadgeStatus } from '@/components/GoogleCon
 import { Business, Review, MenuItem, Analytics } from '@/types';
 import { cn, copyToClipboard } from '@/lib/utils';
 import { triggerPwaInstall } from '@/components/PwaInstallPrompt';
+import {
+  PortalErrorState,
+  PortalLoadingState,
+  PortalStatCard,
+} from '@/components/client-portal/PortalUI';
 
 export default function DashboardHome() {
   const [activeBiz, setActiveBiz] = useState<Business | null>(null);
@@ -57,6 +62,8 @@ export default function DashboardHome() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [copiedQrLink, setCopiedQrLink] = useState(false);
 
   // Date Selection State
@@ -158,6 +165,7 @@ export default function DashboardHome() {
     async function loadDashboardData() {
       try {
         setIsLoading(true);
+        setLoadError(null);
         const biz = await businessService.getActiveBusiness();
         if (!isMounted) return;
         setActiveBiz(biz);
@@ -186,6 +194,7 @@ export default function DashboardHome() {
         }
       } catch (err) {
         console.error('Failed to load dashboard data:', err);
+        if (isMounted) setLoadError('Dashboard data is temporarily unavailable.');
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -195,7 +204,7 @@ export default function DashboardHome() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [loadAttempt]);
 
   const bizName = activeBiz?.name || 'Your Business';
   const bizCategory = activeBiz?.category || 'Local Business';
@@ -213,6 +222,25 @@ export default function DashboardHome() {
   const displayedReviewCount = dateRange === 'all' 
     ? (analytics.googleReviews || reviews.length) 
     : filteredReviews.length;
+  const ratingSource = activeReviews.length > 0 ? activeReviews : reviews;
+  const ratingRows = [5, 4, 3, 2, 1].map((stars) => {
+    const count = ratingSource.filter((review) => review.rating === stars).length;
+    return {
+      stars,
+      count,
+      pct: ratingSource.length > 0 ? Math.round((count / ratingSource.length) * 100) : 0,
+      color: stars >= 4 ? 'bg-emerald-500' : stars === 3 ? 'bg-amber-400' : 'bg-rose-400',
+    };
+  });
+  const reviewTopics = Array.from(new Set(reviews.flatMap((review) => review.tags || []))).slice(0, 8);
+
+  if (isLoading) {
+    return <PortalLoadingState label="Loading your dashboard" />;
+  }
+
+  if (loadError) {
+    return <PortalErrorState description={loadError} onRetry={() => setLoadAttempt((attempt) => attempt + 1)} />;
+  }
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-6" suppressHydrationWarning>
@@ -745,13 +773,7 @@ export default function DashboardHome() {
           <div className="bg-white rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200 p-5">
             <h3 className="font-bold text-slate-900 text-sm mb-4">Reviews by Rating</h3>
             <div className="space-y-3">
-              {[
-                { stars: 5, pct: 82, count: 104, color: 'bg-emerald-500' },
-                { stars: 4, pct: 12, count: 15, color: 'bg-emerald-400' },
-                { stars: 3, pct: 4, count: 5, color: 'bg-amber-400' },
-                { stars: 2, pct: 1, count: 2, color: 'bg-rose-400' },
-                { stars: 1, pct: 1, count: 2, color: 'bg-rose-500' },
-              ].map(row => (
+              {ratingRows.map(row => (
                 <div key={row.stars} className="flex items-center gap-3 text-xs">
                   <div className="flex items-center gap-1 w-12 text-slate-700 font-medium">
                     {row.stars} <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
@@ -769,23 +791,18 @@ export default function DashboardHome() {
           <div className="bg-white rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200 p-5">
             <h3 className="font-bold text-slate-900 text-sm mb-4">Top Review Topics</h3>
             <div className="flex flex-wrap gap-2">
-              {[
-                { name: 'Food Quality', type: 'positive' },
-                { name: 'Service', type: 'positive' },
-                { name: 'Ambience', type: 'positive' },
-                { name: 'Cleanliness', type: 'neutral' },
-                { name: 'Value for Money', type: 'neutral' },
-                { name: 'Wait Time', type: 'negative' },
-              ].map(topic => (
-                <div key={topic.name} className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-medium border",
-                  topic.type === 'positive' ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
-                  topic.type === 'negative' ? "bg-rose-50 border-rose-100 text-rose-700" :
-                  "bg-slate-50 border-slate-200 text-slate-700"
+              {reviewTopics.length > 0 ? reviewTopics.map((topic, index) => (
+                <div key={topic} className={cn(
+                  'rounded-lg border px-3 py-1.5 text-xs font-medium',
+                  index % 3 === 0 ? 'border-emerald-100 bg-emerald-50 text-emerald-700' :
+                  index % 3 === 1 ? 'border-blue-100 bg-blue-50 text-blue-700' :
+                  'border-slate-200 bg-slate-50 text-slate-700'
                 )}>
-                  {topic.name}
+                  {topic}
                 </div>
-              ))}
+              )) : (
+                <p className="text-xs leading-relaxed text-slate-500">Topics will appear after reviews include category tags.</p>
+              )}
             </div>
           </div>
           
@@ -815,23 +832,14 @@ export default function DashboardHome() {
 
 function StatCard({ icon, iconBg, value, trend, title, sub }: any) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
-      <div className={cn('w-10 sm:w-12 h-10 sm:h-12 rounded-2xl flex items-center justify-center flex-shrink-0', iconBg)}>
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <div className="flex items-center gap-1.5 mb-0.5">
-          <span className="text-xl sm:text-2xl font-bold text-gray-900 leading-none truncate">
-            {typeof value === 'number' ? value.toLocaleString() : value}
-          </span>
-          <span className="text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded shrink-0">
-            {trend}
-          </span>
-        </div>
-        <p className="text-xs sm:text-sm font-semibold text-gray-800 truncate">{title}</p>
-        <p className="text-[10px] text-gray-400 truncate hidden sm:block">{sub}</p>
-      </div>
-    </div>
+    <PortalStatCard
+      icon={icon}
+      iconBackground={iconBg}
+      value={typeof value === 'number' ? value.toLocaleString() : value}
+      trend={trend}
+      title={title}
+      description={sub}
+    />
   );
 }
 

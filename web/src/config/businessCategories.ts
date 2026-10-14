@@ -959,6 +959,156 @@ export const BUSINESS_CATEGORIES: Record<string, BusinessCategoryConfig> = {
     icon: 'PawPrint',
   },
 
+  hardware: {
+    id: 'hardware',
+    name: 'Hardware, Tools & Building Materials',
+    aliases: [
+      'hardware', 'hardware store', 'building material', 'power tools', 'tools',
+      'fasteners', 'iron store', 'drill', 'screws', 'hinges', 'construction materials',
+      'steel', 'cement', 'wire mesh', 'locks'
+    ],
+    description: 'Construction hardware, power tools, fasteners, locks & contractor supplies',
+    theme: 'Sturdy, Industrial & Dependable',
+    backgroundImage: '/categories/retail.webp',
+    mobileBackgroundImage: '/categories/retail-mobile.webp',
+    imageOptions: [
+      { id: 'hard_01', url: '/categories/retail.webp', mobileUrl: '/categories/retail-mobile.webp', label: 'Hardware Depot', qualityScore: 10, isDefault: true },
+    ],
+    overlay: {
+      type: 'gradient',
+      opacity: 0.70,
+      gradient: 'linear-gradient(180deg, rgba(69,26,3,0.4) 0%, rgba(20,8,3,0.85) 100%)',
+    },
+    defaultPrimaryColor: '#78350F',
+    defaultSecondaryColor: '#F59E0B',
+    defaultFontStyle: 'bold',
+    menuEnabled: false,
+    servicesEnabled: true,
+    productsEnabled: true,
+    suggestedCTA: 'Review Your Hardware Purchase',
+    postCompletionCTA: 'View Supplies & Catalog',
+    headline: 'How was your visit to our hardware store?',
+    subheadline: 'We value your feedback on our genuine tools, building materials, and contractor rates.',
+    footerFeatures: [
+      { label: 'Heavy Duty Stock', icon: 'CheckCircle' },
+      { label: 'Contractor Rates', icon: 'Award' },
+      { label: 'Genuine Brands', icon: 'ShieldCheck' },
+    ],
+    icon: 'Wrench',
+  },
+
+  'pvc-plumbing': {
+    id: 'pvc-plumbing',
+    name: 'PVC Pipes, Sanitary & Plumbing Store',
+    aliases: [
+      'pvc', 'pvc shop', 'pvc pipes', 'plumbing', 'pipe store', 'sanitary',
+      'cpvc', 'upvc', 'water tank', 'plumbing supplies', 'pipe fittings',
+      'astral', 'finolex', 'ashirvad', 'supreme', 'taps', 'valves', 'drainage'
+    ],
+    description: 'PVC, CPVC & uPVC pipes, sanitary fittings, water tanks & plumbing solutions',
+    theme: 'Clean Water, Durable & Professional',
+    backgroundImage: '/categories/other.webp',
+    mobileBackgroundImage: '/categories/other-mobile.webp',
+    imageOptions: [
+      { id: 'pvc_01', url: '/categories/other.webp', mobileUrl: '/categories/other-mobile.webp', label: 'Pipes & Fittings Depot', qualityScore: 10, isDefault: true },
+    ],
+    overlay: {
+      type: 'gradient',
+      opacity: 0.68,
+      gradient: 'linear-gradient(180deg, rgba(3,105,161,0.35) 0%, rgba(8,47,73,0.85) 100%)',
+    },
+    defaultPrimaryColor: '#0369A1',
+    defaultSecondaryColor: '#38BDF8',
+    defaultFontStyle: 'modern',
+    menuEnabled: false,
+    servicesEnabled: true,
+    productsEnabled: true,
+    suggestedCTA: 'Rate Our Pipes & Fittings',
+    postCompletionCTA: 'View Plumbing Products',
+    headline: 'How was your experience with our pipes & fittings?',
+    subheadline: 'Help local builders, plumbers, and homeowners discover our top-grade PVC fittings and wholesale rates!',
+    footerFeatures: [
+      { label: 'Leak-Proof Quality', icon: 'ShieldCheck' },
+      { label: 'Wholesale Pricing', icon: 'Award' },
+      { label: 'All Fittings in Stock', icon: 'CheckCircle' },
+    ],
+    icon: 'Package',
+  },
+
+  electrical: {
+    id: 'electrical',
+    name: 'Electrical, Lighting & Inverter Store',
+    aliases: [
+      'electrical', 'electric store', 'electrician shop', 'wires', 'switches',
+      'mcb', 'led lights', 'inverter', 'fans', 'lighting', 'cables', 'havells', 'anchor'
+    ],
+    description: 'Branded electrical wiring, switches, modular plates, LED lighting & backup power',
+    theme: 'Vibrant, Electric & Reliable',
+    backgroundImage: '/categories/retail.webp',
+    mobileBackgroundImage: '/categories/retail-mobile.webp',
+    imageOptions: [
+      { id: 'elec_shop_01', url: '/categories/retail.webp', mobileUrl: '/categories/retail-mobile.webp', label: 'Electrical Showroom', qualityScore: 10, isDefault: true },
+    ],
+    overlay: {
+      type: 'gradient',
+      opacity: 0.65,
+      gradient: 'linear-gradient(180deg, rgba(30,58,138,0.35) 0%, rgba(15,23,42,0.85) 100%)',
+    },
+    defaultPrimaryColor: '#1E3A8A',
+    defaultSecondaryColor: '#FBBF24',
+    defaultFontStyle: 'modern',
+    menuEnabled: false,
+    servicesEnabled: true,
+    productsEnabled: true,
+    suggestedCTA: 'Review Your Electrical Purchase',
+    postCompletionCTA: 'Explore Electrical Catalog',
+    headline: 'How was your electrical shopping experience?',
+    subheadline: 'Tell us how you found our electrical supplies, branded wires, and in-store guidance!',
+    footerFeatures: [
+      { label: 'ISI Certified', icon: 'ShieldCheck' },
+      { label: 'Energy Efficient', icon: 'Sparkles' },
+      { label: 'Bulk Electrician Rates', icon: 'Award' },
+    ],
+    icon: 'Zap',
+  },
+
+  paint: {
+    id: 'paint',
+    name: 'Paints, Wall Texture & Coatings',
+    aliases: [
+      'paint', 'paint store', 'asian paints', 'wall paint', 'berger', 'nerolac',
+      'waterproofing', 'colors', 'paint shop', 'primer', 'putty', 'texture'
+    ],
+    description: 'Interior and exterior wall paints, waterproofing, primer, putty & wood polish',
+    theme: 'Colorful, Vibrant & Artistic',
+    backgroundImage: '/categories/retail.webp',
+    mobileBackgroundImage: '/categories/retail-mobile.webp',
+    imageOptions: [
+      { id: 'pnt_01', url: '/categories/retail.webp', mobileUrl: '/categories/retail-mobile.webp', label: 'Paint & Color Lounge', qualityScore: 10, isDefault: true },
+    ],
+    overlay: {
+      type: 'gradient',
+      opacity: 0.65,
+      gradient: 'linear-gradient(180deg, rgba(131,24,67,0.35) 0%, rgba(55,10,29,0.85) 100%)',
+    },
+    defaultPrimaryColor: '#831843',
+    defaultSecondaryColor: '#F472B6',
+    defaultFontStyle: 'modern',
+    menuEnabled: false,
+    servicesEnabled: true,
+    productsEnabled: true,
+    suggestedCTA: 'Review Your Paint & Colors',
+    postCompletionCTA: 'View Color Swatches',
+    headline: 'How was your paint shopping experience?',
+    subheadline: 'Share your thoughts on our color matching accuracy, brand options, and finish quality!',
+    footerFeatures: [
+      { label: 'Exact Color Tinting', icon: 'Sparkles' },
+      { label: 'All Top Brands', icon: 'CheckCircle' },
+      { label: 'Waterproofing Experts', icon: 'ShieldCheck' },
+    ],
+    icon: 'Palette',
+  },
+
   other: {
     id: 'other',
     name: 'Local Business & Services',
@@ -1050,10 +1200,13 @@ export function normalizeBusinessCategory(rawCategory?: string): BusinessCategor
     { keywords: ['law', 'advocate', 'legal', 'accountant', 'ca ', 'tax', 'consultant'], categoryId: 'professional' },
     { keywords: ['travel', 'tour', 'trip', 'holiday', 'safari'], categoryId: 'travel' },
     { keywords: ['wedding', 'banquet', 'event', 'party', 'cater'], categoryId: 'events' },
-    { keywords: ['pet', 'vet', 'dog', 'cat', 'animal'], categoryId: 'pet-care' },
-    { keywords: ['electronic', 'phone', 'mobile', 'laptop', 'computer', 'gadget'], categoryId: 'electronics' },
+    { keywords: ['pvc', 'pipe', 'fitting', 'sanitary', 'cpvc', 'upvc', 'water tank', 'drainage', 'plumbing supply'], categoryId: 'pvc-plumbing' },
+    { keywords: ['hardware', 'power tool', 'fastener', 'drill', 'screws', 'hinges', 'tools', 'iron store'], categoryId: 'hardware' },
+    { keywords: ['electrical', 'wires', 'switches', 'mcb', 'lighting', 'inverter', 'cables', 'havells'], categoryId: 'electrical' },
+    { keywords: ['paint', 'asian paints', 'wall paint', 'berger', 'nerolac', 'waterproof', 'primer', 'putty'], categoryId: 'paint' },
+    { keywords: ['electronic', 'phone', 'mobile', 'laptop', 'computer', 'gadget', 'appliance', 'tv', 'refrigerator'], categoryId: 'electronics' },
     { keywords: ['pharmacy', 'chemist', 'drug', 'medicine'], categoryId: 'pharmacy' },
-    { keywords: ['clean', 'plumb', 'electrician', 'pest', 'repair', 'ac repair'], categoryId: 'home-services' },
+    { keywords: ['clean', 'pest', 'repair', 'ac repair'], categoryId: 'home-services' },
     { keywords: ['photo', 'studio', 'video', 'camera'], categoryId: 'creative' },
   ];
 

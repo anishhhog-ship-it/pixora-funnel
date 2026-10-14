@@ -21,6 +21,13 @@ import {
 import { qrService, businessService, analyticsService, getCatalogTerminology } from '@/services';
 import { QRCodeItem, Business } from '@/types';
 import { cn, copyToClipboard } from '@/lib/utils';
+import {
+  PortalCard,
+  PortalErrorState,
+  PortalLoadingState,
+  PortalPageHeader,
+  PortalStatCard,
+} from '@/components/client-portal/PortalUI';
 
 const QR_TABS = ['Active QR Codes', 'Print Materials', 'Design & Customize'];
 const COLORS = ['#2563EB', '#0B3D2E', '#D4AF37', '#1a1a1a', '#8B5CF6'];
@@ -48,6 +55,9 @@ export default function QRCodePage() {
   const [editLocation, setEditLocation] = useState('');
 
   const [notification, setNotification] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   const showNotification = (msg: string) => {
     setNotification(msg);
@@ -56,21 +66,30 @@ export default function QRCodePage() {
 
   useEffect(() => {
     async function loadData() {
-      const biz = await businessService.getActiveBusiness();
-      setActiveBiz(biz);
-      const bizId = biz?.businessId || (await businessService.getActiveBusinessId());
+      setIsLoading(true);
+      setLoadError(null);
+      try {
+        const biz = await businessService.getActiveBusiness();
+        setActiveBiz(biz);
+        const bizId = biz?.businessId || (await businessService.getActiveBusinessId());
 
-      const [qrsData, analyticsData] = await Promise.all([
-        qrService.getQRCodes(bizId, biz?.slug),
-        analyticsService.getAnalytics(bizId),
-      ]);
+        const [qrsData, analyticsData] = await Promise.all([
+          qrService.getQRCodes(bizId, biz?.slug),
+          analyticsService.getAnalytics(bizId),
+        ]);
 
-      setQrs(qrsData);
-      setSelectedQrId(qrsData[0]?.qrId || null);
-      setTotalMenuViews(analyticsData.menuViews);
+        setQrs(qrsData);
+        setSelectedQrId(qrsData[0]?.qrId || null);
+        setTotalMenuViews(analyticsData.menuViews);
+      } catch (err) {
+        console.error('Failed to load QR data:', err);
+        setLoadError('QR touchpoints are temporarily unavailable.');
+      } finally {
+        setIsLoading(false);
+      }
     }
     loadData();
-  }, []);
+  }, [loadAttempt]);
 
   const totalScans = qrs.reduce((sum, q) => sum + (q.scans || 0), 0);
   const qrBaseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://funnel.pixoraautomations.com';
@@ -234,6 +253,14 @@ export default function QRCodePage() {
       q.location.toLowerCase().includes(search.toLowerCase())
   );
 
+  if (isLoading) {
+    return <PortalLoadingState label="Loading QR touchpoints" />;
+  }
+
+  if (loadError) {
+    return <PortalErrorState description={loadError} onRetry={() => setLoadAttempt((attempt) => attempt + 1)} />;
+  }
+
   return (
     <div className="space-y-5 pb-10">
       {/* Toast Notification */}
@@ -243,6 +270,12 @@ export default function QRCodePage() {
           <span>{notification}</span>
         </div>
       )}
+
+      <PortalPageHeader
+        eyebrow="Customer touchpoints"
+        title="QR Codes"
+        description={`Manage live QR touchpoints, print materials, and ${terminology.isFood ? 'menu' : 'catalogue'} routing for your business.`}
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -312,7 +345,7 @@ export default function QRCodePage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Left: Live QR Stand Preview */}
           <div className="lg:col-span-5">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <PortalCard className="p-5">
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm">Live QR Stand Preview</h3>
@@ -408,12 +441,12 @@ export default function QRCodePage() {
                   <Copy className="w-3.5 h-3.5" /> {copiedLink ? 'Copied! ✅' : 'Copy Link'}
                 </button>
               </div>
-            </div>
+            </PortalCard>
           </div>
 
           {/* Right: Touchpoints & Options */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
+            <PortalCard className="space-y-4 p-5">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm">QR Code Placement Strategy</h3>
@@ -474,14 +507,14 @@ export default function QRCodePage() {
                   View Stands →
                 </a>
               </div>
-            </div>
+            </PortalCard>
           </div>
         </div>
       )}
 
       {/* TAB 1: PRINT MATERIALS */}
       {activeTab === 1 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
+        <PortalCard className="space-y-6 p-6">
           <div>
             <h3 className="font-bold text-gray-900 text-sm">Printable QR Stand &amp; Sticker Templates</h3>
             <p className="text-xs text-gray-400 mt-0.5">
@@ -583,12 +616,12 @@ export default function QRCodePage() {
               </a>
             </div>
           </div>
-        </div>
+        </PortalCard>
       )}
 
       {/* TAB 2: DESIGN & CUSTOMIZE */}
       {activeTab === 2 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
+        <PortalCard className="space-y-6 p-6">
           <div>
             <h3 className="font-bold text-gray-900 text-sm">Customize QR Display &amp; Branding</h3>
             <p className="text-xs text-gray-400 mt-0.5">
@@ -634,11 +667,11 @@ export default function QRCodePage() {
               </p>
             </div>
           </div>
-        </div>
+        </PortalCard>
       )}
 
       {/* ALL QR CODES TABLE */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <PortalCard className="overflow-hidden">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-5 border-b border-gray-100 gap-3">
           <div>
             <div className="flex items-center gap-2">
@@ -809,7 +842,7 @@ export default function QRCodePage() {
             </table>
           </div>
         )}
-      </div>
+      </PortalCard>
 
       {/* MODAL 1: GENERATE NEW QR CODE */}
       {isCreateModalOpen && (
@@ -991,20 +1024,7 @@ export default function QRCodePage() {
 }
 
 function StatCard({ icon, bg, value, title, sub }: any) {
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-3">
-      <div className={cn('w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0', bg)}>
-        {icon}
-      </div>
-      <div>
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-bold text-gray-900 leading-none">{value}</span>
-        </div>
-        <p className="text-xs font-semibold text-gray-800 mt-0.5">{title}</p>
-        <p className="text-[10px] text-gray-400">{sub}</p>
-      </div>
-    </div>
-  );
+  return <PortalStatCard icon={icon} iconBackground={bg} value={value} title={title} description={sub} />;
 }
 
 const EyeIcon = () => (

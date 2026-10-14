@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Play, Tag, Plus, Download, User, Sparkles } from 'lucide-react';
 import { triggerPwaInstall } from '@/components/PwaInstallPrompt';
@@ -12,11 +12,7 @@ interface MobileAppBottomNavProps {
 }
 
 export default function MobileAppBottomNav({ onOpenDemo }: MobileAppBottomNavProps) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    setIsLoggedIn(authService.isAuthenticated());
-  }, []);
+  const [isLoggedIn] = useState(() => authService.isAuthenticated());
 
   return (
     <nav 
@@ -29,7 +25,7 @@ export default function MobileAppBottomNav({ onOpenDemo }: MobileAppBottomNavPro
         <button
           type="button"
           onClick={onOpenDemo}
-          className="flex flex-col items-center justify-center py-1 rounded-xl text-slate-600 hover:text-blue-600 active:scale-90 transition-all cursor-pointer group"
+           className="public-focus-ring flex cursor-pointer flex-col items-center justify-center rounded-xl py-1 text-slate-600 transition-all hover:text-blue-600 active:scale-90 group"
           title="Watch Interactive Live Demo"
         >
           <div className="w-8 h-8 rounded-full bg-slate-100/90 group-hover:bg-blue-50 flex items-center justify-center text-slate-700 group-hover:text-blue-600 transition-colors">
@@ -44,7 +40,7 @@ export default function MobileAppBottomNav({ onOpenDemo }: MobileAppBottomNavPro
         <button
           type="button"
           onClick={() => smoothScrollTo('#pricing')}
-          className="flex flex-col items-center justify-center py-1 rounded-xl text-slate-600 hover:text-blue-600 active:scale-90 transition-all cursor-pointer group"
+           className="public-focus-ring flex cursor-pointer flex-col items-center justify-center rounded-xl py-1 text-slate-600 transition-all hover:text-blue-600 active:scale-90 group"
           title="Jump to Pricing Plans"
         >
           <div className="w-8 h-8 rounded-full bg-slate-100/90 group-hover:bg-blue-50 flex items-center justify-center text-slate-700 group-hover:text-blue-600 transition-colors relative">
@@ -60,7 +56,7 @@ export default function MobileAppBottomNav({ onOpenDemo }: MobileAppBottomNavPro
         <div className="flex flex-col items-center justify-center -mt-6 z-10">
           <Link
             href="/onboarding"
-            className="group relative flex items-center justify-center active:scale-95 transition-all"
+             className="public-focus-ring group relative flex items-center justify-center rounded-full transition-all active:scale-95"
             title="Create Review Funnel for Your Business"
             aria-label="Create Review Funnel"
           >
@@ -84,7 +80,7 @@ export default function MobileAppBottomNav({ onOpenDemo }: MobileAppBottomNavPro
         <button
           type="button"
           onClick={() => triggerPwaInstall()}
-          className="flex flex-col items-center justify-center py-1 rounded-xl text-slate-600 hover:text-emerald-700 active:scale-90 transition-all cursor-pointer group"
+           className="public-focus-ring flex cursor-pointer flex-col items-center justify-center rounded-xl py-1 text-slate-600 transition-all hover:text-emerald-700 active:scale-90 group"
           title="Install Pixora Funnel App on Phone"
         >
           <div className="w-8 h-8 rounded-full bg-emerald-50/80 group-hover:bg-emerald-100 flex items-center justify-center text-emerald-700 transition-colors">
@@ -98,7 +94,7 @@ export default function MobileAppBottomNav({ onOpenDemo }: MobileAppBottomNavPro
         {/* OPTION 5: Account / Login */}
         <Link
           href={isLoggedIn ? '/dashboard' : '/login'}
-          className="flex flex-col items-center justify-center py-1 rounded-xl text-slate-600 hover:text-slate-900 active:scale-90 transition-all group"
+           className="public-focus-ring flex flex-col items-center justify-center rounded-xl py-1 text-slate-600 transition-all hover:text-slate-900 active:scale-90 group"
           title={isLoggedIn ? 'Client Dashboard' : 'Client Portal Login'}
         >
           <div className="w-8 h-8 rounded-full bg-slate-100/90 group-hover:bg-slate-200 flex items-center justify-center text-slate-700 group-hover:text-slate-900 transition-colors">

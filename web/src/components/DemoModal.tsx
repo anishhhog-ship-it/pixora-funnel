@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { X, Play, Sparkles, Star, QrCode, Monitor, CheckCircle, ArrowRight } from 'lucide-react';
+import { X, Play, Sparkles, QrCode, ArrowRight } from 'lucide-react';
 
 interface DemoModalProps {
   isOpen: boolean;
@@ -25,7 +25,7 @@ export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
           </div>
           <div className="text-sm font-bold">Instant Camera Recognition</div>
           <div className="text-xs text-slate-400 max-w-xs">
-            Directly redirects to funnel.pixoraautomations.com/f/your-business in under 1 second.
+             Opens the branded public funnel at funnel.pixoraautomations.com/f/your-business.
           </div>
         </div>
       )
@@ -61,7 +61,7 @@ export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
           </div>
           <div className="text-sm font-bold text-slate-900">Google Business Profile Review Published</div>
           <p className="text-xs text-slate-600 max-w-xs">
-            Your Google Maps star rating and review count increase immediately!
+            The customer is handed off to the business&apos;s Google review screen.
           </p>
         </div>
       )
@@ -84,12 +84,14 @@ export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 relative overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm animate-fadeIn" role="presentation">
+      <div className="relative max-h-[min(720px,calc(100vh-2rem))] w-full max-w-2xl overflow-y-auto overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8" role="dialog" aria-modal="true" aria-labelledby="demo-dialog-title">
         {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+          <button
+           type="button"
+           onClick={onClose}
+           aria-label="Close demo"
+           className="public-focus-ring absolute right-5 top-5 rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
         >
           <X className="w-5 h-5" />
         </button>
@@ -99,7 +101,7 @@ export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
             <Play className="w-3 h-3 fill-current" />
             <span>Interactive Demo Walkthrough</span>
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
+          <h3 id="demo-dialog-title" className="text-xl font-bold text-slate-900 sm:text-2xl">
             How Pixora Funnel Works in Real Life
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
@@ -111,9 +113,11 @@ export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
         <div className="grid grid-cols-4 gap-2 mb-5">
           {demoSteps.map((step, idx) => (
             <button
+              type="button"
               key={idx}
               onClick={() => setActiveStep(idx)}
-              className={`py-2 px-2 text-center rounded-xl text-xs font-semibold border transition-all ${
+              aria-current={activeStep === idx ? 'step' : undefined}
+              className={`public-focus-ring rounded-xl border px-2 py-2 text-center text-xs font-semibold transition-all ${
                 activeStep === idx
                   ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                   : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
@@ -145,8 +149,9 @@ export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <button
+              type="button"
               onClick={() => setActiveStep((prev) => (prev + 1) % demoSteps.length)}
-              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold"
+              className="public-focus-ring flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 sm:flex-none"
             >
               Next Step
             </button>

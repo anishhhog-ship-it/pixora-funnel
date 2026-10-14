@@ -1,13 +1,15 @@
 import Link from 'next/link';
-import { Check, ArrowRight, Sparkles } from 'lucide-react';
+import { Check, ArrowRight } from 'lucide-react';
 
 export default function TrialCtaStrip() {
   return (
-    <section className="py-14 sm:py-18 bg-white">
+    <section className="bg-white py-14 sm:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Soft Blue Tinted Container */}
-        <div className="relative rounded-3xl bg-[#EEF5FF] border border-blue-100 p-8 sm:p-10 lg:p-12 overflow-hidden shadow-sm">
+        <div className="relative overflow-hidden rounded-[2rem] border border-blue-100 bg-gradient-to-br from-[#eef5ff] via-white to-[#effaf5] p-8 shadow-sm sm:p-10 lg:p-12">
+          <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-200/30 blur-3xl" aria-hidden="true" />
+          <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-emerald-200/25 blur-3xl" aria-hidden="true" />
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
             
@@ -17,7 +19,7 @@ export default function TrialCtaStrip() {
                 Start Your 1 Day Free Trial Today
               </h2>
               <p className="mt-2 text-sm text-slate-600">
-                No credit card required. Full access to all features. Set up in 5 minutes.
+                 No credit card required. Full access to the trial experience with guided setup.
               </p>
             </div>
 
@@ -25,7 +27,7 @@ export default function TrialCtaStrip() {
             <div className="lg:col-span-4 flex items-center justify-start lg:justify-center">
               <Link
                 href="/onboarding"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm sm:text-base shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer text-center"
+                className="public-focus-ring inline-flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-xl bg-slate-950 px-7 py-3.5 text-center text-sm font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg active:translate-y-0 active:scale-[0.98] sm:w-auto sm:text-base"
               >
                 <span>Start 1 Day Free Trial</span>
                 <ArrowRight className="w-4 h-4" />

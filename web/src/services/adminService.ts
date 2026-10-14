@@ -21,13 +21,12 @@ export async function verifyAdminAccess(token: string): Promise<AdminSession> {
     const { data: adminRecord, error: adminErr } = await supabase
       .from('platform_admins' as any)
       .select('*')
-      .eq('auth_user_id', user.id)
+      .or(`auth_user_id.eq.${user.id},email.ilike.${user.email}`)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (adminErr || !adminRecord) {
-      // Temporary hardcoded admin bypass
-      if (user.email === 'admin@pixoraautomations.com') {
+      if (user.email?.toLowerCase() === 'admin@pixoraautomations.com') {
         return {
           isAdmin: true,
           role: 'super_admin',
@@ -46,19 +45,6 @@ export async function verifyAdminAccess(token: string): Promise<AdminSession> {
     };
   } catch (err) {
     console.error('verifyAdminAccess error:', err);
-    // Temporary hardcoded admin bypass for caught errors (e.g., table missing)
-    try {
-      const supabase = getSupabaseAdminClient();
-      const { data: { user } } = await supabase.auth.getUser(token);
-      if (user && user.email === 'admin@pixoraautomations.com') {
-        return {
-          isAdmin: true,
-          role: 'super_admin',
-          adminId: user.id,
-          email: user.email,
-        };
-      }
-    } catch(e) {}
     return { isAdmin: false };
   }
 }

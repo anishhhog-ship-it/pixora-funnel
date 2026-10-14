@@ -7,9 +7,8 @@ import {
   Smartphone, 
   ShieldCheck, 
   BarChart2, 
-  BookOpen, 
-  Building2,
-  CheckCircle2
+  BookOpen,
+  Building2
 } from 'lucide-react';
 
 const pillars = [
@@ -21,7 +20,7 @@ const pillars = [
   {
     icon: Clock,
     title: '5-Minute Setup',
-    description: 'No developer needed. Input your business name, pick your theme, and your live funnel is generated immediately.',
+     description: 'No developer needed. Input your business name, pick your theme, and follow the guided path to publish your funnel.',
   },
   {
     icon: LayoutDashboard,
@@ -57,7 +56,7 @@ const pillars = [
 
 export default function WhyPixora() {
   return (
-    <section id="why-pixora" className="py-16 md:py-20 bg-slate-50/70 border-t border-slate-100">
+    <section id="why-pixora" className="border-t border-slate-100 bg-slate-50/70 py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
@@ -81,9 +80,9 @@ export default function WhyPixora() {
             return (
               <div
                 key={i}
-                className="bg-white border border-slate-200/90 rounded-2xl p-5 hover:border-slate-300 hover:shadow-xs transition-all"
+                className="group rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
               >
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3.5">
+                <div className="mb-3.5 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform group-hover:scale-105">
                   <Icon className="w-5 h-5" />
                 </div>
                 <h3 className="text-sm font-bold text-slate-900 mb-1.5">

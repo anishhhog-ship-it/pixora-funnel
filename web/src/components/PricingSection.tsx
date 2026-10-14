@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useState } from 'react';
+import PaymentGatewayModal from '@/components/payment/PaymentGatewayModal';
 import Image from 'next/image';
 import { 
   Check, 
@@ -12,14 +13,12 @@ import {
   MessageCircle, 
   Crown, 
   Truck, 
-  Lock, 
   Zap,
   Info
 } from 'lucide-react';
-import { businessService } from '@/services';
 
 const plan1Features = [
-  '1 Year Full Software Access',
+  '2 Years Full Software Access',
   'AI Auto Reply System Activated',
   'Custom Branded QR Review Funnel',
   '1-Tap Smart Review Assistance for Guests',
@@ -72,16 +71,12 @@ const physicalAddons = [
 ];
 
 export default function PricingSection() {
-  const [slotData, setSlotData] = useState<{ total: number; claimed: number; remaining: number }>({
-    total: 100,
-    claimed: 17,
-    remaining: 83,
+  const [showGatewayModal, setShowGatewayModal] = useState(false);
+  const [gatewayPlan, setGatewayPlan] = useState({
+    planId: 'plan_2year_software',
+    planName: 'Standard 2-Year Plan',
+    amount: 2599,
   });
-
-  useEffect(() => {
-    businessService.getRemainingLifetimeSlots().then(setSlotData);
-  }, []);
-
   return (
     <section id="pricing" className="py-20 md:py-24 bg-white border-t border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -90,49 +85,32 @@ export default function PricingSection() {
         <div className="text-center max-w-3xl mx-auto mb-12">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-wider mb-3">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-            LIMITED LAUNCH OFFER · FIRST 100 ACCOUNTS
+             LAUNCH OFFER · REVIEW PLAN TERMS BELOW
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Simple Pricing. Zero Monthly Software Fees.
           </h2>
           <p className="mt-3 text-slate-600 text-sm sm:text-base leading-relaxed">
-            Test the complete system with our 1-day free trial. The <strong className="text-rose-600 font-bold">first 100 accounts get Lifetime Free access</strong> if they enroll in the ₹2,999 plan (includes custom NFC review card)!
+             Test the complete system with our 1-day free trial, then compare the software-only and NFC card options below. Plan availability and included access are described in each option.
           </p>
 
           {/* Auto Reply Policy Callout */}
           <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
             <Info className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-              <strong>Auto Reply System:</strong> Auto Reply is turned off for trial accounts and is immediately activated with an active plan (Lifetime Free on the ₹2,999 plan for the first 100 accounts).
+               <strong>Auto Reply System:</strong> Auto Reply is turned off for trial accounts and becomes available with an active plan (Lifetime Free on the ₹2,999 plan for the first 100 accounts).
             </span>
           </div>
         </div>
 
-        {/* Dynamic 100 Accounts Slot Countdown Progress Box */}
-        <div className="max-w-3xl mx-auto mb-12 p-4 bg-gradient-to-r from-amber-50 via-rose-50/40 to-amber-50 border border-amber-200/90 rounded-2xl shadow-xs">
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-800 mb-1.5">
-            <span className="flex items-center gap-1">
-              <span>🔥 First 100 Accounts Special: Lifetime Free on ₹2,999 Plan:</span>
-            </span>
-            <span className="font-bold text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-md">
-              {slotData.remaining} of {slotData.total} Lifetime Slots Remaining
-            </span>
-          </div>
-          <div className="w-full bg-slate-200/80 rounded-full h-2.5 overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-amber-500 to-rose-600 h-2.5 rounded-full transition-all duration-500" 
-              style={{ width: `${Math.min(100, Math.max(10, (slotData.claimed / slotData.total) * 100))}%` }}
-            />
-          </div>
-          <p className="text-[11px] text-slate-700 mt-2 leading-relaxed text-center sm:text-left">
-            ⚡ First 100 accounts get lifetime free access if they enroll in the ₹2,999 plan (includes physical NFC card + zero recurring annual fees). Once 100 accounts are claimed, the price returns to regular standard rates.
-          </p>
-        </div>
+         <div className="mx-auto mb-12 max-w-3xl rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-center text-xs leading-relaxed text-slate-600 shadow-sm sm:text-left">
+           <span className="font-bold text-slate-800">Offer terms:</span> the plan cards below are the source of truth for software access, hardware inclusion, and trial behavior. Contact the team if you need help choosing an option.
+         </div>
 
         {/* 2 Main Pricing Cards Side-by-Side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16 items-stretch">
           
-          {/* PLAN 1: ₹2,599 (Without NFC Card · 1 Year Only) */}
+          {/* PLAN 1: ₹2,599 (Without NFC Card · 2 Years Validity) */}
           <div className="rounded-3xl bg-white border-2 border-slate-200 shadow-md hover:border-slate-300 transition-all p-7 sm:p-9 flex flex-col justify-between">
             <div>
               {/* Badge & Title */}
@@ -141,11 +119,11 @@ export default function PricingSection() {
                   Plan Option 1
                 </span>
                 <span className="text-xs font-bold text-slate-500">
-                  1 Year Validity Only
+                  2 Years Validity
                 </span>
               </div>
 
-              <h3 className="text-2xl font-bold text-slate-900">Standard 1-Year Plan</h3>
+              <h3 className="text-2xl font-bold text-slate-900">Standard 2-Year Plan</h3>
               <p className="text-xs sm:text-sm text-slate-500 mt-1">
                 Pure software suite for 1 business location (without physical NFC card)
               </p>
@@ -162,11 +140,11 @@ export default function PricingSection() {
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">₹2,599</span>
-                  <span className="text-xs text-slate-500 font-semibold">/ 1 Year (Without NFC Card)</span>
+                  <span className="text-xs text-slate-500 font-semibold">/ 2 Years (Without NFC Card)</span>
                 </div>
                 <p className="text-xs text-emerald-600 font-semibold mt-1.5 flex items-center gap-1">
                   <Zap className="w-3.5 h-3.5" />
-                  <span>Turns ON AI Auto Reply System for 1 Year</span>
+                  <span>Turns ON AI Auto Reply System for 2 Years</span>
                 </p>
               </div>
 
@@ -189,17 +167,21 @@ export default function PricingSection() {
 
             {/* CTAs */}
             <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
-              <a
-                href={`https://wa.me/919257378047?text=${encodeURIComponent(
-                  'Hi! I would like to purchase the ₹2,599 1-Year Plan (Without NFC Card) for my business.'
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-black text-white text-sm font-bold shadow-md hover:shadow-lg transition-all"
+              <button
+                type="button"
+                onClick={() => {
+                  setGatewayPlan({
+                    planId: 'plan_2year_software',
+                    planName: 'Standard 2-Year Plan',
+                    amount: 2599,
+                  });
+                  setShowGatewayModal(true);
+                }}
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-black text-white text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer"
               >
-                <span>Activate 1-Year Plan (₹2,599)</span>
+                <span>Activate 2-Year Plan Online (₹2,599)</span>
                 <ArrowRight className="w-4 h-4" />
-              </a>
+              </button>
 
               <Link
                 href="/onboarding"
@@ -271,7 +253,7 @@ export default function PricingSection() {
                       <span>Included With This Plan</span>
                     </div>
                     <p className="text-xs font-semibold text-white leading-tight">
-                      Custom Branded NFC Google Review Card — Guests tap phone for 1-second 5-star reviews!
+                       Custom Branded NFC Google Review Card — Guests tap their phone to open the review journey.
                     </p>
                   </div>
                 </div>
@@ -292,18 +274,22 @@ export default function PricingSection() {
 
             {/* CTAs */}
             <div className="pt-6 border-t border-slate-100 flex flex-col gap-3">
-              <a
-                href={`https://wa.me/919257378047?text=${encodeURIComponent(
-                  'Hi! I would like to claim the ₹2,999 Lifetime Free Access Plan (First 100 Accounts Offer + NFC Review Card Included) for my business.'
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-bold shadow-md hover:shadow-xl transition-all"
+              <button
+                type="button"
+                onClick={() => {
+                  setGatewayPlan({
+                    planId: 'plan_pro_nfc_lifetime',
+                    planName: 'Pro Plan + NFC Card (Lifetime Deal)',
+                    amount: 2999,
+                  });
+                  setShowGatewayModal(true);
+                }}
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-bold shadow-md hover:shadow-xl transition-all cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>Claim Lifetime Plan + NFC Card (₹2,999)</span>
+                <span>Claim Lifetime Plan + NFC Online (₹2,999)</span>
                 <ArrowRight className="w-4 h-4" />
-              </a>
+              </button>
 
               <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 pt-1 gap-2">
                 <div className="flex items-center gap-1.5">
@@ -360,6 +346,19 @@ export default function PricingSection() {
           </div>
         </div>
 
+        {/* Live Payment Gateway Modal */}
+        <PaymentGatewayModal
+          isOpen={showGatewayModal}
+          onClose={() => setShowGatewayModal(false)}
+          planId={gatewayPlan.planId}
+          planName={gatewayPlan.planName}
+          amount={gatewayPlan.amount}
+          businessId="visitor"
+          businessName="Your Business"
+          onSuccess={() => {
+            window.location.href = '/onboarding';
+          }}
+        />
       </div>
     </section>
   );

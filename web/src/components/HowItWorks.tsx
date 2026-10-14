@@ -1,11 +1,11 @@
 'use client';
 
-import { User, Store, QrCode, Rocket, ArrowRight } from 'lucide-react';
+import { User, Store, QrCode, Rocket, ArrowRight, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 
 interface Step {
   number: number;
-  icon: any;
+  icon: LucideIcon;
   title: string;
   description: string;
 }
@@ -15,7 +15,7 @@ const steps: Step[] = [
     number: 1,
     icon: User,
     title: 'Create Your Account',
-    description: 'Sign up with your mobile number or Google account in under 30 seconds.',
+     description: 'Sign up with your mobile number or Google account and follow the guided setup.',
   },
   {
     number: 2,
@@ -39,7 +39,7 @@ const steps: Step[] = [
 
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-16 md:py-20 bg-white border-t border-slate-100">
+    <section id="how-it-works" className="border-t border-slate-100 bg-white py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
@@ -62,20 +62,20 @@ export default function HowItWorks() {
           <div className="hidden lg:block absolute top-6 left-[6%] right-[6%] h-0.5 bg-slate-200 z-0" />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 relative z-10">
-            {steps.map((step, idx) => {
+            {steps.map((step) => {
               const Icon = step.icon;
               return (
                 <div
                   key={step.number}
-                  className="bg-white border border-slate-200/90 rounded-2xl p-6 transition-all duration-200 hover:shadow-md hover:border-slate-300 relative group flex flex-col justify-between"
+                  className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_18px_40px_rgba(30,64,175,0.10)]"
                 >
                   <div>
                     {/* Step number badge & icon */}
                     <div className="flex items-center gap-3 mb-5">
-                      <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center shadow-xs">
+                       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white shadow-sm">
                         {step.number}
                       </div>
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                         <Icon className="w-5 h-5" />
                       </div>
                     </div>
@@ -102,7 +102,7 @@ export default function HowItWorks() {
         <div className="mt-12 text-center">
           <Link
             href="/onboarding"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-xs transition-colors"
+                  className="public-focus-ring inline-flex items-center gap-2 rounded-xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-blue-700"
           >
             <span>Start 1-Day Free Trial</span>
             <ArrowRight className="w-4 h-4" />

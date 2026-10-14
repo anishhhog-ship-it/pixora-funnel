@@ -21,6 +21,12 @@ import {
 } from 'lucide-react';
 import { menuService, businessService, getCatalogTerminology } from '@/services';
 import { MenuItem, MenuCategory, Business } from '@/types';
+import {
+  PortalCard,
+  PortalErrorState,
+  PortalLoadingState,
+  PortalPageHeader,
+} from '@/components/client-portal/PortalUI';
 
 export default function MenuManagementPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
@@ -33,6 +39,9 @@ export default function MenuManagementPage() {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   // Dynamic Terminology based on business category (Menu for food/dining, Catalogue for others)
   const terminology = getCatalogTerminology(activeBiz?.category);
@@ -40,22 +49,31 @@ export default function MenuManagementPage() {
 
   useEffect(() => {
     async function loadData() {
-      const biz = await businessService.getActiveBusiness();
-      setActiveBiz(biz);
-      const bizId = biz?.businessId || await businessService.getActiveBusinessId();
+      setIsLoading(true);
+      setLoadError(null);
+      try {
+        const biz = await businessService.getActiveBusiness();
+        setActiveBiz(biz);
+        const bizId = biz?.businessId || await businessService.getActiveBusinessId();
 
-      const [fetchedItems, fetchedCats] = await Promise.all([
-        menuService.getItems(bizId),
-        menuService.getCategories(bizId)
-      ]);
-      setItems(fetchedItems);
-      setCategories(fetchedCats);
-      if (fetchedItems.length > 0) {
-        setEditingItem(fetchedItems[0]);
+        const [fetchedItems, fetchedCats] = await Promise.all([
+          menuService.getItems(bizId),
+          menuService.getCategories(bizId)
+        ]);
+        setItems(fetchedItems);
+        setCategories(fetchedCats);
+        if (fetchedItems.length > 0) {
+          setEditingItem(fetchedItems[0]);
+        }
+      } catch (err) {
+        console.error('Failed to load menu data:', err);
+        setLoadError(`Could not load your ${terminology.isFood ? 'menu' : 'catalogue'} right now.`);
+      } finally {
+        setIsLoading(false);
       }
     }
     loadData();
-  }, []);
+  }, [loadAttempt]);
 
   const filteredItems = items.filter(item => {
     const matchCat = selectedCategory === 'all' || item.categoryId === selectedCategory;
@@ -112,6 +130,14 @@ export default function MenuManagementPage() {
     setTimeout(() => setToastMsg(null), 3000);
   };
 
+  if (isLoading) {
+    return <PortalLoadingState label={`Loading ${terminology.isFood ? 'menu' : 'catalogue'}`} />;
+  }
+
+  if (loadError) {
+    return <PortalErrorState description={loadError} onRetry={() => setLoadAttempt((attempt) => attempt + 1)} />;
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       
@@ -124,24 +150,22 @@ export default function MenuManagementPage() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-        <div>
-          <h1 className="text-2xl font-serif font-bold text-gray-900">{terminology.pageTitle}</h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-            {terminology.pageSubtitle}
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <StatCard icon={<CatalogIcon className="w-4 h-4 text-amber-500" />} value={items.length} label={terminology.totalItemsLabel} />
-          <Button 
-            onClick={handleStartAddNew}
-            className="py-2.5 px-4 bg-[#0B3D2E] hover:bg-[#12543e] text-white rounded-xl text-xs font-semibold flex items-center cursor-pointer shadow-sm"
-          >
-            <Plus className="w-4 h-4 mr-1.5" /> {terminology.addItemLabel}
-          </Button>
-        </div>
-      </div>
+      <PortalPageHeader
+        eyebrow="Content workspace"
+        title={terminology.pageTitle}
+        description={terminology.pageSubtitle}
+        actions={
+          <>
+            <StatCard icon={<CatalogIcon className="h-4 w-4 text-amber-500" />} value={items.length} label={terminology.totalItemsLabel} />
+            <Button
+              onClick={handleStartAddNew}
+              className="flex cursor-pointer items-center rounded-xl bg-[#0B3D2E] px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-[#12543e]"
+            >
+              <Plus className="mr-1.5 h-4 w-4" /> {terminology.addItemLabel}
+            </Button>
+          </>
+        }
+      />
 
       {items.length === 0 ? (
         /* Zero Items Empty State */
@@ -170,7 +194,7 @@ export default function MenuManagementPage() {
             <div className="flex justify-between items-center mb-3 px-2">
               <h3 className="font-bold text-gray-900 text-sm">{terminology.categoriesLabel}</h3>
             </div>
-            <div className="bg-white rounded-2xl p-2 shadow-sm border border-slate-100">
+            <PortalCard className="rounded-2xl p-2 shadow-sm">
               <CategoryItem 
                 active={selectedCategory === 'all'} 
                 onClick={() => setSelectedCategory('all')} 
@@ -188,11 +212,11 @@ export default function MenuManagementPage() {
                   count={items.filter(i => i.categoryId === cat.categoryId).length} 
                 />
               ))}
-            </div>
+            </PortalCard>
           </div>
 
           {/* Middle Column: Item List */}
-          <div className="lg:col-span-5 bg-white rounded-3xl shadow-sm p-4 flex flex-col min-h-[450px] border border-slate-100">
+          <PortalCard className="flex min-h-[450px] flex-col p-4 lg:col-span-5">
             <div className="flex gap-2 mb-4">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -234,7 +258,7 @@ export default function MenuManagementPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </PortalCard>
 
           {/* Right Column: Edit Panel */}
           <div className="lg:col-span-4">

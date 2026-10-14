@@ -13,16 +13,16 @@ import LandingPageWrapper from "@/components/LandingPageWrapper";
 const BASE_URL = "https://funnel.pixoraautomations.com";
 
 export const metadata: Metadata = {
-  title: "Pixora Funnel – #1 Review Funnel for Restaurants & Local Businesses in India",
+  title: "Pixora Funnel – Review Funnels for Restaurants & Local Businesses",
   description:
-    "Get more 5-star Google reviews for your restaurant, café, salon, or clinic with Pixora Funnel's smart QR & NFC review funnels. No monthly fees. Lifetime access at ₹2,599.",
+    "Give your restaurant, café, salon, or clinic a branded QR and NFC review journey with Pixora Funnel's customer feedback tools, menus, and follow-up workflows.",
   alternates: {
     canonical: BASE_URL,
   },
   openGraph: {
-    title: "Pixora Funnel – Google Review Funnel for Local Businesses",
+    title: "Pixora Funnel – Branded Review Funnels for Local Businesses",
     description:
-      "India's #1 review funnel platform. Smart QR codes + NFC taps help restaurants get more 5-star Google reviews automatically. ₹2,599 lifetime access.",
+      "Smart QR codes and NFC taps help local businesses create a clear customer feedback and Google review handoff. Explore the configured plans and trial.",
     url: BASE_URL,
     images: [
       {

@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { replyEngine, reviewService, businessService, replyService, googleBusinessProfileService } from '@/services';
 import { GoogleConnectionBadge, GoogleBadgeStatus } from '@/components/GoogleConnectionBadge';
 import { Review, Business } from '@/types';
+import { PortalErrorState, PortalLoadingState } from '@/components/client-portal/PortalUI';
 
 const TABS = ['Settings', 'Reply Templates', 'Review Categories', 'Smart Customisation', 'Activity Log'];
 const TONES = ['Warm & Friendly', 'Professional', 'Short & Simple', 'Traditional'];
@@ -49,15 +50,30 @@ export default function AutoReplyPage() {
   const [activeBiz, setActiveBiz] = useState<Business | null>(null);
   const [recentReplies, setRecentReplies] = useState<Review[]>([]);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showGatewayModal, setShowGatewayModal] = useState(false);
+  const [gatewayPlan, setGatewayPlan] = useState({
+    planId: 'plan_2year_software',
+    planName: 'Standard 2-Year Plan',
+    amount: 2599,
+  });
 
   // License Key Activation State
   const [licenseKeyInput, setLicenseKeyInput] = useState('');
   const [licenseKeyError, setLicenseKeyError] = useState<string | null>(null);
   const [licenseKeySuccess, setLicenseKeySuccess] = useState<string | null>(null);
   const [isActivatingLicense, setIsActivatingLicense] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
-  // Determine whether current business is in trial
-  const isTrial = activeBiz ? activeBiz.planStatus !== 'active' : true;
+  // Determine whether current business is in trial / upgraded
+  const isLocallyActive = typeof window !== 'undefined' && activeBiz && (
+    localStorage.getItem(`pixora_plan_active_${activeBiz.id}`) === 'true' ||
+    localStorage.getItem(`pixora_plan_active_${activeBiz.businessId}`) === 'true' ||
+    localStorage.getItem(`pixora_plan_active_${activeBiz.slug}`) === 'true'
+  );
+  const isAccountUpgraded = activeBiz?.planStatus === 'active' || Boolean(isLocallyActive);
+  const isTrial = !isAccountUpgraded;
 
   // Template state
   const [fiveStarTemplate, setFiveStarTemplate] = useState('Thank you so much for the 5-star love, {name}! We are thrilled you enjoyed {business}. Looking forward to serving you again soon! ✨');
@@ -66,52 +82,73 @@ export default function AutoReplyPage() {
 
   useEffect(() => {
     async function loadData() {
-      const biz = await businessService.getActiveBusiness();
-      setActiveBiz(biz);
-      const bizId = biz?.businessId || await businessService.getActiveBusinessId();
+      setIsLoading(true);
+      setLoadError(null);
+      try {
+        const biz = await businessService.getActiveBusiness();
+        setActiveBiz(biz);
+        const bizId = biz?.businessId || await businessService.getActiveBusinessId();
 
-      const currentlyOnTrial = biz ? biz.planStatus !== 'active' : true;
+        const isLoc = typeof window !== 'undefined' && biz && (
+          localStorage.getItem(`pixora_plan_active_${biz.id}`) === 'true' ||
+          localStorage.getItem(`pixora_plan_active_${biz.businessId}`) === 'true' ||
+          localStorage.getItem(`pixora_plan_active_${biz.slug}`) === 'true'
+        );
+        const currentlyOnTrial = biz ? (biz.planStatus !== 'active' && !isLoc) : true;
 
-      // Load saved settings if any
-      const saved = localStorage.getItem(`pixora_autoreply_${bizId}`);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          // If on trial, auto-reply MUST remain false
-          if (currentlyOnTrial) {
-            setIsEnabled(false);
-          } else if (typeof parsed.isEnabled === 'boolean') {
-            setIsEnabled(parsed.isEnabled);
-          }
-          if (parsed.tone) setSelectedTone(parsed.tone);
-          if (parsed.lang) setSelectedLang(parsed.lang);
-          if (parsed.instructions) setCustomInstructions(parsed.instructions);
-          if (parsed.fiveStar) setFiveStarTemplate(parsed.fiveStar);
-          if (parsed.fourStar) setFourStarTemplate(parsed.fourStar);
-          if (parsed.threeStar) setThreeStarTemplate(parsed.threeStar);
-        } catch (e) {}
-      } else if (currentlyOnTrial) {
-        setIsEnabled(false);
-      }
+        // Load saved settings if any
+        const saved = localStorage.getItem(`pixora_autoreply_${bizId}`);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            // If on trial, auto-reply MUST remain false
+            if (currentlyOnTrial) {
+              setIsEnabled(false);
+            } else if (typeof parsed.isEnabled === 'boolean') {
+              setIsEnabled(parsed.isEnabled);
+            }
+            if (parsed.tone) setSelectedTone(parsed.tone);
+            if (parsed.lang) setSelectedLang(parsed.lang);
+            if (parsed.instructions) setCustomInstructions(parsed.instructions);
+            if (parsed.fiveStar) setFiveStarTemplate(parsed.fiveStar);
+            if (parsed.fourStar) setFourStarTemplate(parsed.fourStar);
+            if (parsed.threeStar) setThreeStarTemplate(parsed.threeStar);
+          } catch (e) {}
+        } else if (currentlyOnTrial) {
+          setIsEnabled(false);
+        }
 
-      // Load real reviews that have replies and check connection status
-      const [reviews, connInfo] = await Promise.all([
-        reviewService.getReviews(bizId),
-        googleBusinessProfileService.getConnectionStatus(biz),
-      ]);
-      const replied = reviews.filter(r => r.replyStatus === 'replied' || r.replyStatus === 'auto_replied');
-      setRecentReplies(replied);
+        // Load real reviews that have replies and check connection status
+        const [reviews, connInfo] = await Promise.all([
+          reviewService.getReviews(bizId),
+          googleBusinessProfileService.getConnectionStatus(biz),
+        ]);
+        const replied = reviews.filter(r => r.replyStatus === 'replied' || r.replyStatus === 'auto_replied');
+        setRecentReplies(replied);
 
-      if (connInfo.status === 'connected') {
-        setGoogleStatus('connected');
-      } else if (connInfo.status === 'reconnect_required') {
-        setGoogleStatus('requires_auth');
-      } else {
-        setGoogleStatus(biz?.googlePlaceId ? 'connected' : 'not_connected');
+        if (connInfo.status === 'connected') {
+          setGoogleStatus('connected');
+        } else if (connInfo.status === 'reconnect_required') {
+          setGoogleStatus('requires_auth');
+        } else {
+          setGoogleStatus(biz?.googlePlaceId ? 'connected' : 'not_connected');
+        }
+      } catch (err) {
+        console.error('Failed to load auto-reply settings:', err);
+        setLoadError('Auto Reply settings are temporarily unavailable.');
+      } finally {
+        setIsLoading(false);
       }
     }
     loadData();
-  }, []);
+
+    const handleActivated = () => {
+      setActiveBiz(prev => prev ? { ...prev, planStatus: 'active' } : null);
+      setShowUpgradeModal(false);
+    };
+    window.addEventListener('pixora:dashboard_activated', handleActivated);
+    return () => window.removeEventListener('pixora:dashboard_activated', handleActivated);
+  }, [loadAttempt]);
 
   const handleToggle = () => {
     if (isTrial) {
@@ -143,7 +180,7 @@ export default function AutoReplyPage() {
         setActiveBiz({
           ...activeBiz,
           planStatus: 'active',
-          trialExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+          trialExpiresAt: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString(),
         });
       }
       setIsEnabled(true);
@@ -216,6 +253,14 @@ export default function AutoReplyPage() {
 
   const bizName = activeBiz?.name || 'My Business';
 
+  if (isLoading) {
+    return <PortalLoadingState label="Loading Auto Reply settings" />;
+  }
+
+  if (loadError) {
+    return <PortalErrorState description={loadError} onRetry={() => setLoadAttempt((attempt) => attempt + 1)} />;
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10 max-w-5xl mx-auto">
       
@@ -244,6 +289,8 @@ export default function AutoReplyPage() {
               isEnabled && !isTrial ? 'bg-blue-600' : 'bg-slate-300'
             }`}
             title={isTrial ? 'Auto Reply is turned off for trial accounts. Click to upgrade.' : undefined}
+            aria-label={isTrial ? 'Auto Reply requires an active plan' : 'Toggle Auto Reply'}
+            aria-pressed={isEnabled && !isTrial}
           >
             <div className={`w-4 h-4 bg-white rounded-full absolute top-1 shadow-sm transition-transform ${
               isEnabled && !isTrial ? 'right-1' : 'left-1'
@@ -294,7 +341,7 @@ export default function AutoReplyPage() {
                 className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all cursor-pointer whitespace-nowrap"
               >
                 <Crown className="w-4 h-4 text-amber-300" />
-                <span>View 1-Year Pricing Options</span>
+                <span>View 2-Year Pricing Options</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <a
@@ -315,14 +362,14 @@ export default function AutoReplyPage() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Plan Option 1</span>
-                  <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">1 Year Only</span>
+                  <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">2 Years Only</span>
                 </div>
                 <div className="flex items-baseline gap-2 mb-1.5">
                   <span className="text-2xl font-extrabold text-slate-900">₹2,599</span>
-                  <span className="text-xs text-slate-500 font-medium">/ 1 Year (Without NFC Card)</span>
+                  <span className="text-xs text-slate-500 font-medium">/ 2 Years (Without NFC Card)</span>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed mb-3">
-                  Full software suite for 1 location. Turns on the AI Auto Reply system for Google Reviews for 1 full year.
+                  Full software suite for 1 location. Turns on the AI Auto Reply system for Google Reviews for 2 full years.
                 </p>
                 <div className="text-[11px] text-slate-700 space-y-1 mb-4">
                   <div className="flex items-center gap-1.5 text-emerald-700 font-semibold">
@@ -331,7 +378,7 @@ export default function AutoReplyPage() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>1 Year Software Validity</span>
+                    <span>2 Years Software Validity</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-slate-500">
                     <span className="w-3.5 text-center font-bold text-slate-400">✕</span>
@@ -339,14 +386,20 @@ export default function AutoReplyPage() {
                   </div>
                 </div>
               </div>
-              <a
-                href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I want to activate the ₹2,599 1-Year Plan (Without NFC Card) for ${bizName} to turn on Auto Reply.`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold text-center transition-colors"
+              <button
+                type="button"
+                onClick={() => {
+                  setGatewayPlan({
+                    planId: 'plan_2year_software',
+                    planName: 'Standard 2-Year Plan',
+                    amount: 2599,
+                  });
+                  setShowGatewayModal(true);
+                }}
+                className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold text-center transition-colors cursor-pointer"
               >
-                Activate ₹2,599 Plan (1 Year)
-              </a>
+                Activate ₹2,599 Plan Online
+              </button>
             </div>
 
             {/* Plan 2: 2,999 With NFC */}
@@ -398,14 +451,20 @@ export default function AutoReplyPage() {
                   </div>
                 </div>
               </div>
-              <a
-                href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I want to claim the ₹2,999 Lifetime Free Access Plan (First 100 Accounts Offer + NFC Review Card) for ${bizName} to turn on Auto Reply.`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold text-center transition-colors shadow-sm"
+              <button
+                type="button"
+                onClick={() => {
+                  setGatewayPlan({
+                    planId: 'plan_pro_nfc_lifetime',
+                    planName: 'Pro Plan + NFC Card (Lifetime Deal)',
+                    amount: 2999,
+                  });
+                  setShowGatewayModal(true);
+                }}
+                className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold text-center transition-colors cursor-pointer shadow-xs"
               >
-                Claim ₹2,999 Lifetime Plan (With NFC Card)
-              </a>
+                Claim Lifetime + NFC Online (₹2,999)
+              </button>
             </div>
           </div>
         </div>
@@ -417,6 +476,8 @@ export default function AutoReplyPage() {
           <button
             key={i}
             onClick={() => setActiveTab(i)}
+            aria-selected={activeTab === i}
+            role="tab"
             className={cn(
               'px-4 py-2.5 text-xs sm:text-sm font-semibold whitespace-nowrap border-b-2 transition-colors cursor-pointer',
               activeTab === i
@@ -656,7 +717,7 @@ export default function AutoReplyPage() {
       )}
 
       {/* Upgrade / Plan Selection Modal */}
-      {showUpgradeModal && (
+      {showUpgradeModal && !isAccountUpgraded && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto no-scrollbar">
             <button
@@ -674,7 +735,7 @@ export default function AutoReplyPage() {
                 Activate Active Plan to Turn On Auto Reply
               </h3>
               <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto">
-                Auto Reply is turned off for trial accounts. Choose an active 1-year plan below to activate 24/7 automated Google review replies.
+                Auto Reply is turned off for trial accounts. Choose an active 2-year plan below to activate 24/7 automated Google review replies.
               </p>
             </div>
 
@@ -685,10 +746,10 @@ export default function AutoReplyPage() {
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Standard Plan</span>
                   <div className="flex items-baseline gap-1.5 mb-1">
                     <span className="text-3xl font-extrabold text-slate-900">₹2,599</span>
-                    <span className="text-xs text-slate-500 font-semibold">/ 1 Year</span>
+                    <span className="text-xs text-slate-500 font-semibold">/ 2 Years</span>
                   </div>
                   <span className="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-slate-200 text-slate-700 mb-3">
-                    Without NFC Card · 1 Year Only
+                    Without NFC Card · 2 Years Only
                   </span>
                   <div className="text-xs text-slate-600 space-y-2 mb-4">
                     <div className="flex items-center gap-1.5 text-emerald-700 font-semibold">
@@ -701,22 +762,30 @@ export default function AutoReplyPage() {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>1 Year Software Access</span>
+                      <span>2 Years Software Access</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-400">
                       <span>✕ No physical card included</span>
                     </div>
                   </div>
                 </div>
-                <a
-                  href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I would like to activate the ₹2,599 1-Year Plan (Without NFC Card) for ${bizName}.`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs flex items-center justify-center gap-2 transition-all"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUpgradeModal(false);
+                    setGatewayPlan({
+                      planId: 'plan_2year_software',
+                      planName: 'Standard 2-Year Plan',
+                      amount: 2599,
+                    });
+                    setShowGatewayModal(true);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
-                  <span>Activate ₹2,599 Plan</span>
+                  <CreditCard className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Activate ₹2,599 Plan Online</span>
                   <ArrowRight className="w-3.5 h-3.5" />
-                </a>
+                </button>
               </div>
 
               {/* Option 2: 2,999 With NFC */}
@@ -769,15 +838,23 @@ export default function AutoReplyPage() {
                     </div>
                   </div>
                 </div>
-                <a
-                  href={`https://wa.me/919257378047?text=${encodeURIComponent(`Hi Pixora! I would like to claim the ₹2,999 Lifetime Free Access Plan (First 100 Accounts Offer + NFC Review Card) for ${bizName}.`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUpgradeModal(false);
+                    setGatewayPlan({
+                      planId: 'plan_pro_nfc_lifetime',
+                      planName: 'Pro Plan + NFC Card (Lifetime Offer)',
+                      amount: 2999,
+                    });
+                    setShowGatewayModal(true);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
                 >
-                  <span>Claim ₹2,999 Lifetime Plan + NFC</span>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Claim ₹2,999 Lifetime Plan Online</span>
                   <ArrowRight className="w-3.5 h-3.5" />
-                </a>
+                </button>
               </div>
             </div>
 
@@ -790,7 +867,7 @@ export default function AutoReplyPage() {
                 </h4>
               </div>
               <p className="text-[11px] sm:text-xs text-slate-600 mb-3 leading-relaxed">
-                Enter your 1-year activation license key below to instantly activate your dashboard and turn on 24/7 AI Google review auto-replies.
+                Enter your 2-year activation license key below to instantly activate your dashboard and turn on 24/7 AI Google review auto-replies.
               </p>
               <div className="flex flex-col sm:flex-row gap-2">
                 <input
@@ -843,4 +920,3 @@ export default function AutoReplyPage() {
     </div>
   );
 }
-

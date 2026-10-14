@@ -7,25 +7,41 @@ import { Input } from '@/components/ui/input';
 import { Users, Search, Phone, Mail, Star, ExternalLink, Calendar, ShieldCheck, Trash2 } from 'lucide-react';
 import { customerService, businessService } from '@/services';
 import { Customer, Business } from '@/types';
+import {
+  PortalCard,
+  PortalErrorState,
+  PortalLoadingState,
+  PortalPageHeader,
+} from '@/components/client-portal/PortalUI';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [activeBiz, setActiveBiz] = useState<Business | null>(null);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     async function loadData() {
-      const biz = await businessService.getActiveBusiness();
-      setActiveBiz(biz);
-      const bizId = biz?.businessId || await businessService.getActiveBusinessId();
+      setIsLoading(true);
+      setLoadError(null);
+      try {
+        const biz = await businessService.getActiveBusiness();
+        setActiveBiz(biz);
+        const bizId = biz?.businessId || await businessService.getActiveBusinessId();
 
-      const data = await customerService.getCustomers(bizId);
-      setCustomers(data);
-      setIsLoading(false);
+        const data = await customerService.getCustomers(bizId);
+        setCustomers(data);
+      } catch (err) {
+        console.error('Failed to load customers:', err);
+        setLoadError('Customer records are temporarily unavailable.');
+      } finally {
+        setIsLoading(false);
+      }
     }
     loadData();
-  }, []);
+  }, [loadAttempt]);
 
   const filteredCustomers = customers.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -33,23 +49,27 @@ export default function CustomersPage() {
     (c.email && c.email.toLowerCase().includes(search.toLowerCase()))
   );
 
+  if (isLoading) {
+    return <PortalLoadingState label="Loading customer directory" />;
+  }
+
+  if (loadError) {
+    return <PortalErrorState description={loadError} onRetry={() => setLoadAttempt((attempt) => attempt + 1)} />;
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-        <div>
-          <h1 className="text-2xl font-serif font-bold text-gray-900">Customer Directory</h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-            Verified diner contacts captured through QR review funnels and private feedback channels.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-semibold text-slate-700">
+      <PortalPageHeader
+        eyebrow="Relationship workspace"
+        title="Customer Directory"
+        description="Verified customer contacts captured through QR review funnels and private feedback channels."
+        actions={
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm">
             Total Captured: <strong className="text-slate-900">{customers.length}</strong>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {customers.length === 0 ? (
         /* Empty State */
@@ -77,7 +97,7 @@ export default function CustomersPage() {
         </div>
       ) : (
         /* Customers Table */
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <PortalCard className="overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex items-center justify-between gap-4">
             <div className="relative w-full sm:w-80">
               <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -173,7 +193,7 @@ export default function CustomersPage() {
               </tbody>
             </table>
           </div>
-        </div>
+        </PortalCard>
       )}
     </div>
   );

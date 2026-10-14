@@ -25,11 +25,10 @@ export default function PostOnGooglePage() {
   const routeParams = useParams();
   const businessSlug = (routeParams?.businessSlug as string) || 'your-business';
 
-  const [reviewText, setReviewText] = useState(
-    'Amazing food and wonderful experience at Your Business! The paneer tikka and thali were delicious. The ambience is beautiful and the staff is very polite and welcoming. Will surely visit again!'
-  );
+  const [reviewText, setReviewText] = useState('');
   const [rating, setRating] = useState(5);
   const [business, setBusiness] = useState<Business | null>(null);
+  const [isLoadingBusiness, setIsLoadingBusiness] = useState(true);
 
   // Architecture state
   const [copied, setCopied] = useState(false);
@@ -38,12 +37,26 @@ export default function PostOnGooglePage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const text = sessionStorage.getItem('final_review_text');
-    const storedRating = sessionStorage.getItem('temp_rating');
-    if (text) setReviewText(text);
-    if (storedRating) setRating(parseInt(storedRating));
+    let isActive = true;
+    Promise.resolve().then(() => {
+      const text = sessionStorage.getItem('final_review_text');
+      const storedRating = sessionStorage.getItem('temp_rating');
+      if (!isActive) return;
+      if (text) setReviewText(text);
+      if (storedRating) setRating(parseInt(storedRating));
+    });
 
-    businessService.getBusinessBySlug(businessSlug).then(setBusiness);
+    businessService.getBusinessBySlug(businessSlug)
+      .then((result) => {
+        if (isActive) setBusiness(result);
+      })
+      .finally(() => {
+        if (isActive) setIsLoadingBusiness(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
   }, [businessSlug]);
 
   /**
@@ -128,6 +141,7 @@ export default function PostOnGooglePage() {
    * 3. Activates the on-screen posting assistant
    */
   const handlePost = async () => {
+    if (!reviewText.trim()) return;
     setIsPosting(true);
 
     // 1. Copy review text to clipboard
@@ -161,22 +175,20 @@ export default function PostOnGooglePage() {
    * User confirms review has been posted on Google
    */
   const handleFinished = () => {
-    analyticsService.trackEvent('experience_submitted', { slug: businessSlug, rating });
+    analyticsService.trackEvent('google_handoff_completed', { slug: businessSlug, rating });
     router.push(`/f/${businessSlug}/thank-you`);
   };
 
   const primaryColor = business?.theme?.primaryColor || '#0B3D2E';
-  const businessName = business?.name || 'Your Business';
-  const category = business?.category || 'Pure Vegetarian Restaurant';
-  const city = business?.city || 'Jaipur';
+  const businessName = isLoadingBusiness ? 'Loading business…' : business?.name || 'This business';
 
   return (
-    <div className="flex flex-col animate-in fade-in duration-500 pb-10 w-full max-w-sm mx-auto relative z-10">
+    <div className="relative z-10 mx-auto flex w-full max-w-sm flex-col pb-10 animate-in fade-in duration-500">
       
       {/* ── Floating Notification Toast ── */}
       {toastMessage && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-3 duration-300">
-          <div className="bg-slate-900/95 text-white backdrop-blur-md px-4 py-2.5 rounded-full shadow-2xl border border-white/20 text-xs font-semibold flex items-center gap-2">
+        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 animate-in fade-in slide-in-from-top-3 duration-300" role="status" aria-live="polite">
+          <div className="flex items-center gap-2 rounded-full border border-white/20 bg-slate-900/95 px-4 py-2.5 text-xs font-semibold text-white shadow-2xl backdrop-blur-md">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>{toastMessage}</span>
           </div>
@@ -187,14 +199,14 @@ export default function PostOnGooglePage() {
       <div className="flex items-center justify-between mb-4 px-1 text-white">
         <button 
           onClick={() => router.back()}
-          className="flex items-center gap-1 text-xs font-semibold text-white/90 hover:text-white bg-black/25 px-2.5 py-1.5 rounded-full border border-white/10 transition cursor-pointer"
+           className="funnel-focus-ring flex cursor-pointer items-center gap-1 rounded-full border border-white/10 bg-black/25 px-2.5 py-1.5 text-xs font-semibold text-white/90 transition hover:text-white"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
           <span>Back</span>
         </button>
 
         {copied && (
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-300 bg-emerald-950/60 border border-emerald-400/30 px-3 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-950/60 px-3 py-1 text-[11px] font-semibold text-emerald-300">
             <Check className="w-3 h-3 text-emerald-400" />
             <span>Review Copied</span>
           </span>
@@ -202,7 +214,7 @@ export default function PostOnGooglePage() {
       </div>
 
       {/* ── Stepper Header (1. Your Experience · 2. AI Suggestion · 3. Post on Google) ── */}
-      <div className="flex items-center justify-between mb-6 px-3 text-xs font-medium text-white/90">
+       <div className="mb-6 flex items-center justify-between px-3 text-xs font-medium text-white/90" aria-label="Review progress">
         <div className="flex flex-col items-center">
           <div className="w-7 h-7 rounded-full bg-white/20 border border-white/60 flex items-center justify-center mb-1 text-white text-[11px] font-bold">
             1
@@ -218,7 +230,7 @@ export default function PostOnGooglePage() {
         </div>
         <div className="h-px bg-white/30 flex-grow mx-2 mt-[-18px]"></div>
         <div className="flex flex-col items-center">
-          <div className="w-7 h-7 rounded-full bg-[#0B3D2E] border-2 border-[#D4AF37] flex items-center justify-center mb-1 text-white text-[11px] font-bold shadow-md">
+           <div className="mb-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#D4AF37] bg-[#0B3D2E] text-[11px] font-bold text-white shadow-md" aria-current="step">
             3
           </div>
           <span className="text-[10px] font-bold text-white">Post on Google</span>
@@ -226,7 +238,7 @@ export default function PostOnGooglePage() {
       </div>
 
       {/* ── Main Container Card ── */}
-      <div className="bg-[#FAF7F2]/98 backdrop-blur-md rounded-[32px] p-5 sm:p-6 shadow-2xl w-full flex flex-col items-center border border-white/40">
+       <div className="flex w-full flex-col items-center rounded-[32px] border border-white/50 bg-[#FAF7F2]/98 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.24)] backdrop-blur-md sm:p-6">
         
         {/* Google G Logo with Confetti Rays */}
         <div className="relative w-16 h-16 mb-2 flex items-center justify-center">
@@ -235,7 +247,7 @@ export default function PostOnGooglePage() {
           <div className="absolute top-4 -left-2 w-3 h-1 bg-rose-500 rotate-15 rounded-full"></div>
           <div className="absolute top-4 -right-2 w-3 h-1 bg-blue-500 -rotate-15 rounded-full"></div>
           
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-md">
             <svg viewBox="0 0 24 24" width="28" height="28">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.31-1.03 2.41-2.16 3.16v2.62h3.49c2.04-1.89 3.22-4.67 3.22-7.79z" fill="#4285F4" />
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.49-2.62c-.98.66-2.23 1.05-3.79 1.05-2.91 0-5.38-1.97-6.26-4.62H2.12v2.71C3.94 20.48 7.68 23 12 23z" fill="#34A853" />
@@ -251,14 +263,14 @@ export default function PostOnGooglePage() {
         >
           {hasTriggeredGoogle ? 'Just 1 Click on Google!' : 'Almost there!'}
         </h2>
-        <p className="text-xs text-center text-gray-600 mb-5 max-w-[280px] leading-relaxed">
+         <p className="mb-5 max-w-[280px] text-center text-xs leading-relaxed text-gray-600">
           {hasTriggeredGoogle
             ? 'Your review is copied to your clipboard. Paste it in Google and click Post!'
             : 'Your review is ready. When you tap Post, it will copy automatically so you just paste & submit on Google.'}
         </p>
 
         {/* Card 1: Your Selected Review with [✎ Edit] & [📋 Copy] */}
-        <Card className="w-full border border-gray-100 shadow-xs p-4 rounded-2xl mb-3 bg-white">
+         <Card className="mb-3 w-full rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-bold text-gray-900 font-serif text-sm">Your Selected Review</h3>
             
@@ -266,7 +278,7 @@ export default function PostOnGooglePage() {
               <button 
                 type="button"
                 onClick={handleManualCopy}
-                className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-200 transition cursor-pointer flex items-center gap-1"
+                 className="funnel-focus-ring flex cursor-pointer items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 transition hover:bg-emerald-100 hover:text-emerald-950"
                 title="Copy to clipboard"
               >
                 {copied ? (
@@ -284,7 +296,7 @@ export default function PostOnGooglePage() {
 
               <button 
                 type="button"
-                className="text-xs text-gray-500 flex items-center font-medium hover:text-gray-900 transition cursor-pointer"
+                 className="funnel-focus-ring flex cursor-pointer items-center rounded-md text-xs font-medium text-gray-500 transition hover:text-gray-900"
                 onClick={() => router.back()}
               >
                 <Edit2 className="w-3 h-3 mr-1 text-stone-600" />
@@ -304,7 +316,13 @@ export default function PostOnGooglePage() {
         </Card>
 
         {/* ── IF USER HAS ALREADY TAPPED GOOGLE: Show Posting Assistant Card ── */}
-        {hasTriggeredGoogle ? (
+         {!reviewText.trim() ? (
+           <div className="mb-2 w-full rounded-2xl border border-dashed border-amber-300 bg-amber-50/80 p-4 text-center">
+             <p className="text-sm font-semibold text-amber-950">No review text selected yet</p>
+             <p className="mt-1 text-xs leading-relaxed text-amber-900/75">Go back to the previous step to write or choose your own review text.</p>
+             <Button type="button" variant="outline" onClick={() => router.back()} className="funnel-focus-ring mt-3 h-9 rounded-full border-amber-300 px-4 text-xs text-amber-950">Back to edit</Button>
+           </div>
+         ) : hasTriggeredGoogle ? (
           <div className="w-full space-y-3 mb-2 animate-in fade-in duration-300">
             {/* Guide Steps Box */}
             <div className="bg-emerald-50/70 rounded-2xl p-4 border border-emerald-200/90 text-left space-y-3">
@@ -325,7 +343,7 @@ export default function PostOnGooglePage() {
                   </div>
                   <div className="flex-1">
                     <p className="font-semibold text-slate-900">Review Copied to Clipboard</p>
-                    <p className="text-[11px] text-stone-500">Your 5-star review is saved in memory.</p>
+                       <p className="text-[11px] text-stone-500">Your selected review text is ready to paste.</p>
                   </div>
                 </div>
 
@@ -334,9 +352,9 @@ export default function PostOnGooglePage() {
                     2
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-slate-900">Paste &amp; Tap "Post"</p>
+                     <p className="font-semibold text-slate-900">Paste &amp; Tap &quot;Post&quot;</p>
                     <p className="text-[11px] text-stone-500">
-                      Long-press in Google's review box, select <strong>Paste</strong>, then tap the blue <strong>Post</strong> button!
+                       Long-press in Google&apos;s review box, select <strong>Paste</strong>, then tap the blue <strong>Post</strong> button!
                     </p>
                   </div>
                 </div>
@@ -347,7 +365,7 @@ export default function PostOnGooglePage() {
                 <button
                   type="button"
                   onClick={handleManualCopy}
-                  className="flex-1 py-2 px-3 rounded-xl bg-white border border-emerald-300 text-emerald-900 font-semibold text-xs hover:bg-emerald-100/50 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                   className="funnel-focus-ring flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-emerald-300 bg-white px-3 py-2 text-xs font-semibold text-emerald-900 transition hover:bg-emerald-100/50"
                 >
                   <Copy className="w-3 h-3 text-emerald-700" />
                   <span>{copied ? 'Copied Again ✓' : 'Copy Again'}</span>
@@ -359,7 +377,7 @@ export default function PostOnGooglePage() {
                     const url = resolveGoogleReviewUrl();
                     if (typeof window !== 'undefined') window.open(url, '_blank');
                   }}
-                  className="flex-1 py-2 px-3 rounded-xl bg-white border border-slate-300 text-slate-800 font-semibold text-xs hover:bg-slate-50 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                   className="funnel-focus-ring flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 transition hover:bg-slate-50"
                 >
                   <ExternalLink className="w-3 h-3 text-slate-600" />
                   <span>Re-open Google</span>
@@ -367,16 +385,16 @@ export default function PostOnGooglePage() {
               </div>
             </div>
 
-            {/* Done! I've Posted Button */}
+             {/* Return to thank-you without claiming Google submission */}
             <Button
-              className="w-full text-base font-semibold shadow-lg text-white rounded-full h-13 transition-all duration-300 cursor-pointer"
+               className="funnel-focus-ring h-13 w-full cursor-pointer rounded-full text-base font-semibold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
               style={{ backgroundColor: primaryColor }}
               size="lg"
               onClick={handleFinished}
             >
               <div className="flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-5 h-5" />
-                <span>Done! I've Posted My Review</span>
+                <span>Continue to Thank You</span>
                 <span>→</span>
               </div>
             </Button>
@@ -390,40 +408,40 @@ export default function PostOnGooglePage() {
             </div>
 
             {/* Card 2: Google Preview Card */}
-            <Card className="w-full border border-gray-100 shadow-xs p-4 rounded-2xl mb-5 bg-white">
+             <Card className="mb-5 w-full rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
               <div className="flex items-center gap-2.5 mb-3">
-                <div className="w-10 h-10 rounded-full relative overflow-hidden bg-black flex-shrink-0 border border-gray-200">
-                  <Image 
-                    src={business?.theme?.logo || '/placeholder.png'} 
-                    alt={businessName} 
+                   <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-slate-100">
+                    <Image
+                      src={business?.theme?.logo || '/placeholder.png'}
+                      alt={businessName}
                     fill 
                     unoptimized
                     className="object-cover" 
                   />
                 </div>
-                <div className="truncate">
-                  <h4 className="font-bold text-gray-900 text-xs leading-tight truncate">{businessName}</h4>
-                  <div className="flex items-center text-[11px] mt-0.5">
-                    <span className="font-bold mr-1 text-gray-800">4.8</span>
-                    <div className="flex gap-0.5 mr-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-2.5 h-2.5 fill-[#F4B400] text-[#F4B400]" />
-                      ))}
-                    </div>
-                    <span className="text-gray-400 text-[10px]">(1,248 reviews)</span>
-                  </div>
-                  <p className="text-[10px] text-gray-500 truncate mt-0.5">{category} · {city}</p>
+                 <div className="min-w-0 truncate">
+                   <h4 className="font-bold text-gray-900 text-xs leading-tight truncate">{businessName}</h4>
+                   {business?.rating || business?.reviewsCount ? (
+                     <div className="mt-0.5 flex items-center text-[11px]">
+                       {business.rating ? <span className="mr-1 font-bold text-gray-800">{business.rating.toFixed(1)}</span> : null}
+                       {business.rating ? <div className="mr-1 flex gap-0.5" aria-label={`${business.rating.toFixed(1)} out of 5 stars`}>
+                         {[...Array(5)].map((_, i) => <Star key={i} className={`h-2.5 w-2.5 ${i < Math.round(business.rating || 0) ? 'fill-[#F4B400] text-[#F4B400]' : 'text-gray-200'}`} />)}
+                       </div> : null}
+                       {business.reviewsCount ? <span className="text-[10px] text-gray-400">({business.reviewsCount.toLocaleString()} reviews)</span> : null}
+                     </div>
+                   ) : null}
+                   {(business?.category || business?.city) && <p className="mt-0.5 truncate text-[10px] text-gray-500">{[business.category, business.city].filter(Boolean).join(' · ')}</p>}
                 </div>
               </div>
               
               {/* User Review Preview Sub-box */}
               <div className="bg-gray-50/90 rounded-xl p-3 border border-gray-100">
                 <div className="flex items-center gap-2 mb-1.5">
-                  <div className="w-6 h-6 rounded-full bg-[#5D707F] text-white flex items-center justify-center text-[10px] font-bold">
-                    R
+                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#5D707F] text-[10px] font-bold text-white">
+                     Y
                   </div>
                   <div>
-                    <h5 className="font-semibold text-[11px] text-gray-900 leading-tight">Rohan Mehta</h5>
+                     <h5 className="font-semibold text-[11px] leading-tight text-gray-900">Your review</h5>
                     <p className="text-[9px] text-gray-500 flex items-center gap-0.5">
                       Posting publicly on Google <Info className="w-2.5 h-2.5 inline opacity-70" />
                     </p>
@@ -442,7 +460,7 @@ export default function PostOnGooglePage() {
 
             {/* Large Pill Action Button: [G] Post on Google → */}
             <Button 
-              className="w-full text-base font-semibold shadow-lg text-white rounded-full h-13 transition-all duration-300 disabled:opacity-50 cursor-pointer"
+               className="funnel-focus-ring h-13 w-full cursor-pointer rounded-full text-base font-semibold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
               style={{ backgroundColor: primaryColor }}
               size="lg"
               onClick={handlePost}
@@ -475,8 +493,8 @@ export default function PostOnGooglePage() {
         {/* Security / No Login Guarantee Badge */}
         <div className="bg-[#EBF2EE] rounded-xl py-2.5 px-3.5 mt-3.5 w-full flex items-center gap-2 border border-[#D1E0D9]/80">
           <CheckCircle2 className="w-4 h-4 text-[#0B3D2E] shrink-0" />
-          <p className="text-[11px] text-[#0B3D2E] font-medium leading-tight">
-            Review is copied automatically so you only need to paste and click Post on Google.
+           <p className="text-[11px] font-medium leading-tight text-[#0B3D2E]">
+             The text is copied for you; you decide whether to paste and post it on Google.
           </p>
         </div>
       </div>

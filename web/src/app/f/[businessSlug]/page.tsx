@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Star, Zap, Bot, Clock, TrendingUp } from 'lucide-react';
+import { Star, Zap, Bot, Clock, ShieldCheck, ArrowRight } from 'lucide-react';
 import { businessService, analyticsService, normalizeBusinessCategory, getCatalogTerminology } from '@/services';
 import { Business } from '@/types';
 import { useParams } from 'next/navigation';
@@ -17,12 +17,35 @@ export default function BusinessLandingPage() {
   const [rating, setRating] = useState<number>(0);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [business, setBusiness] = useState<Business | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   
   const terminology = getCatalogTerminology(business?.category);
 
   useEffect(() => {
     analyticsService.trackEvent('landing_view', { slug: businessSlug });
-    businessService.getBusinessBySlug(businessSlug).then(setBusiness);
+    let isActive = true;
+
+    Promise.resolve().then(() => {
+      if (isActive) {
+        setIsLoading(true);
+        setLoadError(false);
+      }
+    });
+    businessService.getBusinessBySlug(businessSlug)
+      .then((result) => {
+        if (isActive) setBusiness(result);
+      })
+      .catch(() => {
+        if (isActive) setLoadError(true);
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
   }, [businessSlug]);
 
   const handleContinue = () => {
@@ -38,33 +61,66 @@ export default function BusinessLandingPage() {
   };
 
   const primaryColor = business?.theme?.primaryColor || '#0B3D2E';
-  const secondaryColor = business?.theme?.secondaryColor || '#D4AF37';
-  const businessName = business?.name || 'Your Business';
-  const catConfig = business?.category ? businessService : null; // check
   const categoryConfig = normalizeBusinessCategory(business?.category);
 
+  if (isLoading) {
+    return (
+      <div className="mx-auto flex w-full max-w-sm flex-col gap-4" role="status" aria-live="polite">
+        <div className="space-y-3 text-center">
+          <div className="mx-auto h-8 w-3/4 rounded-full bg-white/20 funnel-skeleton" />
+          <div className="mx-auto h-3 w-2/3 rounded-full bg-white/15 funnel-skeleton" />
+        </div>
+        <div className="rounded-[28px] border border-white/20 bg-white/90 p-6 shadow-2xl backdrop-blur-md">
+          <div className="mx-auto mb-6 h-12 w-12 rounded-full bg-slate-200 funnel-skeleton" />
+          <div className="mb-3 h-3 rounded-full bg-slate-200 funnel-skeleton" />
+          <div className="mb-7 h-10 rounded-full bg-slate-100 funnel-skeleton" />
+          <div className="h-12 rounded-full bg-slate-200 funnel-skeleton" />
+          <span className="sr-only">Loading this business&apos;s review page…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError || !business) {
+    return (
+      <div className="mx-auto w-full max-w-sm rounded-[28px] border border-white/20 bg-white/95 p-7 text-center text-slate-900 shadow-2xl backdrop-blur-md" role="alert">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+          <ShieldCheck className="h-6 w-6" aria-hidden="true" />
+        </div>
+        <h2 className="font-serif text-2xl font-bold">This page is unavailable</h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+          We could not load this business&apos;s public experience right now. Please try the link again in a moment.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col items-center animate-in fade-in slide-in-from-bottom-3 duration-500 w-full max-w-sm mx-auto">
+    <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-1 animate-in fade-in slide-in-from-bottom-3 duration-500">
       
       {/* ── Main Question Title & Subtitle ── */}
-      <div className="text-center mb-6 text-white max-w-[320px]">
+      <div className="mb-6 max-w-[320px] text-center text-white">
+        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/80 backdrop-blur-sm">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]" aria-hidden="true" />
+          Your experience matters
+        </div>
         <h2 
-          className="text-3xl sm:text-4xl font-serif font-bold mb-3 leading-tight tracking-tight text-[#FAF5EB]"
+          className="font-serif text-3xl font-bold leading-tight tracking-tight text-[#FAF5EB] sm:text-4xl"
           style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
         >
           {categoryConfig.headline}
         </h2>
-        <p className="text-xs sm:text-sm text-stone-200/90 leading-relaxed font-light">
+        <p className="text-xs font-light leading-relaxed text-stone-200/90 sm:text-sm">
           {categoryConfig.subheadline}
         </p>
       </div>
 
       {/* ── Central White Review Card (Exact Reference Screenshot Layout) ── */}
-      <Card className="w-full rounded-[28px] p-6 shadow-2xl border-0 mb-6 bg-white/98 backdrop-blur-md">
+      <Card className="mb-5 w-full rounded-[28px] border border-white/70 bg-white/95 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.24)] backdrop-blur-md sm:p-7">
         
         {/* Google 'G' Logo Badge */}
         <div className="flex justify-center mb-5">
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md border border-gray-100">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-gray-100 bg-white shadow-md">
             <svg viewBox="0 0 24 24" width="26" height="26">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.31-1.03 2.41-2.16 3.16v2.62h3.49c2.04-1.89 3.22-4.67 3.22-7.79z" fill="#4285F4" />
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.49-2.62c-.98.66-2.23 1.05-3.79 1.05-2.91 0-5.38-1.97-6.26-4.62H2.12v2.71C3.94 20.48 7.68 23 12 23z" fill="#34A853" />
@@ -75,19 +131,20 @@ export default function BusinessLandingPage() {
         </div>
 
         {/* 5 Outline / Filled Gold Stars */}
-        <div className="flex justify-center gap-2 mb-6">
+        <div className="mb-6 flex justify-center gap-2" role="group" aria-label="Select a rating">
           {[1, 2, 3, 4, 5].map((star) => (
             <button
               key={star}
               type="button"
-              className="focus:outline-hidden transition-transform hover:scale-115 active:scale-125 cursor-pointer p-0.5"
+              className="funnel-focus-ring cursor-pointer rounded-lg p-1 transition-transform hover:scale-110 active:scale-125"
               onMouseEnter={() => setHoverRating(star)}
               onMouseLeave={() => setHoverRating(0)}
               onClick={() => setRating(star)}
               aria-label={`Rate ${star} stars`}
+              aria-pressed={rating === star}
             >
-              <Star
-                className={`w-9 h-9 sm:w-10 sm:h-10 transition-all duration-200 ${
+                  <Star
+                    className={`h-9 w-9 transition-all duration-200 sm:h-10 sm:w-10 ${
                   star <= (hoverRating || rating)
                     ? 'fill-[#F4B400] text-[#F4B400] drop-shadow-sm'
                     : 'text-[#E5A812] stroke-[#E5A812] fill-transparent hover:text-[#F4B400]'
@@ -100,10 +157,10 @@ export default function BusinessLandingPage() {
 
         {/* Pill Continue Button */}
         <Button 
-          className="w-full text-base font-semibold shadow-lg text-white rounded-full h-13 transition-all duration-300 disabled:opacity-50 cursor-pointer"
+          className="funnel-focus-ring h-13 w-full cursor-pointer rounded-full text-base font-semibold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
           style={{ 
             backgroundColor: rating > 0 ? primaryColor : '#0B3D2E',
-            boxShadow: rating > 0 ? '0 10px 25px -5px rgba(11, 61, 46, 0.4)' : undefined 
+            boxShadow: rating > 0 ? `0 14px 30px -8px ${primaryColor}99` : undefined
           }}
           size="lg"
           disabled={rating === 0}
@@ -114,26 +171,26 @@ export default function BusinessLandingPage() {
         </Button>
 
         {/* 3 Circular Micro-Features */}
-        <div className="grid grid-cols-3 gap-1 mt-7 pt-4 border-t border-gray-100 text-center">
+        <div className="mt-7 grid grid-cols-3 gap-2 border-t border-gray-100 pt-5 text-center">
           <div className="flex flex-col items-center">
-            <div className="w-8 h-8 rounded-full bg-[#FFF7ED] flex items-center justify-center mb-1.5 shadow-2xs border border-[#FED7AA]/50">
+            <div className="mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-full border border-[#FED7AA]/50 bg-[#FFF7ED] shadow-sm">
               <Zap className="w-4 h-4 text-[#D97706]" />
             </div>
-            <span className="text-[11px] font-semibold text-gray-800 leading-tight">Quick<br/>&amp; Easy</span>
+            <span className="text-[11px] font-semibold leading-tight text-gray-800">Quick<br/>&amp; easy</span>
           </div>
 
           <div className="flex flex-col items-center">
-            <div className="w-8 h-8 rounded-full bg-[#FFF7ED] flex items-center justify-center mb-1.5 shadow-2xs border border-[#FED7AA]/50">
+            <div className="mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-full border border-[#FED7AA]/50 bg-[#FFF7ED] shadow-sm">
               <Bot className="w-4 h-4 text-[#D97706]" />
             </div>
-            <span className="text-[11px] font-semibold text-gray-800 leading-tight">AI Helps<br/>You Write</span>
+            <span className="text-[11px] font-semibold leading-tight text-gray-800">Writing<br/>support</span>
           </div>
 
           <div className="flex flex-col items-center">
-            <div className="w-8 h-8 rounded-full bg-[#FFF7ED] flex items-center justify-center mb-1.5 shadow-2xs border border-[#FED7AA]/50">
+            <div className="mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-full border border-[#FED7AA]/50 bg-[#FFF7ED] shadow-sm">
               <Clock className="w-4 h-4 text-[#D97706]" />
             </div>
-            <span className="text-[11px] font-semibold text-gray-800 leading-tight">Takes<br/>30 Seconds</span>
+            <span className="text-[11px] font-semibold leading-tight text-gray-800">Private<br/>feedback path</span>
           </div>
         </div>
       </Card>
@@ -142,10 +199,10 @@ export default function BusinessLandingPage() {
       {business?.theme?.menuEnabled !== false && (
         <Link 
           href={`/f/${businessSlug}/menu`}
-          className="w-full mb-4 bg-white/90 hover:bg-white text-gray-800 rounded-2xl p-3.5 flex items-center justify-between text-xs font-semibold shadow-md border border-white/40 backdrop-blur-md transition-transform hover:scale-[1.01]"
+          className="funnel-focus-ring mb-4 flex w-full items-center justify-between rounded-2xl border border-white/40 bg-white/90 p-3.5 text-xs font-semibold text-gray-800 shadow-md backdrop-blur-md transition-transform hover:scale-[1.01] hover:bg-white"
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
+            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-100 text-xs font-bold text-amber-800">
               ✨
             </div>
             <div className="text-left">
@@ -157,25 +214,20 @@ export default function BusinessLandingPage() {
               </p>
             </div>
           </div>
-          <span className="font-bold text-xs" style={{ color: primaryColor }}>
-            Open →
+          <span className="flex items-center gap-1 text-xs font-bold" style={{ color: primaryColor }}>
+            Open <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </span>
         </Link>
       )}
 
       {/* ── Happy Customers Banner (Matches Reference Screenshot) ── */}
-      <div className="w-full bg-[#EAF2EC]/95 backdrop-blur-md rounded-[26px] p-3.5 flex items-center justify-between shadow-lg border border-[#D1E0D9]/80 mb-2">
-        <div className="flex -space-x-2.5 shrink-0">
-          <img src="https://i.pravatar.cc/100?u=priya" alt="Customer" className="w-9 h-9 rounded-full border-2 border-white shadow-xs object-cover" />
-          <img src="https://i.pravatar.cc/100?u=rohit" alt="Customer" className="w-9 h-9 rounded-full border-2 border-white shadow-xs object-cover" />
-          <img src="https://i.pravatar.cc/100?u=karan" alt="Customer" className="w-9 h-9 rounded-full border-2 border-white shadow-xs object-cover" />
+      <div className="mb-2 flex w-full items-center gap-3 rounded-[26px] border border-[#D1E0D9]/80 bg-[#EAF2EC]/95 p-3.5 shadow-lg backdrop-blur-md">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#D7E8DE]">
+          <ShieldCheck className="h-4 w-4 text-[#0B3D2E]" aria-hidden="true" />
         </div>
-        <div className="text-left ml-3 flex-grow truncate">
-          <p className="font-bold text-xs text-gray-900 leading-tight">Join our happy customers</p>
-          <p className="text-[11px] text-gray-600 truncate mt-0.5">Your review helps others choose with confidence.</p>
-        </div>
-        <div className="w-8 h-8 rounded-full bg-[#D7E8DE] flex items-center justify-center shrink-0 ml-2">
-          <TrendingUp className="w-4 h-4 text-[#0B3D2E]" />
+        <div className="min-w-0 text-left">
+          <p className="text-xs font-bold leading-tight text-gray-900">A direct line to this business</p>
+          <p className="mt-0.5 truncate text-[11px] text-gray-600">Share what went well or what could be better.</p>
         </div>
       </div>
 
