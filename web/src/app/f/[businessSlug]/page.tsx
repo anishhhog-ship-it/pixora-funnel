@@ -31,6 +31,13 @@ export default function BusinessLandingPage() {
         setIsLoading(true);
         setLoadError(false);
       }
+      const saved = sessionStorage.getItem('temp_rating');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed > 0 && parsed <= 5) {
+          setRating(parsed);
+        }
+      }
     });
     businessService.getBusinessBySlug(businessSlug)
       .then((result) => {
@@ -53,15 +60,35 @@ export default function BusinessLandingPage() {
       analyticsService.trackEvent('rating_selected', { rating });
       sessionStorage.setItem('temp_rating', rating.toString());
       if (rating <= 3) {
-        router.push(`/f/${businessSlug}/feedback`);
+        router.push(`/f/${businessSlug}/feedback?rating=${rating}`);
       } else {
-        router.push(`/f/${businessSlug}/review`);
+        router.push(`/f/${businessSlug}/review?rating=${rating}`);
       }
     }
   };
 
   const primaryColor = business?.theme?.primaryColor || '#0B3D2E';
   const categoryConfig = normalizeBusinessCategory(business?.category);
+
+  const getRatingFeedback = (val: number) => {
+    switch (val) {
+      case 5:
+        return { label: 'Outstanding Experience!', sub: 'Ready for 1-click Google review', badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+      case 4:
+        return { label: 'Very Good Experience!', sub: 'Ready for 1-click Google review', badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+      case 3:
+        return { label: 'Average / Fair Visit', sub: 'Help us improve with private feedback', badgeColor: 'bg-amber-50 text-amber-800 border-amber-200' };
+      case 2:
+        return { label: 'Below Expectations', sub: 'Direct private message to the owner', badgeColor: 'bg-orange-50 text-orange-800 border-orange-200' };
+      case 1:
+        return { label: 'Unsatisfactory', sub: 'Direct private resolution guaranteed', badgeColor: 'bg-rose-50 text-rose-800 border-rose-200' };
+      default:
+        return null;
+    }
+  };
+
+  const activeRating = hoverRating || rating;
+  const ratingFeedback = activeRating > 0 ? getRatingFeedback(activeRating) : null;
 
   if (isLoading) {
     return (
@@ -131,33 +158,54 @@ export default function BusinessLandingPage() {
         </div>
 
         {/* 5 Outline / Filled Gold Stars */}
-        <div className="mb-6 flex justify-center gap-2" role="group" aria-label="Select a rating">
+        <div className="mb-4 flex justify-center gap-2" role="group" aria-label="Select a rating">
           {[1, 2, 3, 4, 5].map((star) => (
             <button
               key={star}
               type="button"
-              className="funnel-focus-ring cursor-pointer rounded-lg p-1 transition-transform hover:scale-110 active:scale-125"
+              className={`funnel-focus-ring cursor-pointer rounded-xl p-1.5 transition-all duration-200 hover:scale-115 active:scale-95 ${
+                star <= (hoverRating || rating) ? 'scale-105' : 'opacity-85 hover:opacity-100'
+              }`}
               onMouseEnter={() => setHoverRating(star)}
               onMouseLeave={() => setHoverRating(0)}
               onClick={() => setRating(star)}
               aria-label={`Rate ${star} stars`}
               aria-pressed={rating === star}
             >
-                  <Star
-                    className={`h-9 w-9 transition-all duration-200 sm:h-10 sm:w-10 ${
+              <Star
+                className={`h-9 w-9 transition-all duration-200 sm:h-10 sm:w-10 ${
                   star <= (hoverRating || rating)
-                    ? 'fill-[#F4B400] text-[#F4B400] drop-shadow-sm'
+                    ? 'fill-[#F4B400] text-[#F4B400] drop-shadow-[0_4px_12px_rgba(244,180,0,0.45)]'
                     : 'text-[#E5A812] stroke-[#E5A812] fill-transparent hover:text-[#F4B400]'
                 }`}
-                strokeWidth={1.75}
+                strokeWidth={1.8}
               />
             </button>
           ))}
         </div>
 
+        {/* Dynamic Rating Feedback Badge */}
+        {ratingFeedback ? (
+          <div className="mb-5 flex flex-col items-center animate-in fade-in duration-200">
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold shadow-xs ${ratingFeedback.badgeColor}`}>
+              <span>{'★'.repeat(activeRating)}</span>
+              <span>{ratingFeedback.label}</span>
+            </span>
+            <span className="mt-1 text-[11px] font-medium text-stone-500">
+              {ratingFeedback.sub}
+            </span>
+          </div>
+        ) : (
+          <div className="mb-5 text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-medium text-stone-600">
+              <span>Tap a star to rate your visit</span>
+            </span>
+          </div>
+        )}
+
         {/* Pill Continue Button */}
         <Button 
-          className="funnel-focus-ring h-13 w-full cursor-pointer rounded-full text-base font-semibold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
+          className="funnel-focus-ring h-13 w-full cursor-pointer rounded-full text-base font-semibold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-40"
           style={{ 
             backgroundColor: rating > 0 ? primaryColor : '#0B3D2E',
             boxShadow: rating > 0 ? `0 14px 30px -8px ${primaryColor}99` : undefined
@@ -166,8 +214,10 @@ export default function BusinessLandingPage() {
           disabled={rating === 0}
           onClick={handleContinue}
         >
-          <span>Continue</span>
-          <span className="ml-2">→</span>
+          <span>
+            {rating === 5 ? 'Continue with 5 Stars' : rating > 0 ? `Continue with ${rating} Stars` : 'Select rating to continue'}
+          </span>
+          <span className="ml-2 font-bold">→</span>
         </Button>
 
         {/* 3 Circular Micro-Features */}

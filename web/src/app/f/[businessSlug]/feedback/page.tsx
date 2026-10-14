@@ -38,9 +38,18 @@ export default function PrivateFeedbackPage() {
 
   useEffect(() => {
     Promise.resolve().then(() => {
-      const storedRating = sessionStorage.getItem('temp_rating');
-      if (storedRating) setRating(parseInt(storedRating, 10));
-      const storedExp = sessionStorage.getItem('temp_experience');
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const urlRating = urlParams?.get('rating');
+      const urlExp = urlParams?.get('text');
+      const storedRating = urlRating || sessionStorage.getItem('temp_rating');
+      if (storedRating) {
+        const parsed = parseInt(storedRating, 10);
+        if (!isNaN(parsed) && parsed > 0 && parsed <= 5) {
+          setRating(parsed);
+          sessionStorage.setItem('temp_rating', parsed.toString());
+        }
+      }
+      const storedExp = urlExp || sessionStorage.getItem('temp_experience');
       if (storedExp) setMessage(storedExp);
     });
     businessService.getBusinessBySlug(businessSlug).then(setBusiness);

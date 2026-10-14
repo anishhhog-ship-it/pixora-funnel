@@ -48,8 +48,9 @@ export default function ReviewSuggestionsPage() {
 
   const handleProceedToGoogle = () => {
     const textToPost = customText || suggestions[selectedIndex] || '';
+    const storedRating = sessionStorage.getItem('temp_rating') || '5';
     sessionStorage.setItem('final_review_text', textToPost);
-    router.push(`/f/${businessSlug}/review/post`);
+    router.push(`/f/${businessSlug}/review/post?rating=${storedRating}&text=${encodeURIComponent(textToPost)}`);
   };
 
   const secondaryColor = business?.theme?.secondaryColor || '#D4AF37';

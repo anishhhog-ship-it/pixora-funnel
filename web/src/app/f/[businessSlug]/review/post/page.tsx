@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Star,
   Edit2,
@@ -32,32 +33,10 @@ export default function PostOnGooglePage() {
 
   // Architecture state
   const [copied, setCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [hasTriggeredGoogle, setHasTriggeredGoogle] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isActive = true;
-    Promise.resolve().then(() => {
-      const text = sessionStorage.getItem('final_review_text');
-      const storedRating = sessionStorage.getItem('temp_rating');
-      if (!isActive) return;
-      if (text) setReviewText(text);
-      if (storedRating) setRating(parseInt(storedRating));
-    });
-
-    businessService.getBusinessBySlug(businessSlug)
-      .then((result) => {
-        if (isActive) setBusiness(result);
-      })
-      .finally(() => {
-        if (isActive) setIsLoadingBusiness(false);
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [businessSlug]);
 
   /**
    * Robust clipboard copy utility with fallback for mobile webviews & non-HTTPS environments
@@ -95,6 +74,51 @@ export default function PostOnGooglePage() {
 
     return success;
   };
+
+  useEffect(() => {
+    let isActive = true;
+    Promise.resolve().then(() => {
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const urlText = urlParams?.get('text');
+      const urlRating = urlParams?.get('rating');
+      const text = urlText || sessionStorage.getItem('final_review_text') || '';
+      const storedRating = urlRating || sessionStorage.getItem('temp_rating');
+
+      if (!isActive) return;
+      if (text) {
+        setReviewText(text);
+        sessionStorage.setItem('final_review_text', text);
+        // Automatically pre-copy review to clipboard on arrival!
+        copyToClipboard(text).then((ok) => {
+          if (ok && isActive) {
+            setCopied(true);
+            setToastMessage('✓ Review copied to clipboard! Ready to paste on Google.');
+            setTimeout(() => setToastMessage(null), 3500);
+            setTimeout(() => setCopied(false), 5000);
+          }
+        });
+      }
+      if (storedRating) {
+        const parsed = parseInt(storedRating, 10);
+        if (!isNaN(parsed) && parsed > 0 && parsed <= 5) {
+          setRating(parsed);
+          sessionStorage.setItem('temp_rating', parsed.toString());
+        }
+      }
+    });
+
+    businessService.getBusinessBySlug(businessSlug)
+      .then((result) => {
+        if (isActive) setBusiness(result);
+      })
+      .finally(() => {
+        if (isActive) setIsLoadingBusiness(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [businessSlug]);
 
   /**
    * Resolves the direct Google write-review URL for this business
@@ -269,16 +293,19 @@ export default function PostOnGooglePage() {
             : 'Your review is ready. When you tap Post, it will copy automatically so you just paste & submit on Google.'}
         </p>
 
-        {/* Card 1: Your Selected Review with [✎ Edit] & [📋 Copy] */}
-         <Card className="mb-3 w-full rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="font-bold text-gray-900 font-serif text-sm">Your Selected Review</h3>
+        {/* Card 1: Your Selected Review with Pre-filled Stars and Text */}
+        <Card className="mb-4 w-full rounded-2xl border border-stone-200/80 bg-white p-4 shadow-sm">
+          <div className="flex justify-between items-center mb-2.5">
+            <div>
+              <h3 className="font-bold text-gray-950 font-serif text-sm">Your Selected Review</h3>
+              <p className="text-[10px] text-stone-500">Selected from Step 2 · Pre-copied &amp; ready</p>
+            </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button 
                 type="button"
                 onClick={handleManualCopy}
-                 className="funnel-focus-ring flex cursor-pointer items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 transition hover:bg-emerald-100 hover:text-emerald-950"
+                className="funnel-focus-ring flex cursor-pointer items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800 transition hover:bg-emerald-100"
                 title="Copy to clipboard"
               >
                 {copied ? (
@@ -296,23 +323,92 @@ export default function PostOnGooglePage() {
 
               <button 
                 type="button"
-                 className="funnel-focus-ring flex cursor-pointer items-center rounded-md text-xs font-medium text-gray-500 transition hover:text-gray-900"
-                onClick={() => router.back()}
+                className="funnel-focus-ring flex cursor-pointer items-center gap-1 rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[11px] font-semibold text-stone-700 transition hover:bg-stone-100"
+                onClick={() => setIsEditing(!isEditing)}
               >
-                <Edit2 className="w-3 h-3 mr-1 text-stone-600" />
-                <span>Edit</span>
+                <Edit2 className="w-3 h-3 text-stone-600" />
+                <span>{isEditing ? 'Done' : 'Edit'}</span>
               </button>
             </div>
           </div>
 
-          <div className="flex gap-0.5 mb-2.5">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className={`w-4 h-4 ${i < rating ? 'fill-[#F4B400] text-[#F4B400]' : 'text-gray-200'}`} />
-            ))}
+          {/* Pre-Filled Stars from Step 1 */}
+          <div className="mb-3 flex items-center justify-between rounded-xl bg-amber-50/70 p-2.5 border border-amber-200/60">
+            <div className="flex items-center gap-1.5">
+              <div className="flex gap-0.5" role="group" aria-label="Selected rating">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => {
+                      setRating(star);
+                      sessionStorage.setItem('temp_rating', star.toString());
+                    }}
+                    className="cursor-pointer transition-transform hover:scale-110 active:scale-95"
+                    title={`Rate ${star} stars`}
+                  >
+                    <Star
+                      className={`w-4.5 h-4.5 transition-colors ${
+                        star <= rating
+                          ? 'fill-[#F4B400] text-[#F4B400] drop-shadow-[0_2px_8px_rgba(244,180,0,0.35)]'
+                          : 'text-stone-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs font-bold text-amber-950 ml-1">
+                {rating}.0 Stars Selected
+              </span>
+            </div>
+            <span className="text-[10px] font-semibold text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded-full">
+              Pre-filled from Step 1
+            </span>
           </div>
-          <p className="text-xs text-gray-700 leading-relaxed font-normal">
-            {reviewText}
-          </p>
+
+          {/* Pre-Filled Review Text or Inline Edit */}
+          {isEditing ? (
+            <div className="space-y-2">
+              <Textarea
+                value={reviewText}
+                onChange={(e) => {
+                  setReviewText(e.target.value);
+                  sessionStorage.setItem('final_review_text', e.target.value);
+                }}
+                className="funnel-focus-ring min-h-[90px] resize-none rounded-xl border-stone-300 bg-stone-50/50 p-3 text-xs leading-relaxed text-stone-900"
+                placeholder="Customize your review text here…"
+              />
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    setIsEditing(false);
+                    copyToClipboard(reviewText);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 3000);
+                  }}
+                  className="h-7 rounded-lg text-xs font-bold text-white cursor-pointer"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  Save &amp; Re-copy
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div 
+              onClick={() => setIsEditing(true)}
+              className="group cursor-pointer rounded-xl bg-stone-50/70 p-3 border border-stone-200/50 hover:border-stone-300 transition-colors"
+              title="Click to edit review text"
+            >
+              <p className="text-xs text-stone-800 leading-relaxed font-normal">
+                &ldquo;{reviewText}&rdquo;
+              </p>
+              <span className="mt-1.5 block text-[10px] text-stone-400 group-hover:text-stone-600">
+                Tap to edit · Pre-filled from Step 2
+              </span>
+            </div>
+          )}
         </Card>
 
         {/* ── IF USER HAS ALREADY TAPPED GOOGLE: Show Posting Assistant Card ── */}
@@ -447,10 +543,15 @@ export default function PostOnGooglePage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-0.5 mb-1.5">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`w-2.5 h-2.5 ${i < rating ? 'fill-[#F4B400] text-[#F4B400]' : 'text-gray-200'}`} />
-                  ))}
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <div className="flex gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`w-3.5 h-3.5 ${i < rating ? 'fill-[#F4B400] text-[#F4B400]' : 'text-gray-200'}`} />
+                    ))}
+                  </div>
+                  <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                    {rating}.0 Stars Pre-filled
+                  </span>
                 </div>
                 <p className="text-[11px] text-gray-700 line-clamp-3 leading-relaxed">
                   {reviewText}
@@ -458,10 +559,13 @@ export default function PostOnGooglePage() {
               </div>
             </Card>
 
-            {/* Large Pill Action Button: [G] Post on Google → */}
+            {/* Large Pill Action Button: [G] Open Google & Paste Review → */}
             <Button 
-               className="funnel-focus-ring h-13 w-full cursor-pointer rounded-full text-base font-semibold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ backgroundColor: primaryColor }}
+               className="funnel-focus-ring h-14 w-full cursor-pointer rounded-full text-base font-bold text-white shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ 
+                backgroundColor: primaryColor,
+                boxShadow: `0 14px 30px -6px ${primaryColor}99`
+              }}
               size="lg"
               onClick={handlePost}
               disabled={isPosting}
@@ -469,7 +573,7 @@ export default function PostOnGooglePage() {
               {isPosting ? (
                 <span className="flex items-center gap-2">
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  <span>Copying &amp; Opening Google...</span>
+                  <span>Opening Google ({rating} Stars)...</span>
                 </span>
               ) : (
                 <div className="flex items-center justify-center gap-2.5 w-full">
@@ -482,7 +586,7 @@ export default function PostOnGooglePage() {
                     </svg>
                   </div>
                   <div className="h-4 w-px bg-white/30"></div>
-                  <span>Post on Google</span>
+                  <span>Open Google &amp; Paste Review ({rating} Stars)</span>
                   <span>→</span>
                 </div>
               )}

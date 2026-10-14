@@ -12,7 +12,11 @@ import {
   CheckCircle2,
   Info, 
   ShieldCheck, 
-   ArrowRight,
+  ArrowRight,
+  Zap,
+  Sparkles,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 export default function ReviewExperiencePage() {
@@ -54,17 +58,49 @@ export default function ReviewExperiencePage() {
       }
     });
 
-    // Check pre-existing rating from landing page
+    // Check pre-existing rating from URL query param first, then session storage
     Promise.resolve().then(() => {
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const urlRating = urlParams?.get('rating');
       const storedRating = sessionStorage.getItem('temp_rating');
-      if (storedRating) {
-        const parsed = parseInt(storedRating, 10);
-        if (!isNaN(parsed) && parsed > 0) {
+      const targetRating = urlRating || storedRating;
+      if (targetRating) {
+        const parsed = parseInt(targetRating, 10);
+        if (!isNaN(parsed) && parsed > 0 && parsed <= 5) {
           setRating(parsed);
+          sessionStorage.setItem('temp_rating', parsed.toString());
         }
       }
     });
   }, [businessSlug]);
+
+  const copyToClipboard = async (textToCopy: string): Promise<boolean> => {
+    let success = false;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(textToCopy);
+        success = true;
+      }
+    } catch {}
+
+    if (!success && typeof document !== 'undefined') {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = textToCopy;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        success = document.execCommand('copy');
+        document.body.removeChild(textarea);
+      } catch {}
+    }
+    return success;
+  };
 
   const primaryColor = business?.theme?.primaryColor || '#0B3D2E';
 
@@ -109,8 +145,21 @@ export default function ReviewExperiencePage() {
     }
   };
 
+  // ── Direct 1-Click Post from Review Card ──
+  const handleDirectPostCard = async (text: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    sessionStorage.setItem('final_review_text', text);
+    sessionStorage.setItem('temp_rating', rating.toString());
+    await copyToClipboard(text);
+    analyticsService.trackEvent('direct_card_post_clicked', { slug: businessSlug, rating });
+    router.push(`/f/${businessSlug}/review/post?rating=${rating}&text=${encodeURIComponent(text)}`);
+  };
+
   // ── Handler 3: Customer-controlled Google hand-off ──
-  const handlePostCustomOnGoogle = () => {
+  const handlePostCustomOnGoogle = async () => {
     let finaltext = '';
     if (experience.trim().length > 0) {
       finaltext = experience.trim();
@@ -124,11 +173,12 @@ export default function ReviewExperiencePage() {
 
     sessionStorage.setItem('final_review_text', finaltext);
     sessionStorage.setItem('temp_rating', rating.toString());
+    await copyToClipboard(finaltext);
     analyticsService.trackEvent('custom_review_google_posted', {
       slug: businessSlug,
       rating,
     });
-    router.push(`/f/${businessSlug}/review/post`);
+    router.push(`/f/${businessSlug}/review/post?rating=${rating}&text=${encodeURIComponent(finaltext)}`);
   };
 
   // ── Optional private note, never a replacement for the Google hand-off ──
@@ -208,30 +258,30 @@ export default function ReviewExperiencePage() {
 
             {/* Rating status */}
             <div className="mb-4 text-center">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-900">
-                <ShieldCheck className="h-3.5 w-3.5 text-blue-700" />
-                <span>{rating} Star{rating > 1 ? 's' : ''} · You choose where to share</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3.5 py-1 text-xs font-bold text-amber-950 shadow-2xs">
+                <span className="text-[#F4B400] text-sm">{'★'.repeat(rating)}</span>
+                <span>{rating}.0 Star Experience Selected · Step 2 of 3</span>
               </span>
             </div>
 
             {/* Positive Reviews (Rating > 3): Pre-written reviews ready from library */}
             {rating > 3 ? (
               <div>
-                <div className="flex items-center justify-between mb-1.5 px-1">
+                <div className="flex items-center justify-between mb-2 px-1">
                   <div className="flex items-center gap-1.5">
                     <span className="text-amber-500">✨</span>
-                    <h3 className="font-bold text-sm text-stone-900">Ready-Made AI Reviews</h3>
+                    <h3 className="font-bold text-sm text-stone-900">Tailored Google Reviews</h3>
                   </div>
-                  <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                    1-Click Select
+                  <span className="text-[10px] text-emerald-800 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    ⚡ 1-Click Direct Post
                   </span>
                 </div>
                 <p className="text-[11px] text-stone-500 mb-3 px-1">
-                  Select a ready review below or edit your own words:
+                  Choose a review below to post directly, or tap to customize:
                 </p>
 
-                {/* 3 Library Review Cards */}
-                <div className="space-y-2.5 mb-4">
+                {/* 3 Library Review Cards with Direct 1-Click Post */}
+                <div className="space-y-3 mb-4">
                   {suggestions.map((suggestion, idx) => (
                     <Card
                       key={idx}
@@ -239,33 +289,61 @@ export default function ReviewExperiencePage() {
                       tabIndex={0}
                       aria-pressed={selectedSuggestionIndex === idx}
                       onClick={() => handleUseSuggestion(idx)}
-                      className={`funnel-focus-ring cursor-pointer rounded-2xl border-2 p-3.5 transition-all text-left ${
+                      className={`group relative funnel-focus-ring cursor-pointer rounded-2xl border-2 p-3.5 transition-all text-left ${
                         selectedSuggestionIndex === idx
-                          ? 'border-[#0B3D2E] bg-[#F2F7F5] shadow-xs'
-                          : 'border-stone-200/80 shadow-2xs hover:border-stone-300 bg-white'
+                          ? 'border-[#0B3D2E] bg-white shadow-md ring-2 ring-[#0B3D2E]/15'
+                          : 'border-stone-200/80 shadow-2xs hover:border-stone-300 hover:shadow-xs bg-white/95'
                       }`}
                       style={selectedSuggestionIndex === idx ? { borderColor: primaryColor } : undefined}
                     >
                       <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex gap-0.5">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} className="w-3.5 h-3.5 fill-[#F4B400] text-[#F4B400]" />
-                          ))}
+                        <div className="flex items-center gap-1">
+                          <div className="flex gap-0.5">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} className="w-3.5 h-3.5 fill-[#F4B400] text-[#F4B400]" />
+                            ))}
+                          </div>
+                          <span className="text-[10px] font-bold text-stone-500 ml-1">5.0</span>
                         </div>
                         {selectedSuggestionIndex === idx ? (
                           <span
-                            className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full flex items-center gap-1"
+                            className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs"
                             style={{ backgroundColor: primaryColor }}
                           >
                             <CheckCircle2 className="w-3 h-3" /> Selected
                           </span>
                         ) : (
                           <span className="text-[10px] font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 px-2 py-0.5 rounded-full transition-colors">
-                            Use this
+                            Tap to edit
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-stone-800 leading-relaxed">{suggestion}</p>
+
+                      <p className="text-xs text-stone-800 leading-relaxed font-normal mb-2.5">
+                        &ldquo;{suggestion}&rdquo;
+                      </p>
+
+                      {/* Direct 1-Click Post Row */}
+                      <div className="flex items-center justify-between pt-2 border-t border-stone-100">
+                        <span className="text-[10px] text-stone-400 font-medium">Ready to post</span>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDirectPostCard(suggestion, e)}
+                          className="funnel-focus-ring cursor-pointer inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-[11px] font-bold text-white shadow-xs transition-all hover:scale-105 active:scale-95"
+                          style={{ backgroundColor: primaryColor }}
+                          title="Direct post this review on Google"
+                        >
+                          <div className="w-3.5 h-3.5 bg-white rounded-full flex items-center justify-center p-0.5">
+                            <svg viewBox="0 0 24 24" width="10" height="10">
+                              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.31-1.03 2.41-2.16 3.16v2.62h3.49c2.04-1.89 3.22-4.67 3.22-7.79z" fill="#4285F4" />
+                              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.49-2.62c-.98.66-2.23 1.05-3.79 1.05-2.91 0-5.38-1.97-6.26-4.62H2.12v2.71C3.94 20.48 7.68 23 12 23z" fill="#34A853" />
+                              <path d="M5.74 14.15c-.22-.66-.35-1.36-.35-2.15s.13-1.49.35-2.15V7.14H2.12C1.4 8.59 1 10.25 1 12s.4 3.41 1.12 4.86l3.62-2.71z" fill="#FBBC05" />
+                              <path d="M12 5.38c1.62 0 3.07.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.68 1 3.94 3.52 2.12 7.14l3.62 2.71c.88-2.65 3.35-4.47 6.26-4.47z" fill="#EA4335" />
+                            </svg>
+                          </div>
+                          <span>⚡ Post to Google →</span>
+                        </button>
+                      </div>
                     </Card>
                   ))}
                 </div>
@@ -274,7 +352,7 @@ export default function ReviewExperiencePage() {
                 <div className="mb-3">
                   <div className="flex items-center justify-between mb-1 px-1">
                     <label className="text-[11px] font-semibold text-stone-700">
-                      Customize your review:
+                      Customize selected review:
                     </label>
                     <span className="text-[10px] text-stone-400">{experience.length}/500</span>
                   </div>
@@ -304,8 +382,11 @@ export default function ReviewExperiencePage() {
 
                 {/* Primary Post on Google Button */}
                 <Button
-                  className="funnel-focus-ring w-full text-sm font-bold shadow-md transition-all hover:-translate-y-0.5 rounded-xl py-5 cursor-pointer text-white flex items-center justify-center gap-2 mb-2"
-                  style={{ backgroundColor: primaryColor }}
+                  className="funnel-focus-ring w-full text-sm font-bold shadow-lg transition-all hover:-translate-y-0.5 rounded-xl py-5 cursor-pointer text-white flex items-center justify-center gap-2 mb-2"
+                  style={{ 
+                    backgroundColor: primaryColor,
+                    boxShadow: `0 14px 28px -8px ${primaryColor}88`
+                  }}
                   onClick={handlePostCustomOnGoogle}
                 >
                   <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center p-0.5 mr-1">
@@ -316,7 +397,7 @@ export default function ReviewExperiencePage() {
                       <path d="M12 5.38c1.62 0 3.07.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.68 1 3.94 3.52 2.12 7.14l3.62 2.71c.88-2.65 3.35-4.47 6.26-4.47z" fill="#EA4335" />
                     </svg>
                   </div>
-                  <span>Post on Google →</span>
+                  <span>Post on Google ({rating} Stars) →</span>
                 </Button>
               </div>
             ) : (
