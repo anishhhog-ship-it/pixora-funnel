@@ -277,6 +277,7 @@ export async function POST(req: NextRequest) {
     // Activate Business Tenant & Funnel
     await db.from('businesses').update({
       owner_id: authUserId || undefined,
+      email: customerEmail,
       status: 'active',
       plan_status: 'active',
       trial_expires_at: null,
@@ -294,6 +295,12 @@ export async function POST(req: NextRequest) {
     }).eq('business_id', businessId);
 
     if (authUserId) {
+      try {
+        await db.from('sales_orders').update({
+          customer_id: authUserId,
+        }).eq('id', order.data.id);
+      } catch {}
+
       try {
         await db.from('business_members').upsert({
           business_id: businessId,

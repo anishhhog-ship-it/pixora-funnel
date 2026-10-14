@@ -252,8 +252,39 @@ export default function DashboardContent({ children }: { children: React.ReactNo
           setUnreadNotifCount(notifs.filter(n => !n.read).length);
         });
       } else {
-        setIsInitializing(false);
-        setNoBusinessAttached(true);
+        // Fallback auto-provision check via authoritative /api/user/businesses
+        (async () => {
+          try {
+            const { getSupabaseBrowserClient } = await import('@/lib/supabase/client');
+            const client = getSupabaseBrowserClient();
+            const { data: { session } } = await client.auth.getSession();
+            if (session?.access_token) {
+              const res = await fetch('/api/user/businesses', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${session.access_token}`,
+                },
+              });
+              if (res.ok) {
+                const json = await res.json();
+                if (json.success && Array.isArray(json.businesses) && json.businesses.length > 0) {
+                  const b = json.businesses[0];
+                  setAllBusinesses(json.businesses);
+                  setActiveBusiness(b);
+                  businessService.setActiveBusinessSlug(b.slug);
+                  setTrialTimeText('Active · 2 Year License Valid');
+                  setIsInitializing(false);
+                  return;
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('Dashboard fallback provision error:', e);
+          }
+          setIsInitializing(false);
+          setNoBusinessAttached(true);
+        })();
       }
     });
 

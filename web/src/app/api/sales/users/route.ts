@@ -95,32 +95,50 @@ export async function POST(req: NextRequest) {
       console.warn('Profiles upsert warning:', e);
     }
 
-    // 3. Link business to user if businessId is supplied
+    // 3. Link business to user if businessId is supplied or found by email
     let businessSlug = '';
-    if (businessId) {
+    let targetBusinessId = businessId;
+
+    if (!targetBusinessId) {
+      // Auto-resolve business by matching email
+      const { data: matchedBiz } = await db
+        .from('businesses')
+        .select('id,slug')
+        .ilike('email', email)
+        .order('created_at', { ascending: false })
+        .maybeSingle();
+
+      if (matchedBiz) {
+        targetBusinessId = matchedBiz.id;
+        businessSlug = matchedBiz.slug;
+      }
+    }
+
+    if (targetBusinessId) {
       const { data: biz } = await db
         .from('businesses')
         .select('id,slug')
-        .eq('id', businessId)
+        .eq('id', targetBusinessId)
         .maybeSingle();
 
-      businessSlug = biz?.slug || '';
+      businessSlug = biz?.slug || businessSlug;
 
       await db
         .from('businesses')
         .update({
           owner_id: authUserId,
+          email,
           status: 'active',
           plan_status: 'active',
           trial_expires_at: null,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', businessId);
+        .eq('id', targetBusinessId);
 
       try {
         await db.from('business_members').upsert(
           {
-            business_id: businessId,
+            business_id: targetBusinessId,
             user_id: authUserId,
             role: 'owner',
             updated_at: new Date().toISOString(),
@@ -130,6 +148,14 @@ export async function POST(req: NextRequest) {
       } catch (e) {
         console.warn('business_members upsert warning:', e);
       }
+
+      // Link any orders for this business or email to this auth user
+      try {
+        await db
+          .from('sales_orders')
+          .update({ customer_id: authUserId })
+          .eq('business_id', targetBusinessId);
+      } catch {}
     }
 
     // 4. Record sales audit log

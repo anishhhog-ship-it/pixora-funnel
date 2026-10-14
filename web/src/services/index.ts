@@ -315,17 +315,51 @@ export const businessService = {
     const targetUserId = userId || currentUser?.id;
     const targetEmail = currentUser?.email?.toLowerCase().trim();
 
+    // 1. Authoritative Server-Side Resolution (Bypasses RLS & Auto-links sales-provisioned accounts)
+    if (isBrowser) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          const res = await fetch('/api/user/businesses', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && Array.isArray(json.businesses) && json.businesses.length > 0) {
+              // Cache in runtime memory
+              for (const b of json.businesses) {
+                runtimeBusinesses[b.slug] = b;
+              }
+              const currentActive = localStorage.getItem(ACTIVE_BIZ_KEY);
+              if (!currentActive || currentActive === 'your-business') {
+                localStorage.setItem(ACTIVE_BIZ_KEY, json.businesses[0].slug);
+              }
+              return json.businesses;
+            }
+          }
+        }
+      } catch (apiErr) {
+        console.warn('Unable to query /api/user/businesses:', apiErr);
+      }
+    }
+
+    // 2. Direct Supabase Query (Fallback)
     if (isSupabaseConfigured() && targetUserId) {
       try {
         const { data, error } = await supabase
           .from('businesses')
           .select('*')
-          .eq('owner_id', targetUserId)
+          .or(`owner_id.eq.${targetUserId}${targetEmail ? `,email.ilike.${targetEmail}` : ''}`)
           .order('created_at', { ascending: false });
 
         if (!error && data && data.length > 0) {
           const mapped = data.map((b: any) => ({
             businessId: b.id,
+            id: b.id,
             ownerId: b.owner_id,
             userId: b.owner_id,
             slug: b.slug,

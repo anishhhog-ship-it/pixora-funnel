@@ -85,14 +85,11 @@ export default function LoginPage() {
         const { businessService } = await import('@/services');
         const bizs = await businessService.getBusinessesForUser(user.id);
         
-        if (bizs.length === 0) {
-          setError('No business profile attached to this email');
-          setIsLoading(false);
-          return;
-        } else {
-          setInfoMessage('Signed in successfully! Redirecting to dashboard...');
-          router.push('/dashboard');
+        if (bizs.length > 0) {
+          businessService.setActiveBusinessSlug(bizs[0].slug);
         }
+        setInfoMessage('Signed in successfully! Redirecting to dashboard...');
+        router.push('/dashboard');
       }
     } catch (err: any) {
       setError(err?.message || (isSignUp ? 'Account creation failed. Please try again.' : 'Login failed. Please verify your credentials.'));
@@ -108,15 +105,11 @@ export default function LoginPage() {
       setError(null);
       const user = await authService.signInWithGoogle();
       
-      // If we are in local mock mode, check if they have a business
-      const { isSupabaseConfigured } = await import('@/lib/supabase/client');
-      if (!isSupabaseConfigured() && user) {
+      if (user) {
         const { businessService } = await import('@/services');
         const bizs = await businessService.getBusinessesForUser(user.id);
-        if (bizs.length === 0) {
-          setError('No business profile attached to this email');
-          setIsLoading(false);
-          return;
+        if (bizs.length > 0) {
+          businessService.setActiveBusinessSlug(bizs[0].slug);
         }
         router.push('/dashboard');
       }
