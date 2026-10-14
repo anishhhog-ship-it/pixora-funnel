@@ -118,16 +118,16 @@ function ConversionsPage() {
       setErrorMessage('Please select a prospect.');
       return;
     }
-    if (!selectedDemoId) {
-      setErrorMessage('Select the demo that was shown to this owner so the same QR/NFC URL can be activated safely.');
-      return;
-    }
     if (!selectedPlan) {
       setErrorMessage('No available commercial plan is loaded. Retry the plans request before recording a sale.');
       return;
     }
     if (!customerEmail.trim() || !customerName.trim()) {
       setErrorMessage('Customer name and email are strictly required for account creation.');
+      return;
+    }
+    if (paymentMethod !== 'Cash' && !transactionReference.trim()) {
+      setErrorMessage('Please enter the UPI Reference / UTR Number for payment verification.');
       return;
     }
     if (includesNfc && (!shippingAddress.trim() || !pincode.trim())) {
@@ -139,7 +139,7 @@ function ConversionsPage() {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-       const idempotencyKey = createSalesIdempotencyKey(selectedProspectId, selectedDemoId);
+      const idempotencyKey = createSalesIdempotencyKey(selectedProspectId, selectedDemoId || null);
 
       const res = await fetch('/api/sales/convert', {
         method: 'POST',
@@ -203,7 +203,7 @@ function ConversionsPage() {
           <span>Demo-to-Customer Conversion & Handover</span>
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-           Record the sale and payment reference after the owner agrees. Activation, production QR assets, and handover follow authoritative manager or admin verification.
+          Record the sale and directly activate the client plan. Instant customer dashboard credentials, live funnel, and QR code provisioned immediately.
         </p>
       </div>
 
@@ -345,13 +345,16 @@ function ConversionsPage() {
               </div>
 
               <div className="space-y-1">
-                 <label className="text-slate-700 font-semibold">Associated Demo *</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-slate-700 font-semibold">Associated Demo</label>
+                  <span className="text-[10px] text-slate-400 font-medium">Optional (Auto-creates funnel if none)</span>
+                </div>
                 <select
                   value={selectedDemoId}
                   onChange={(e) => setSelectedDemoId(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#5356EC] focus:border-[#5356EC]"
                 >
-                   <option value="">-- Choose the demo shown to the owner --</option>
+                  <option value="">-- Direct Onboarding (No Demo Required - Auto-Create Funnel) --</option>
                   {demos.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.business_name} ({d.slug})
@@ -479,7 +482,13 @@ function ConversionsPage() {
                 <label className="text-slate-700 font-semibold">Payment Method</label>
                 <select
                   value={paymentMethod}
-                   onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                  onChange={(e) => {
+                    const method = e.target.value as PaymentMethod;
+                    setPaymentMethod(method);
+                    if (method === 'Cash') {
+                      setTransactionReference('');
+                    }
+                  }}
                   className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#5356EC] focus:border-[#5356EC]"
                 >
                   <option value="UPI">UPI (GooglePay / PhonePe / Paytm)</option>
@@ -488,16 +497,29 @@ function ConversionsPage() {
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-700 font-semibold">UPI Reference / UTR Number</label>
-                <input
-                  type="text"
-                  placeholder="12-digit UTR (e.g. 428190382910)"
-                  value={transactionReference}
-                  onChange={(e) => setTransactionReference(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#5356EC] focus:border-[#5356EC]"
-                />
-              </div>
+              {paymentMethod === 'Cash' ? (
+                <div className="space-y-1">
+                  <label className="text-slate-700 font-semibold">Payment Verification</label>
+                  <div className="w-full bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-emerald-800 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span className="font-semibold text-[11px]">
+                      Cash collected by salesperson • No UTR required • Plan activates directly
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <label className="text-slate-700 font-semibold">UPI Reference / UTR Number *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="12-digit UTR (e.g. 428190382910)"
+                    value={transactionReference}
+                    onChange={(e) => setTransactionReference(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#5356EC] focus:border-[#5356EC]"
+                  />
+                </div>
+              )}
             </div>
 
             {/* NFC Shipping Address if plan includes NFC */}
@@ -537,15 +559,19 @@ function ConversionsPage() {
             )}
           </div>
 
-           <button
-             type="submit"
-             disabled={submitting || !selectedPlan}
+          <button
+            type="submit"
+            disabled={submitting || !selectedPlan}
             className="w-full py-4 rounded-xl bg-[#5356EC] hover:bg-[#4346DB] text-white font-bold text-sm shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
           >
             <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
-             <span>
-               {submitting ? 'Recording payment receipt…' : selectedPlan ? `Record sale & payment receipt (₹${selectedPlan.price_inr.toLocaleString('en-IN')})` : 'Select an available plan'}
-             </span>
+            <span>
+              {submitting
+                ? 'Activating client plan directly…'
+                : selectedPlan
+                ? `Activate Client Plan Directly (₹${selectedPlan.price_inr.toLocaleString('en-IN')})`
+                : 'Select an available plan'}
+            </span>
           </button>
         </form>
       )}
