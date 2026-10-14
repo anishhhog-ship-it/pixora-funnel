@@ -104,7 +104,7 @@ export default function ReviewsPage() {
         setActionNotice(result.message || `${result.syncedCount} reviews synchronized from Google My Business! ✨`);
       } else if (result.status === 'access_pending') {
         setGoogleStatus('access_pending');
-        setActionNotice('Google API access approval is pending on Google Cloud project pixora-funnel-511104. Merchant profile is connected.');
+        setActionNotice('Google API access approval is pending on your Google Cloud project. Merchant profile is connected.');
       } else if (result.status === 'requires_auth') {
         setGoogleStatus('requires_auth');
         setActionNotice('Please connect your Google Business Profile in Settings to enable live review sync.');
@@ -163,7 +163,7 @@ export default function ReviewsPage() {
         };
         setReviews(prev => prev.map(r => r.reviewId === selected.reviewId ? draftReview : r));
         setSelected(draftReview);
-        setActionNotice('Reply saved locally as a draft. Google My Business API access approval is pending on project pixora-funnel-511104.');
+        setActionNotice('Reply saved locally as a draft. Google My Business API access approval is pending on your Google Cloud project.');
       } else if (result.status === 'requires_auth') {
         setActionNotice('Google authorization required to publish live. Link profile in Settings.');
       } else {

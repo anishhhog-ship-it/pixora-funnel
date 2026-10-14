@@ -72,7 +72,7 @@ export function GoogleConnectionBadge({
             'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-900 border border-amber-200/90',
             className
           )}
-          title="OAuth Connected · Google Cloud Project pixora-funnel-511104 API Access Pending Approval"
+          title="OAuth Connected · Google Cloud API Access Pending Approval"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
           <span>Google Linked (API Pending)</span>

@@ -253,9 +253,9 @@ export async function POST(req: NextRequest) {
         success: false,
         status: 'access_pending',
         message:
-          'Google Business Profile API access approval is pending on project pixora-funnel-511104. Reply saved locally as a draft.',
+          'Google Business Profile API access approval is pending on your Google Cloud project. Reply saved locally as a draft.',
         googleConsoleUrl:
-          'https://console.cloud.google.com/apis/library/mybusiness.googleapis.com?project=pixora-funnel-511104',
+          `https://console.cloud.google.com/apis/library/mybusiness.googleapis.com?project=${process.env.GOOGLE_PROJECT_ID || ''}`,
         reviewId: reviewRow.google_review_id,
         replyText,
       });
@@ -335,9 +335,9 @@ export async function POST(req: NextRequest) {
           success: false,
           status: 'access_pending',
           message:
-            'Google Business Profile API access request for project pixora-funnel-511104 is pending Google approval. Your reply has been saved locally as a draft and is ready to post once Google approves project access.',
+            'Google Business Profile API access request is pending Google approval. Your reply has been saved locally as a draft and is ready to post once Google approves project access.',
           googleConsoleUrl:
-            'https://console.cloud.google.com/apis/library/mybusiness.googleapis.com?project=pixora-funnel-511104',
+            `https://console.cloud.google.com/apis/library/mybusiness.googleapis.com?project=${process.env.GOOGLE_PROJECT_ID || ''}`,
           reviewId: reviewRow.google_review_id,
           replyText,
         });

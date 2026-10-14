@@ -362,7 +362,7 @@ export default function SettingsPage() {
       } else if (googleStatus === 'access_pending') {
         setGoogleOAuthStatusBanner({
           type: 'warning',
-          message: googleMsg || 'Google OAuth authorized! Google Business Profile API access approval is currently pending on Google Cloud project pixora-funnel-511104. Location routing is active via direct Place link.',
+          message: googleMsg || 'Google OAuth authorized! Google Business Profile API access approval is currently pending. Location routing is active via direct Place link.',
         });
         handleLoadGoogleAccounts();
       } else if (googleStatus === 'credentials_missing') {
@@ -604,7 +604,7 @@ export default function SettingsPage() {
       if (result.googleApiError) {
         setGoogleConsoleNotice(
           result.googleApiError.message ||
-          'Places API (New) requires activation in your Google Cloud Console project pixora-funnel-511104.'
+          'Places API (New) requires activation in your Google Cloud Console.'
         );
       } else {
         setGoogleConsoleNotice(null);
@@ -2204,12 +2204,9 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                   <span className="font-bold text-amber-950">Google Business Profile API Access Pending Approval</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white text-amber-800 border border-amber-200">
-                    pixora-funnel-511104
-                  </span>
                 </div>
                 <p className="text-[11px] text-amber-800 leading-relaxed">
-                  Your Google Account is securely connected. Google requires developer approval for Google Business Profile API access on project <strong>pixora-funnel-511104</strong> before live reviews can be synced. In the meantime, you can search and activate your business location below via Place ID for automatic 5-star review routing!
+                  Your Google Account is securely connected. Google requires developer approval for Google Business Profile API access before live reviews can be synced. In the meantime, you can search and activate your business location below via Place ID for automatic 5-star review routing!
                 </p>
               </div>
             )}

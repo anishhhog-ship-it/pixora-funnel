@@ -368,7 +368,7 @@ export default function OnboardingContent() {
       } else if (googleStatus === 'access_pending') {
         setGoogleApiNotice(
           googleMsg ||
-          'Google Business Profile OAuth authorized! API access approval is currently pending on project pixora-funnel-511104. Location routing is active via direct Place link.'
+          'Google Business Profile OAuth authorized! API access approval is currently pending. Location routing is active via direct Place link.'
         );
       } else if (googleStatus && googleStatus !== 'connected') {
         if (googleMsg) setGoogleApiNotice(googleMsg);

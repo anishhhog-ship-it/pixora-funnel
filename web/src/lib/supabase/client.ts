@@ -21,7 +21,7 @@ export const getSupabaseBrowserClient = () => {
   if (!isSupabaseConfigured()) {
     // Return a dummy/safe client fallback if env vars are missing during local dev/mock mode
     supabaseInstance = createClient(
-      supabaseUrl || 'https://wpjkmzwzijxzdldtaktz.supabase.co',
+      supabaseUrl || 'https://your-project.supabase.co',
       supabaseAnonKey || 'dummy-anon-key',
       {
         auth: {

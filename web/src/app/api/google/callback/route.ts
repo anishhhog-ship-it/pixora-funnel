@@ -185,7 +185,7 @@ export async function GET(req: NextRequest) {
       redirectTarget.searchParams.set('google_email', accountEmail);
       redirectTarget.searchParams.set(
         'google_message',
-        'Google OAuth successful, but Business Profile API access is pending approval for project pixora-funnel-511104.'
+        'Google OAuth successful, but Business Profile API access is pending approval.'
       );
     }
 

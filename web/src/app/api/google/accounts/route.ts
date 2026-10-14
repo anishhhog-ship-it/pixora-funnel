@@ -159,7 +159,7 @@ export async function POST(req: NextRequest) {
           const errMsg = errData.error?.message || '';
           if (accRes.status === 403 || errMsg.toLowerCase().includes('permission') || errMsg.toLowerCase().includes('not been used')) {
             integrationStatus = 'access_pending';
-            apiWarning = 'Google Business Profile API access approval is pending on Google Cloud project pixora-funnel-511104. Merchant OAuth is authenticated, but Google has not yet approved API access for this project.';
+            apiWarning = 'Google Business Profile API access approval is pending on your Google Cloud project. Merchant OAuth is authenticated, but Google has not yet approved API access for this project.';
             requiresOAuth = false;
           } else {
             apiWarning = errData.error?.message || 'Google Account Management API error';
@@ -354,7 +354,7 @@ export async function POST(req: NextRequest) {
       integrationStatus,
       apiWarning: hasAccounts ? apiWarning : (apiWarning || 'No business profile attached to this email'),
       googleConsoleUrl:
-        'https://console.cloud.google.com/apis/library/mybusinessaccountmanagement.googleapis.com?project=pixora-funnel-511104',
+        `https://console.cloud.google.com/apis/library/mybusinessaccountmanagement.googleapis.com?project=${process.env.GOOGLE_PROJECT_ID || ''}`,
       message: responseMessage,
     });
   } catch (error: any) {

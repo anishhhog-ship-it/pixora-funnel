@@ -140,9 +140,9 @@ export async function POST(req: NextRequest) {
               success: false,
               status: 'access_pending',
               message:
-                'Google Business Profile API access approval is pending on project pixora-funnel-511104. Merchant OAuth is connected, but Google has not yet approved API access.',
+                'Google Business Profile API access approval is pending on your Google Cloud project. Merchant OAuth is connected, but Google has not yet approved API access.',
               googleConsoleUrl:
-                'https://console.cloud.google.com/apis/library/mybusiness.googleapis.com?project=pixora-funnel-511104',
+                `https://console.cloud.google.com/apis/library/mybusiness.googleapis.com?project=${process.env.GOOGLE_PROJECT_ID || ''}`,
               syncedCount: 0,
             });
           }
@@ -157,9 +157,9 @@ export async function POST(req: NextRequest) {
         success: false,
         status: 'access_pending',
         message:
-          'Could not retrieve Google Business account name. Google Business Profile API access request for project pixora-funnel-511104 is pending approval.',
+          'Could not retrieve Google Business account name. Google Business Profile API access request for this project is pending approval.',
         googleConsoleUrl:
-          'https://console.cloud.google.com/apis/library/mybusiness.googleapis.com?project=pixora-funnel-511104',
+          `https://console.cloud.google.com/apis/library/mybusiness.googleapis.com?project=${process.env.GOOGLE_PROJECT_ID || ''}`,
         syncedCount: 0,
       });
     }
@@ -259,9 +259,9 @@ export async function POST(req: NextRequest) {
           success: false,
           status: 'access_pending',
           message:
-            'Google Business Profile API access approval is pending on Google Cloud project pixora-funnel-511104. Review sync will activate once Google approves project access.',
+            'Google Business Profile API access approval is pending on your Google Cloud project. Review sync will activate once Google approves project access.',
           googleConsoleUrl:
-            'https://console.cloud.google.com/apis/library/mybusiness.googleapis.com?project=pixora-funnel-511104',
+            `https://console.cloud.google.com/apis/library/mybusiness.googleapis.com?project=${process.env.GOOGLE_PROJECT_ID || ''}`,
           syncedCount: 0,
         });
       }
