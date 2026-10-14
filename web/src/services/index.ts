@@ -111,6 +111,7 @@ const runtimeBusinesses: Record<string, Business> = isDemoMode() ? {
 export const businessService = {
   getBusinessBySlug: async (slug: string): Promise<Business | null> => {
     const cleanSlug = (slug || '').trim().toLowerCase();
+    const baseSlug = cleanSlug.replace(/-[a-z0-9]{5,8}$/i, '');
 
     // 1. Query Supabase businesses table when configured
     if (isSupabaseConfigured()) {
@@ -118,7 +119,7 @@ export const businessService = {
         const { data: b, error } = await supabase
           .from('businesses')
           .select('*')
-          .eq('slug', cleanSlug)
+          .or(`slug.eq.${cleanSlug},slug.eq.${baseSlug}`)
           .maybeSingle();
 
         if (!error && b) {
@@ -159,7 +160,9 @@ export const businessService = {
         const { data: demo } = await supabase
           .from('sales_demos')
           .select('*')
-          .or(`slug.eq.${cleanSlug},slug.eq.demo-${cleanSlug}`)
+          .or(`slug.eq.${cleanSlug},slug.eq.${baseSlug},slug.ilike.${baseSlug}%`)
+          .order('created_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         if (demo) {
@@ -205,17 +208,27 @@ export const businessService = {
     if (runtimeBusinesses[cleanSlug]) {
       return runtimeBusinesses[cleanSlug];
     }
+    if (runtimeBusinesses[baseSlug]) {
+      return runtimeBusinesses[baseSlug];
+    }
     // 3. Check localStorage
     const stored = getStoredBusinesses();
     if (stored[cleanSlug]) {
       runtimeBusinesses[cleanSlug] = stored[cleanSlug];
       return stored[cleanSlug];
     }
+    if (stored[baseSlug]) {
+      runtimeBusinesses[baseSlug] = stored[baseSlug];
+      return stored[baseSlug];
+    }
 
     // 4. Fallback generator for Localhost / Development / Preview
     // Guarantees the live customer funnel ALWAYS works on localhost & preview without 404
-    const formattedName = cleanSlug
+    // Strip any trailing hex numbers / hashes so the business name is ALWAYS clean
+    const cleanDisplaySlug = baseSlug || cleanSlug;
+    const formattedName = cleanDisplaySlug
       .split('-')
+      .filter(Boolean)
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
 

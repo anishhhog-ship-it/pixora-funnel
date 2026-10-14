@@ -6,16 +6,22 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://funnel.pixoraautomat
 const PAYMENT_STATUSES = ['UPI', 'Bank Transfer', 'Cash', 'Online Gateway'];
 
 function slugBase(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 28) || 'business';
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 48) || 'business';
 }
 
 async function generateSlug(db: any, name: string) {
-  for (let i = 0; i < 5; i++) {
-    const slug = `${slugBase(name)}-${crypto.randomUUID().slice(0, 6)}`;
-    const { data } = await db.from('businesses').select('id').eq('slug', slug).maybeSingle();
-    if (!data) return slug;
+  const base = slugBase(name);
+  const { data: b1 } = await db.from('businesses').select('id').eq('slug', base).maybeSingle();
+  const { data: d1 } = await db.from('sales_demos').select('id').eq('slug', base).maybeSingle();
+  if (!b1 && !d1) return base;
+
+  for (let i = 2; i <= 50; i++) {
+    const candidate = `${base}-${i}`;
+    const { data: bTaken } = await db.from('businesses').select('id').eq('slug', candidate).maybeSingle();
+    const { data: dTaken } = await db.from('sales_demos').select('id').eq('slug', candidate).maybeSingle();
+    if (!bTaken && !dTaken) return candidate;
   }
-  return `${slugBase(name)}-${Date.now().toString().slice(-6)}`;
+  return `${base}-${Date.now().toString().slice(-4)}`;
 }
 
 export async function POST(req: NextRequest) {

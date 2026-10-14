@@ -6,17 +6,24 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://funnel.pixoraautomat
 const DEFAULT_CATEGORY = 'General Business';
 
 function slugBase(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 28) || 'business';
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 48) || 'business';
 }
 
 async function uniqueSlug(db: any, name: string) {
-  for (let i = 0; i < 5; i++) {
-    const slug = `${slugBase(name)}-${crypto.randomUUID().slice(0, 6)}`;
-    const { data, error } = await db.from('sales_demos').select('id').eq('slug', slug).maybeSingle();
-    if (error) throw new Error('Unable to validate demo slug');
-    if (!data) return slug;
+  const base = slugBase(name);
+  // 1. Try clean business name slug first (no random hashes)
+  const { data: d1 } = await db.from('sales_demos').select('id').eq('slug', base).maybeSingle();
+  const { data: b1 } = await db.from('businesses').select('id').eq('slug', base).maybeSingle();
+  if (!d1 && !b1) return base;
+
+  // 2. If already taken, use clean human suffixes like -2, -3 (NEVER random hex hashes)
+  for (let i = 2; i <= 50; i++) {
+    const candidate = `${base}-${i}`;
+    const { data: dTaken } = await db.from('sales_demos').select('id').eq('slug', candidate).maybeSingle();
+    const { data: bTaken } = await db.from('businesses').select('id').eq('slug', candidate).maybeSingle();
+    if (!dTaken && !bTaken) return candidate;
   }
-  throw new Error('Unable to allocate a unique demo URL');
+  return `${base}-${Date.now().toString().slice(-4)}`;
 }
 
 function categoryDefaults(category: string) {
