@@ -680,11 +680,11 @@ export default function DashboardHome() {
                 done: menuItems.length > 0,
               },
               { 
-                label: 'Set Up Auto Replies', 
-                sub: isAutoReplyActive ? '24/7 AI auto-reply active' : 'Configure review response tones',
+                label: 'AI Auto Replies (Beta)', 
+                sub: 'Beta launch in 7 days · Locked for private testing',
                 href: '/dashboard/auto-reply',
                 external: false,
-                done: isAutoReplyActive,
+                done: false,
               },
               { 
                 label: 'Customize Appearance', 

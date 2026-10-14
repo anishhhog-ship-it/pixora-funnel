@@ -166,10 +166,10 @@ export default function DashboardContent({ children }: { children: React.ReactNo
   const terminology = getCatalogTerminology(activeBusiness?.category);
   const CatalogNavIcon = terminology.isFood ? UtensilsCrossed : BookOpen;
 
-  const sidebarItems = [
+  const sidebarItems: Array<{ label: string; icon: any; href: string; badge?: string }> = [
     { label: 'Dashboard', icon: Home, href: '/dashboard' },
     { label: 'Reviews', icon: Star, href: '/dashboard/reviews' },
-    { label: 'Auto Reply', icon: MessageSquare, href: '/dashboard/auto-reply' },
+    { label: 'Auto Reply', icon: MessageSquare, href: '/dashboard/auto-reply', badge: 'Beta' },
     { label: terminology.sidebarLabel, icon: CatalogNavIcon, href: '/dashboard/menu' },
     { label: 'QR Codes', icon: QrCode, href: '/dashboard/qr' },
     { label: 'Analytics', icon: BarChart2, href: '/dashboard/analytics' },
@@ -536,7 +536,13 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                   className={cn('h-4.5 w-4.5 flex-shrink-0 transition-colors', isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600')}
                 />
                 <span className="truncate">{item.label}</span>
-                {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-600" aria-hidden="true" />}
+                {item.badge ? (
+                  <span className="ml-auto px-1.5 py-0.5 text-[9px] font-extrabold rounded-md bg-purple-100 text-purple-700 border border-purple-200/80 uppercase tracking-wider">
+                    {item.badge}
+                  </span>
+                ) : isActive ? (
+                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-600" aria-hidden="true" />
+                ) : null}
               </Link>
             );
           })}
@@ -619,6 +625,11 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                   >
                     <Icon className={cn('h-5 w-5', isActive ? 'text-blue-600' : 'text-slate-400')} />
                     <span>{item.label}</span>
+                    {item.badge && (
+                      <span className="ml-auto px-1.5 py-0.5 text-[9px] font-extrabold rounded-md bg-purple-100 text-purple-700 border border-purple-200/80 uppercase tracking-wider">
+                        {item.badge}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
