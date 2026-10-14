@@ -159,8 +159,125 @@ export const MASSIVE_CATEGORY_REVIEWS: Record<string, CategoryReviewItem> = {
       "The trainers at {biz} provide personalized form corrections and tailored diet plans. Seeing real progress within my first month.",
       "Well-ventilated gym floor with plenty of free weights and cardio stations. The community vibe here keeps you coming back every single day."
     ]
+  },
+
+  electronics: {
+    category: 'Electronics & Mobile Stores',
+    subcategories: ['electronic', 'electronics', 'mobile', 'phone', 'laptop', 'computer', 'gadget', 'appliance', 'tv', 'ac', 'audio', 'earphones', 'headphones', 'smartwatch'],
+    reviews: [
+      "Best electronics and mobile store in the city! Got the latest smartphone at {biz} with an unbeatable launch discount and genuine brand warranty.",
+      "The tech sales team at {biz} was extremely knowledgeable. Helped me compare laptops based on processor, RAM, and battery life without pushing the most expensive one.",
+      "Fast screen and battery replacement service on my device. Completed in 45 minutes with genuine parts and a test warranty. Truly impressive at {biz}.",
+      "Huge variety of genuine accessories, chargers, and tempered glasses. Authentic products, clean billing, and courteous customer support.",
+      "Purchased home appliances including a smart TV and air conditioner from {biz}. Prompt same-day delivery and professional installation team.",
+      "Transparent pricing with zero hidden insurance fees. They even transferred all my data from the old phone to the new one for free!",
+      "Great exchange bonus on my older handset. The staff at {biz} made the trade-in valuation quick, fair, and seamless.",
+      "Wide selection of audiophile headphones and wireless soundbars. The listening lounge lets you test sound fidelity before purchasing."
+    ]
+  },
+
+  jewellery: {
+    category: 'Jewellery & Luxury Boutiques',
+    subcategories: ['jewellery', 'jewelry', 'gold', 'diamond', 'silver', 'ornaments', 'hallmarked', 'bridal', 'necklaces', 'rings', 'bangles', 'polki', 'kundan'],
+    reviews: [
+      "Exquisite bridal jewellery collection at {biz}! The 916 BIS Hallmarking and certified diamond reports gave us complete peace of mind.",
+      "The master karigars at {biz} crafted our custom engagement ring exactly to specification. Flawless finishing and brilliant diamond clarity.",
+      "Transparent making charges and live gold rate calculation right before your eyes. Our family has trusted {biz} for three generations.",
+      "The showroom ambiance is royal and welcoming. Attendants brought out countless trays of delicate daily wear gold chains without rushing us.",
+      "Their antique gold and polki craftsmanship is breathtaking. Every piece feels like an heirloom art piece with exceptional attention to detail.",
+      "Great buyback and exchange policy. They tested our old ornaments on computerized karat meters right in front of us with 100% honesty."
+    ]
+  },
+
+  hotels: {
+    category: 'Hotels, Resorts & Stays',
+    subcategories: ['hotel', 'resort', 'stay', 'hospitality', 'rooms', 'suites', 'homestay', 'luxury stay', 'inn', 'lodging', 'palace'],
+    reviews: [
+      "Exceptional hospitality and luxurious rooms at {biz}! The bed was plush, climate control was silent, and the city view was breathtaking.",
+      "Spotlessly clean bathroom, crisp linen, and lightning-fast room service. Front desk staff greeted us warmly and arranged early check-in effortlessly.",
+      "The breakfast buffet at {biz} is lavish with live egg and dosa stations. High hygiene standards and very courteous stewards.",
+      "Peaceful retreat away from the city hustle. Beautiful gardens, heated swimming pool, and rejuvenating spa treatments. Will return soon!",
+      "We hosted our corporate offsite conference at {biz}. The banquet facilities, AV sound systems, and catering were managed to five-star standards."
+    ]
+  },
+
+  automotive: {
+    category: 'Automotive, Showrooms & Garages',
+    subcategories: ['car', 'automotive', 'bike', 'showroom', 'garage', 'mechanic', 'service center', 'tyres', 'detailing', 'vehicles', 'spares'],
+    reviews: [
+      "Honest, skilled mechanics and transparent billing at {biz}! Diagnosed the engine noise accurately and delivered my car ahead of schedule.",
+      "Took our vehicle for full periodic service and ceramic coating. The car looks showroom-fresh and drives like a dream.",
+      "Zero unnecessary part replacement recommendations. They shared live video updates of old parts and explained every invoice item clearly.",
+      "Smooth test drive and purchase experience at {biz}. The sales consultant handled RTO registration, insurance, and accessories paperwork smoothly."
+    ]
+  },
+
+  education: {
+    category: 'Education, Academies & Coaching',
+    subcategories: ['education', 'coaching', 'academy', 'institute', 'school', 'college', 'tuition', 'classes', 'training', 'tutor', 'competitive'],
+    reviews: [
+      "Outstanding faculty at {biz} with deep subject mastery and patience! Simplified complex physics and mathematics concepts effortlessly.",
+      "Personalized mentoring and regular mock test analysis helped my daughter improve her percentile significantly. Highly disciplined environment.",
+      "Comprehensive, up-to-date study material and dedicated doubt-clearing sessions every weekend. The best coaching institute in the region."
+    ]
+  },
+
+  retail: {
+    category: 'Supermarkets & Grocery Retail',
+    subcategories: ['retail', 'grocery', 'supermarket', 'store', 'provision', 'mart', 'daily essentials', 'kirana', 'packaged'],
+    reviews: [
+      "Spotless supermarket with ultra-fresh vegetables, organic staples, and every household essential in stock. Great aisle organization!",
+      "Fast billing counters even during weekend rush hours. The staff at {biz} helps pack bags carefully and handles discounts efficiently."
+    ]
+  },
+
+  homeservices: {
+    category: 'Home Services, Hardware & Interior',
+    subcategories: ['interior', 'home services', 'plumbing', 'electrical', 'painting', 'carpentry', 'contractor', 'hardware', 'renovation', 'sanitary'],
+    reviews: [
+      "Top-tier craftsmanship and punctual execution by the {biz} team! Renovated our modular kitchen and living room within the promised budget.",
+      "Professional technicians who arrived on time, used quality branded materials, and cleaned the work area completely before leaving."
+    ]
   }
 };
+
+/**
+ * Standard industry categories available for Salesmen to select when registering a lead.
+ * Directly mapped to our verified review library and visual funnel themes.
+ */
+export interface SalesCategoryOption {
+  id: string;
+  name: string;
+  group: string;
+  icon: string;
+  description: string;
+}
+
+export const SALES_CATEGORY_OPTIONS: SalesCategoryOption[] = [
+  { id: 'clothes', name: 'Clothes & Fashion Stores', group: 'Fashion & Lifestyle', icon: 'ShoppingBag', description: '24+ verified fabric, fitting, designer & ethnic reviews' },
+  { id: 'perfumes', name: 'Perfume & Fragrance Stores', group: 'Fashion & Lifestyle', icon: 'Sparkles', description: '20+ verified oud, attar, longevity & scent reviews' },
+  { id: 'jewellery', name: 'Jewellery & Luxury Boutiques', group: 'Fashion & Lifestyle', icon: 'Gem', description: 'Certified hallmarked gold, diamond & bridal reviews' },
+  
+  { id: 'offices', name: 'Offices & Corporate Workspaces', group: 'Corporate & Real Estate', icon: 'Building', description: '15+ high-speed Wi-Fi, conference & IT uptime reviews' },
+  { id: 'realestate', name: 'Real Estate & Properties', group: 'Corporate & Real Estate', icon: 'Home', description: '15+ verified RERA, title deed, site visit & loan reviews' },
+  { id: 'professional', name: 'Professional Services & CA', group: 'Corporate & Real Estate', icon: 'Briefcase', description: 'Taxation, legal, advisory & audit corporate reviews' },
+
+  { id: 'restaurants', name: 'Restaurant & Fine Dining', group: 'Food & Hospitality', icon: 'Utensils', description: 'Taste, culinary standards, hospitality & ambience reviews' },
+  { id: 'cafes', name: 'Cafes, Coffee & Bakeries', group: 'Food & Hospitality', icon: 'Coffee', description: 'Espresso, bakes, work-friendly cafe & dessert reviews' },
+  { id: 'hotels', name: 'Hotels, Resorts & Stays', group: 'Food & Hospitality', icon: 'Bed', description: 'Plush suites, room service, buffet & hospitality reviews' },
+
+  { id: 'salons', name: 'Salons, Spas & Beauty Care', group: 'Wellness & Healthcare', icon: 'Scissors', description: 'Hair styling, skin treatments, hygiene & spa reviews' },
+  { id: 'healthcare', name: 'Healthcare, Clinics & Doctors', group: 'Wellness & Healthcare', icon: 'Stethoscope', description: 'Doctor diagnosis, gentle care, hygiene & pharmacy reviews' },
+  { id: 'fitness', name: 'Fitness Centers & Gyms', group: 'Wellness & Healthcare', icon: 'Dumbbell', description: 'Trainers, workout equipment, diet & progress reviews' },
+
+  { id: 'electronics', name: 'Electronics & Mobile Stores', group: 'Retail & Commerce', icon: 'Smartphone', description: 'Smartphones, warranty, gadgets, repairs & appliances' },
+  { id: 'retail', name: 'Supermarkets & Grocery Retail', group: 'Retail & Commerce', icon: 'Store', description: 'Fresh groceries, aisle organization & quick billing' },
+
+  { id: 'automotive', name: 'Automotive, Showrooms & Garages', group: 'Automotive & Services', icon: 'Car', description: 'Car servicing, mechanics, transparent billing & spares' },
+  { id: 'homeservices', name: 'Home Services, Hardware & Interior', group: 'Automotive & Services', icon: 'Wrench', description: 'Interior renovation, modular kitchen & repair reviews' },
+  { id: 'education', name: 'Education, Academies & Coaching', group: 'Education & Learning', icon: 'GraduationCap', description: 'Faculty, concept clarity, study material & mock exams' },
+  { id: 'other', name: 'Other Local Business', group: 'Other Verticals', icon: 'Layers', description: 'Universal positive 5-star customer experience reviews' },
+];
 
 /**
  * Find matching reviews from the massive category library
@@ -179,3 +296,4 @@ export function getReviewsForCategory(rawCategory: string = '', businessName: st
   // Default fallback if no specific category matched
   return [];
 }
+

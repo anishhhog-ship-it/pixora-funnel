@@ -22,7 +22,9 @@ import {
   X,
   MessageSquare,
   Building,
+  Tag,
 } from 'lucide-react';
+import { SALES_CATEGORY_OPTIONS } from '@/data/categoryReviews';
 
 const STAGES: ProspectStage[] = [
   'New Lead',
@@ -44,6 +46,7 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedStage, setSelectedStage] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
 
   // Modal State
@@ -53,7 +56,7 @@ export default function LeadsPage() {
     contactName: '',
     phone: '',
     email: '',
-    category: 'Restaurant / Cafe',
+    category: SALES_CATEGORY_OPTIONS[0].name,
     city: '',
     address: '',
     website: '',
@@ -130,7 +133,7 @@ export default function LeadsPage() {
           contactName: '',
           phone: '',
           email: '',
-          category: 'Restaurant / Cafe',
+          category: SALES_CATEGORY_OPTIONS[0].name,
           city: '',
           address: '',
           website: '',
@@ -164,6 +167,13 @@ export default function LeadsPage() {
       console.warn('Stage update error:', e);
     }
   };
+
+  const filteredProspects = prospects.filter((lead) => {
+    if (selectedCategory !== 'all' && lead.category !== selectedCategory) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 font-sans">
@@ -219,20 +229,38 @@ export default function LeadsPage() {
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-          <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">Stage:</span>
-          <select
-            value={selectedStage}
-            onChange={(e) => setSelectedStage(e.target.value)}
-            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 font-medium focus:outline-none"
-          >
-            <option value="all">All Stages ({prospects.length})</option>
-            {STAGES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+        <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">Category:</span>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 font-medium focus:outline-none max-w-[200px] truncate"
+            >
+              <option value="all">All Categories</option>
+              {SALES_CATEGORY_OPTIONS.map((c) => (
+                <option key={c.id} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">Stage:</span>
+            <select
+              value={selectedStage}
+              onChange={(e) => setSelectedStage(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 font-medium focus:outline-none"
+            >
+              <option value="all">All Stages ({prospects.length})</option>
+              {STAGES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -276,7 +304,7 @@ export default function LeadsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {prospects.map((lead) => (
+                {filteredProspects.map((lead) => (
                   <tr key={lead.id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="py-3.5 px-4 space-y-0.5">
                       <p className="font-bold text-slate-900 text-sm">{lead.business_name}</p>
@@ -291,7 +319,10 @@ export default function LeadsPage() {
                     </td>
 
                     <td className="py-3.5 px-4 text-slate-700">
-                      <p className="font-semibold">{lead.category}</p>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60 mb-0.5">
+                        <Tag className="w-2.5 h-2.5" />
+                        <span>{lead.category || 'General'}</span>
+                      </span>
                       <p className="text-[11px] text-slate-400">{lead.city || 'Location unassigned'}</p>
                     </td>
 
@@ -357,7 +388,7 @@ export default function LeadsPage() {
         /* Kanban View */
         <div className="flex gap-4 overflow-x-auto pb-4">
           {STAGES.map((stage) => {
-            const stageLeads = prospects.filter((p) => p.stage === stage);
+            const stageLeads = filteredProspects.filter((p) => p.stage === stage);
             return (
               <div
                 key={stage}
@@ -378,7 +409,10 @@ export default function LeadsPage() {
                     >
                       <div>
                         <h4 className="font-bold text-slate-900 text-xs">{lead.business_name}</h4>
-                        <p className="text-[10px] text-slate-500">{lead.category}</p>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 mt-1">
+                          <Tag className="w-2 h-2" />
+                          <span>{lead.category || 'General'}</span>
+                        </span>
                       </div>
                       {lead.phone && (
                         <p className="text-[11px] text-slate-600 flex items-center gap-1">
@@ -474,16 +508,54 @@ export default function LeadsPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-700 font-bold">Category</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Restaurant, Clinic, Salon"
+                  <div className="flex items-center justify-between">
+                    <label className="text-slate-700 font-bold">Select Category *</label>
+                    <span className="text-[10px] text-indigo-600 font-semibold flex items-center gap-0.5">
+                      <Sparkles className="w-2.5 h-2.5" /> AI Review Presets
+                    </span>
+                  </div>
+                  <select
+                    required
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-500"
-                  />
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                  >
+                    {Object.entries(
+                      SALES_CATEGORY_OPTIONS.reduce((acc, cat) => {
+                        acc[cat.group] = acc[cat.group] || [];
+                        acc[cat.group].push(cat);
+                        return acc;
+                      }, {} as Record<string, typeof SALES_CATEGORY_OPTIONS>)
+                    ).map(([group, cats]) => (
+                      <optgroup key={group} label={`── ${group} ──`}>
+                        {cats.map((c) => (
+                          <option key={c.id} value={c.name}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
                 </div>
               </div>
+
+              {/* Dynamic review preset hint based on selected category */}
+              {(() => {
+                const selectedOpt = SALES_CATEGORY_OPTIONS.find((c) => c.name === formData.category) || SALES_CATEGORY_OPTIONS[0];
+                return (
+                  <div className="p-3 rounded-2xl bg-gradient-to-r from-indigo-50 via-purple-50 to-blue-50 border border-indigo-100 flex items-start gap-2.5 text-[11px] text-indigo-950">
+                    <Sparkles className="w-4 h-4 text-[#5356EC] shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-extrabold text-indigo-900">
+                        {selectedOpt.name} Funnel Preset Active
+                      </p>
+                      <p className="text-slate-600 leading-relaxed">
+                        {selectedOpt.description}. Selecting this category ensures the customer funnel displays hyper-relevant 5-star pre-written reviews tailored to their business.
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">

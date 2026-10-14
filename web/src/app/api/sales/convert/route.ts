@@ -89,6 +89,10 @@ export async function POST(req: NextRequest) {
       }
       businessId = demo.data.business_id;
       businessSlug = demo.data.slug;
+      // Ensure category is synced to the business record
+      if (demo.data.category || prospect.data.category) {
+        await db.from('businesses').update({ category: demo.data.category || prospect.data.category }).eq('id', businessId);
+      }
     } else {
       // Direct onboarding without a prior demo
       businessSlug = await generateSlug(db, prospect.data.business_name);
