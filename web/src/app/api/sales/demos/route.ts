@@ -94,16 +94,36 @@ export async function POST(req: NextRequest) {
     if (funnel.error || !funnel.data) throw new Error('Unable to persist demo funnel');
     const qr = await db.from('qr_codes').insert({ business_id: businessId, funnel_id: funnel.data.id, name: `${businessName} Demo QR`, short_code: `px-${crypto.randomUUID().slice(0, 8)}`, destination_url: `${APP_URL}/f/${slug}`, status: 'active' });
     if (qr.error) throw new Error('Unable to persist demo QR');
-    const trial = await db.from('subscriptions').insert({ business_id: businessId, status: 'trial', is_lifetime: false, starts_at: now.toISOString(), expires_at: expires, payment_reference: null, payment_amount_inr: 0 });
-    if (trial.error) throw new Error('Unable to persist demo trial');
+    // Trial record (best-effort)
+    try {
+      await db.from('trials').insert({
+        business_id: businessId,
+        status: 'active',
+        started_at: now.toISOString(),
+        expires_at: expires,
+      });
+    } catch (trialErr) {
+      console.warn('Unable to persist demo trial record:', trialErr);
+    }
 
     if (prospectId) {
-      const p = await db.from('prospects').update({ stage: 'Demo In Progress', updated_at: now.toISOString() }).eq('id', prospectId);
-      const a = await db.from('sales_activities').insert({ prospect_id: prospectId, staff_id: access.session.staffId, type: 'demo_created', title: 'Review Funnel Created', description: `Created trial demo /f/${slug}.`, metadata: { demoId: demoResult.data.id, slug } });
-      if (p.error || a.error) throw new Error('Unable to record demo activity');
+      try {
+        await db.from('prospects').update({ stage: 'Demo In Progress', updated_at: now.toISOString() }).eq('id', prospectId);
+        await db.from('sales_activities').insert({
+          prospect_id: prospectId,
+          staff_id: access.session.staffId,
+          type: 'demo_created',
+          title: 'Review Funnel Created',
+          description: `Created trial demo /f/${slug}.`,
+          metadata: { demoId: demoResult.data.id, slug },
+        });
+      } catch (actErr) {
+        console.warn('Unable to record demo activity:', actErr);
+      }
     }
     return NextResponse.json({ success: true, demo: demoResult.data, publicFunnelUrl: `/f/${slug}`, publicDemoUrl: `/f/${slug}` });
   } catch (error: any) {
+    console.error('Demo creation error:', error);
     if (businessId) await db.from('businesses').delete().eq('id', businessId); // best-effort cleanup of an unreferenced trial tenant
     return databaseFailure(error?.message === 'Unable to persist demo' ? 'Unable to persist demo' : 'Unable to create demo');
   }

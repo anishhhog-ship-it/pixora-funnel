@@ -19,7 +19,7 @@ export default function PublicDemoRedirectPage() {
     <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white text-xs font-mono">
       <div className="flex items-center gap-2">
         <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-        <span>Loading real customer funnel /f/{slug}...</span>
+        <span>Loading...</span>
       </div>
     </div>
   );

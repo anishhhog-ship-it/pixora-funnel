@@ -397,8 +397,8 @@ function DemoBuilderPage() {
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                 <div>
-                  <h3 className="font-bold text-slate-900 text-sm">Real Customer Funnel Ready!</h3>
-                  <p className="text-[11px] text-emerald-700">This is the real, live customer review funnel provided to the business.</p>
+                  <h3 className="font-bold text-slate-900 text-sm">Customer Funnel Ready!</h3>
+                  <p className="text-[11px] text-emerald-700">The live customer review funnel is ready.</p>
                 </div>
               </div>
 
@@ -426,7 +426,7 @@ function DemoBuilderPage() {
                   className="px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 flex items-center gap-1.5 shadow-2xs"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Open Real Customer Funnel</span>
+                  <span>Open Customer Funnel</span>
                 </a>
 
                 <Link
@@ -787,7 +787,7 @@ function DemoBuilderPage() {
               className="w-full py-3.5 rounded-xl bg-[#5356EC] hover:bg-[#4346DB] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer disabled:opacity-50"
             >
               <Sparkles className="w-4 h-4 stroke-[2.5]" />
-              <span>{building ? 'Building Real Customer Funnel...' : 'Generate Real Customer Funnel'}</span>
+              <span>{building ? 'Building Customer Funnel...' : 'Generate Customer Funnel'}</span>
             </button>
           </div>
         </div>
@@ -796,7 +796,7 @@ function DemoBuilderPage() {
         <div className="lg:col-span-5 space-y-3">
           <div className="flex items-center justify-between px-1">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Real Customer Funnel
+              Customer Funnel Preview
             </span>
             <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200">
               Live Customer Screen (/f/)
@@ -815,14 +815,11 @@ function DemoBuilderPage() {
                 {/* Mini Mobile Browser Top Bar */}
                 <div className="relative z-20 w-full bg-slate-900/90 backdrop-blur-md px-3.5 py-2 flex items-center justify-between border-b border-white/10 text-[10px]">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0 animate-pulse" />
-                    <span className="font-mono text-stone-200 truncate">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
+                    <span className="font-mono text-stone-300 truncate text-[11px]">
                       /f/{previewSlug}
                     </span>
                   </div>
-                  <span className="text-[9px] uppercase tracking-wider text-emerald-400 font-bold bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-700/50 flex-shrink-0">
-                    REAL FUNNEL
-                  </span>
                 </div>
 
                 {/* Background Image / Ambient Vignette */}

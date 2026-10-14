@@ -200,7 +200,7 @@ export default function MyDemosPage() {
                     target="_blank"
                     rel="noreferrer"
                     className="p-2 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors"
-                    title="Open Real Customer Funnel"
+                    title="Open Customer Funnel"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
