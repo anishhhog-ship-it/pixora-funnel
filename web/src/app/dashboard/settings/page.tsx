@@ -217,6 +217,11 @@ export default function SettingsPage() {
   const [isSavingAccount, setIsSavingAccount] = useState(false);
   const [accountSavedSuccess, setAccountSavedSuccess] = useState(false);
   const [passwordResetSent, setPasswordResetSent] = useState(false);
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordUpdateSuccess, setPasswordUpdateSuccess] = useState(false);
+  const [passwordUpdateError, setPasswordUpdateError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -902,6 +907,43 @@ export default function SettingsPage() {
   const handleRequestPasswordReset = async () => {
     setPasswordResetSent(true);
     setTimeout(() => setPasswordResetSent(false), 5000);
+  };
+
+  const handleUpdatePassword = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setPasswordUpdateError(null);
+    setPasswordUpdateSuccess(false);
+
+    if (!newPasswordInput || newPasswordInput.length < 6) {
+      setPasswordUpdateError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    if (newPasswordInput !== confirmPasswordInput) {
+      setPasswordUpdateError('Passwords do not match. Please ensure both fields are identical.');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      const { supabase } = await import('@/lib/supabase/client');
+      const { error } = await supabase.auth.updateUser({
+        password: newPasswordInput,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setPasswordUpdateSuccess(true);
+      setNewPasswordInput('');
+      setConfirmPasswordInput('');
+      setTimeout(() => setPasswordUpdateSuccess(false), 5000);
+    } catch (err: any) {
+      setPasswordUpdateError(err?.message || 'Failed to update password. Please try again.');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
 
   const handleSignOutAccount = async () => {
@@ -3090,6 +3132,80 @@ export default function SettingsPage() {
                   <span>Session Active Now</span>
                 </div>
               </div>
+            </div>
+
+            {/* In-App Change Password Form */}
+            <div className="p-5 rounded-2xl border border-emerald-200/90 bg-emerald-50/40 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                  <Lock className="w-4 h-4 text-emerald-800" />
+                  <span>Change Password</span>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Instant Update
+                </span>
+              </div>
+              <p className="text-xs text-stone-600">
+                You can change your password anytime. Enter a new password below (at least 6 characters).
+              </p>
+
+              {passwordUpdateSuccess && (
+                <div className="p-3.5 bg-emerald-100 border border-emerald-300 rounded-xl text-emerald-900 text-xs font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span>Password updated successfully! You can now use your new password.</span>
+                </div>
+              )}
+
+              {passwordUpdateError && (
+                <div className="p-3.5 bg-rose-50 border border-rose-300 rounded-xl text-rose-800 text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{passwordUpdateError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleUpdatePassword} className="space-y-3 max-w-md">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">New Password *</label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="Enter new password (min. 6 characters)"
+                    value={newPasswordInput}
+                    onChange={(e) => setNewPasswordInput(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-xs bg-white border border-stone-200 rounded-xl focus:ring-1 focus:ring-emerald-800 outline-none font-mono text-slate-900 shadow-2xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Confirm New Password *</label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="Re-enter new password to confirm"
+                    value={confirmPasswordInput}
+                    onChange={(e) => setConfirmPasswordInput(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-xs bg-white border border-stone-200 rounded-xl focus:ring-1 focus:ring-emerald-800 outline-none font-mono text-slate-900 shadow-2xs"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isUpdatingPassword || !newPasswordInput}
+                  className="px-5 py-2.5 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-white text-xs font-bold transition cursor-pointer shadow-xs disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isUpdatingPassword ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Updating Password...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Update Password</span>
+                    </>
+                  )}
+                </button>
+              </form>
             </div>
 
             <div className="pt-4 border-t border-stone-100 flex items-center justify-between">

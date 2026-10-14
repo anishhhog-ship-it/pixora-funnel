@@ -45,6 +45,7 @@ function ConversionsPage() {
 
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
+  const [customerPassword, setCustomerPassword] = useState('Client@1234');
   const [customerPhone, setCustomerPhone] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('UPI');
   const [transactionReference, setTransactionReference] = useState('');
@@ -152,6 +153,7 @@ function ConversionsPage() {
            planSlug: selectedPlanSlug,
           customerName,
           customerEmail,
+          customerPassword: customerPassword.trim() || 'Client@1234',
           customerPhone: customerPhone.trim() || null,
           paymentMethod,
           transactionReference: transactionReference.trim() || null,
@@ -241,13 +243,23 @@ function ConversionsPage() {
               </a>
             </div>
 
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
-              <span className="text-slate-500 font-semibold">Customer Dashboard Login</span>
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2.5">
+              <span className="text-slate-500 font-semibold">Customer Dashboard Login Credentials</span>
               <p className="font-mono text-emerald-600 font-bold">{handoverPackage.loginUrl}</p>
-                 <p className="text-[11px] text-slate-500">
-                 Email: <span className="text-slate-900 font-semibold">{handoverPackage.customerEmail}</span>
-               </p>
-               {handoverPackage.activationStatus !== 'active' && <p className="text-[11px] font-semibold text-amber-700">The account, funnel and QR remain inactive until an admin or manager verifies the payment receipt.</p>}
+              <div className="space-y-1 pt-1">
+                <p className="text-[11px] text-slate-700">
+                  Email: <span className="text-slate-900 font-mono font-bold">{handoverPackage.customerEmail}</span>
+                </p>
+                {handoverPackage.initialPassword && (
+                  <p className="text-[11px] text-slate-700">
+                    Password: <span className="text-emerald-700 font-mono font-bold bg-white px-2 py-0.5 rounded border border-emerald-200">{handoverPackage.initialPassword}</span>
+                  </p>
+                )}
+                <p className="text-[10px] text-slate-500 italic">
+                  Client can change their password anytime in their dashboard profile section.
+                </p>
+              </div>
+              {handoverPackage.activationStatus !== 'active' && <p className="text-[11px] font-semibold text-amber-700">The account, funnel and QR remain inactive until an admin or manager verifies the payment receipt.</p>}
             </div>
           </div>
 
@@ -399,7 +411,7 @@ function ConversionsPage() {
               3. Customer &amp; Payment Information
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
               <div className="space-y-1">
                 <label className="text-slate-700 font-semibold">Customer Full Name *</label>
                 <input
@@ -421,6 +433,32 @@ function ConversionsPage() {
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#5356EC] focus:border-[#5356EC]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-slate-700 font-semibold">Client Initial Password *</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$';
+                      let pass = 'Px!';
+                      for (let i = 0; i < 6; i++) pass += chars.charAt(Math.floor(Math.random() * chars.length));
+                      setCustomerPassword(pass);
+                    }}
+                    className="text-[10px] font-bold text-[#5356EC] hover:underline cursor-pointer"
+                  >
+                    Generate
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Client@1234"
+                  value={customerPassword}
+                  onChange={(e) => setCustomerPassword(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#5356EC] focus:border-[#5356EC]"
                 />
               </div>
 

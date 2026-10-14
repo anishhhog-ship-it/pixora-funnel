@@ -227,4 +227,5 @@ export interface CustomerHandoverPackage {
   activationStatus?: 'pending_payment' | 'active';
   paymentStatus?: PaymentStatus;
   orderNo?: string;
+  initialPassword?: string;
 }

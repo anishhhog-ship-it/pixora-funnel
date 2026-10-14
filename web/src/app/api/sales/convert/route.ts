@@ -79,13 +79,77 @@ export async function POST(req: NextRequest) {
     const audit = await db.from('sales_audit_logs').insert({ staff_id: access.session.staffId, staff_email: access.session.email, action: 'SALES_CHECKOUT_PENDING_APPROVAL', target_type: 'sales_orders', target_id: order.data.id, details: { orderNo, demoId, planSlug } });
     if (stage.error || demoState.error || activity.error || audit.error) return databaseFailure();
 
+    const customerPassword = boundedText(body.customerPassword, 120) || 'Pixora@2026';
+
+    // Provision Client Auth User & Link Business
+    let authUserId: string | null = null;
+    try {
+      const { data: userList } = await db.auth.admin.listUsers();
+      const existingUser = userList?.users?.find((u: any) => u.email?.toLowerCase().trim() === customerEmail);
+      if (existingUser) {
+        authUserId = existingUser.id;
+        await db.auth.admin.updateUserById(authUserId, {
+          password: customerPassword,
+          email_confirm: true,
+          user_metadata: { full_name: customerName, role: 'business_owner' },
+        });
+      } else {
+        const { data: newUser } = await db.auth.admin.createUser({
+          email: customerEmail,
+          password: customerPassword,
+          email_confirm: true,
+          user_metadata: { full_name: customerName, role: 'business_owner' },
+        });
+        if (newUser?.user) authUserId = newUser.user.id;
+      }
+
+      if (authUserId) {
+        await db.from('profiles').upsert({
+          id: authUserId,
+          email: customerEmail,
+          full_name: customerName,
+          role: 'business_owner',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+
+        await db.from('businesses').update({
+          owner_id: authUserId,
+          status: 'active',
+          plan_status: 'active',
+          trial_expires_at: null,
+          updated_at: new Date().toISOString(),
+        }).eq('id', demo.data.business_id);
+
+        await db.from('business_members').upsert({
+          business_id: demo.data.business_id,
+          user_id: authUserId,
+          role: 'owner',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'business_id,user_id' });
+      }
+    } catch (authErr) {
+      console.warn('Unable to auto-provision client auth user:', authErr);
+    }
+
     const handover: CustomerHandoverPackage = {
-      businessName: prospect.data.business_name, customerName, customerEmail, customerPhone: snapshot.customerPhone,
-      businessSlug: demo.data.slug, loginUrl: `${APP_URL}/login`, publicFunnelUrl: `/f/${demo.data.slug}`,
-      qrCodeDownloadUrl: `/api/qr/download?slug=${demo.data.slug}`, planName: plan.data.name, isLifetime: plan.data.is_lifetime,
-      expiresAt: null, nfcOrdered: false, nfcAssetType: plan.data.includes_nfc ? 'Card + Stand' : undefined,
-      whatsappMessageTemplate: `We recorded order ${orderNo} for ${prospect.data.business_name}. Activation follows manual payment verification.`,
-      activationStatus: 'pending_payment', paymentStatus: 'PENDING_APPROVAL', orderNo,
+      businessName: prospect.data.business_name,
+      customerName,
+      customerEmail,
+      customerPhone: snapshot.customerPhone,
+      businessSlug: demo.data.slug,
+      loginUrl: `${APP_URL}/login`,
+      publicFunnelUrl: `/f/${demo.data.slug}`,
+      qrCodeDownloadUrl: `/api/qr/download?slug=${demo.data.slug}`,
+      planName: plan.data.name,
+      isLifetime: plan.data.is_lifetime,
+      expiresAt: null,
+      nfcOrdered: false,
+      nfcAssetType: plan.data.includes_nfc ? 'Card + Stand' : undefined,
+      initialPassword: customerPassword,
+      whatsappMessageTemplate: `Hello ${customerName}! Your ${prospect.data.business_name} Pixora review funnel is ready.\n\nSign in to your Dashboard:\n🔗 ${APP_URL}/login\n📧 Email: ${customerEmail}\n🔑 Password: ${customerPassword}\n\nLive Customer Funnel: ${APP_URL}/f/${demo.data.slug}\n\nYou can change your password anytime in your Profile & Security section!`,
+      activationStatus: 'pending_payment',
+      paymentStatus: 'PENDING_APPROVAL',
+      orderNo,
     };
     return NextResponse.json({ success: true, order: order.data, handover, activationStatus: 'pending_payment', paymentStatus: 'PENDING_APPROVAL', orderNo });
   } catch { return databaseFailure(); }
