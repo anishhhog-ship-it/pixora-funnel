@@ -26,6 +26,66 @@ export default function ConversionsWrapper() {
   );
 }
 
+const DEFAULT_COMMERCIAL_PLANS: CommercialPlan[] = [
+  {
+    id: 'plan_lifetime_launch',
+    name: 'Founder Launch Lifetime Offer',
+    slug: 'lifetime_launch_100',
+    description: 'Exclusive launch offer for first 100 businesses. Lifetime Review Funnel software access with zero renewal fees.',
+    price_paise: 259900,
+    price_inr: 2599,
+    billing_interval: 'lifetime',
+    duration_years: 99,
+    is_lifetime: true,
+    includes_nfc: false,
+    max_slots: 100,
+    slots_used: 12,
+    is_active: true,
+    display_order: 1,
+    features: ['Lifetime Review Funnel Software', 'Unlimited Google Reviews Routing', 'Smart AI Review Wizard', 'Custom QR Stand Asset', 'Zero Recurring Fees'],
+    created_at: '2026-01-01T00:00:00.000Z',
+    updated_at: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'plan_2year_software',
+    name: 'Standard 2-Year Plan',
+    slug: 'standard_2year_software',
+    description: 'Full access for 2 full years to Pixora Review Funnel, smart routing, and QR assets.',
+    price_paise: 259900,
+    price_inr: 2599,
+    billing_interval: '2_years',
+    duration_years: 2,
+    is_lifetime: false,
+    includes_nfc: false,
+    max_slots: null,
+    slots_used: 0,
+    is_active: true,
+    display_order: 2,
+    features: ['2-Year Full Software License', 'Unlimited Table & Counter Scans', 'AI Auto-Reply Generator', 'Dynamic Feedback Routing', 'Priority Support'],
+    created_at: '2026-01-01T00:00:00.000Z',
+    updated_at: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'plan_2year_nfc',
+    name: 'Standard 2-Year Plan + NFC Delivery',
+    slug: 'standard_2year_nfc',
+    description: '2-Year Review Funnel access plus premium custom printed NFC Card & Stand delivered to doorstep.',
+    price_paise: 299900,
+    price_inr: 2999,
+    billing_interval: '2_years',
+    duration_years: 2,
+    is_lifetime: false,
+    includes_nfc: true,
+    max_slots: null,
+    slots_used: 0,
+    is_active: true,
+    display_order: 3,
+    features: ['2-Year Full Software License', '1x Custom NFC Business Card', '1x Acrylic Table Display Stand', 'Doorstep Express Courier', 'Ready to Tap & Collect Reviews'],
+    created_at: '2026-01-01T00:00:00.000Z',
+    updated_at: '2026-01-01T00:00:00.000Z',
+  },
+];
+
 function ConversionsPage() {
   const searchParams = useSearchParams();
   const initialProspectId = searchParams.get('prospectId') || '';
@@ -33,7 +93,7 @@ function ConversionsPage() {
 
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [demos, setDemos] = useState<SalesDemo[]>([]);
-  const [plans, setPlans] = useState<CommercialPlan[]>([]);
+  const [plans, setPlans] = useState<CommercialPlan[]>(DEFAULT_COMMERCIAL_PLANS);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
@@ -71,7 +131,7 @@ function ConversionsPage() {
         const [pRes, dRes, plRes] = await Promise.all([
           fetch('/api/sales/prospects', { headers }),
           fetch('/api/sales/demos', { headers }),
-          fetch('/api/sales/plans'),
+          fetch('/api/sales/plans', { headers }),
         ]);
 
         const [pData, dData, plData] = await Promise.all([
@@ -82,7 +142,12 @@ function ConversionsPage() {
 
         if (pData.success) setProspects(pData.prospects || []);
         if (dData.success) setDemos(dData.demos || []);
-        if (plData.success) setPlans(plData.plans || []);
+        if (plData.success && Array.isArray(plData.plans) && plData.plans.length > 0) {
+          setPlans(plData.plans.map((p: any) => ({
+            ...p,
+            price_inr: p.price_inr ?? (p.price_paise ? Math.round(p.price_paise / 100) : 2599),
+          })));
+        }
       } catch (e) {
         setLoadError(e instanceof Error ? e.message : 'Sales conversion data could not be loaded.');
       } finally {
@@ -367,45 +432,65 @@ function ConversionsPage() {
 
           {/* 2. Choose Commercial Plan */}
           <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xs">
-            <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
-              2. Commercial Plan &amp; Offer Selection
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {plans.map((pl) => {
-                const isSelected = selectedPlanSlug === pl.slug;
-                return (
-                  <div
-                    key={pl.id}
-                    onClick={() => setSelectedPlanSlug(pl.slug)}
-                    className={`p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between space-y-3 ${
-                      isSelected
-                        ? 'bg-indigo-50/70 border-[#5356EC] shadow-xs ring-1 ring-[#5356EC]'
-                        : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
-                    }`}
-                  >
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-900 text-xs leading-snug">{pl.name}</span>
-                        {pl.is_lifetime && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
-                            LIFETIME
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-base font-bold text-slate-900">
-                        ₹{pl.price_inr.toLocaleString('en-IN')}
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-relaxed">{pl.description}</p>
-                    </div>
-
-                    <div className="text-[10px] text-[#5356EC] font-semibold pt-1">
-                      {isSelected ? '✓ Selected' : 'Click to Select'}
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
+                2. Commercial Plan &amp; Offer Selection
+              </h3>
+              <span className="text-[11px] text-slate-500 font-medium">
+                {plans.length} Packages Available
+              </span>
             </div>
+
+            {plans.length === 0 ? (
+              <div className="p-6 text-center text-xs text-slate-500 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                Loading commercial plans...
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {plans.map((pl) => {
+                  const isSelected = selectedPlanSlug === pl.slug;
+                  const priceInr = pl.price_inr ?? (pl.price_paise ? Math.round(pl.price_paise / 100) : 2599);
+                  return (
+                    <div
+                      key={pl.id || pl.slug}
+                      onClick={() => setSelectedPlanSlug(pl.slug)}
+                      className={`p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between space-y-3 ${
+                        isSelected
+                          ? 'bg-indigo-50/70 border-[#5356EC] shadow-xs ring-1 ring-[#5356EC]'
+                          : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
+                      }`}
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-900 text-xs leading-snug">{pl.name}</span>
+                          {pl.is_lifetime && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                              LIFETIME
+                            </span>
+                          )}
+                          {pl.includes_nfc && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold">
+                              + NFC CARD
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-base font-bold text-slate-900">
+                          ₹{priceInr.toLocaleString('en-IN')}
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-relaxed">{pl.description}</p>
+                      </div>
+
+                      <div className="text-[10px] text-[#5356EC] font-semibold pt-1 flex items-center justify-between">
+                        <span>{isSelected ? '✓ Selected' : 'Click to Select'}</span>
+                        <span className="text-[10px] text-slate-400">
+                          {pl.is_lifetime ? 'No Renewals' : `${pl.duration_years || 2} Years`}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* 3. Customer & Payment Details */}
