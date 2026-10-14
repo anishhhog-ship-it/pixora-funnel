@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Star, Zap, Bot, Clock, ShieldCheck, ArrowRight } from 'lucide-react';
-import { businessService, analyticsService, normalizeBusinessCategory, getCatalogTerminology } from '@/services';
-import { Business } from '@/types';
+import { Star, Zap, Bot, Clock, ShieldCheck, ArrowRight, UtensilsCrossed, Smartphone, Sparkles } from 'lucide-react';
+import { businessService, menuService, analyticsService, normalizeBusinessCategory, getCatalogTerminology } from '@/services';
+import { Business, MenuItem } from '@/types';
 import { useParams } from 'next/navigation';
 
 export default function BusinessLandingPage() {
@@ -17,6 +17,7 @@ export default function BusinessLandingPage() {
   const [rating, setRating] = useState<number>(0);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [business, setBusiness] = useState<Business | null>(null);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   
@@ -39,9 +40,17 @@ export default function BusinessLandingPage() {
         }
       }
     });
+
     businessService.getBusinessBySlug(businessSlug)
-      .then((result) => {
-        if (isActive) setBusiness(result);
+      .then(async (result) => {
+        if (!isActive || !result) return;
+        setBusiness(result);
+        try {
+          const items = await menuService.getItems(result.businessId);
+          if (isActive) setMenuItems(items.filter(i => i.isLive !== false));
+        } catch (e) {
+          console.warn('Could not load menu items in funnel:', e);
+        }
       })
       .catch(() => {
         if (isActive) setLoadError(true);
@@ -245,29 +254,67 @@ export default function BusinessLandingPage() {
         </div>
       </Card>
 
-      {/* ── Optional Digital Menu Link (if enabled) ── */}
+      {/* ── Client Portal Catalogue / Menu Integration ── */}
       {business?.theme?.menuEnabled !== false && (
-        <Link 
-          href={`/f/${businessSlug}/menu`}
-          className="funnel-focus-ring mb-4 flex w-full items-center justify-between rounded-2xl border border-white/40 bg-white/90 p-3.5 text-xs font-semibold text-gray-800 shadow-md backdrop-blur-md transition-transform hover:scale-[1.01] hover:bg-white"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-100 text-xs font-bold text-amber-800">
-              ✨
+        <div className="mb-4 w-full rounded-3xl border border-white/60 bg-white/95 p-4 shadow-xl backdrop-blur-md">
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-100 text-xs font-bold text-amber-800">
+                ✨
+              </div>
+              <div>
+                <p className="font-bold text-gray-900 text-xs leading-tight">
+                  {terminology.isFood ? 'Live Digital Menu' : 'Live Product & Service Catalogue'}
+                </p>
+                <p className="text-[10px] text-gray-500 font-normal">
+                  {menuItems.length > 0 ? `${menuItems.length} items & offerings listed` : 'Explore prices, photos & specials'}
+                </p>
+              </div>
             </div>
-            <div className="text-left">
-              <p className="font-bold text-gray-900 leading-tight">
-                {terminology.isFood ? 'View Digital Menu & Specials' : 'View Product & Service Catalogue'}
-              </p>
-              <p className="text-[10px] text-gray-500 font-normal">
-                {terminology.isFood ? 'Explore prices, items & photo gallery' : 'Explore offerings, prices & photo gallery'}
-              </p>
-            </div>
+            <Link 
+              href={`/f/${businessSlug}/menu`}
+              className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-[#0B3D2E] hover:bg-emerald-100 transition-colors"
+            >
+              View All <ArrowRight className="h-3 w-3" />
+            </Link>
           </div>
-          <span className="flex items-center gap-1 text-xs font-bold" style={{ color: primaryColor }}>
-            Open <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </span>
-        </Link>
+
+          {/* Quick Preview Chips of Real Items Added by Client Portal */}
+          {menuItems.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-gray-100">
+              {menuItems.slice(0, 2).map((item) => (
+                <Link
+                  key={item.itemId}
+                  href={`/f/${businessSlug}/menu`}
+                  className="flex items-center gap-2 p-2 rounded-xl bg-stone-50 hover:bg-stone-100 transition-colors border border-stone-200/60"
+                >
+                  <img
+                    src={item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'}
+                    alt={item.name}
+                    className="w-10 h-10 rounded-lg object-cover shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-bold text-gray-900 truncate leading-tight">{item.name}</p>
+                    <p className="text-[10px] font-bold text-[#0B3D2E]">₹{item.price}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Direct Homescreen Quick Action */}
+          <div className="mt-2.5 pt-2 border-t border-dashed border-gray-200 flex items-center justify-between text-[10px] text-gray-500">
+            <span className="flex items-center gap-1 text-[#0B3D2E] font-medium">
+              <Smartphone className="w-3.5 h-3.5" /> Save to mobile home screen
+            </span>
+            <Link 
+              href={`/f/${businessSlug}/menu`}
+              className="font-bold text-[#0B3D2E] hover:underline"
+            >
+              Open Menu →
+            </Link>
+          </div>
+        </div>
       )}
 
       {/* ── Happy Customers Banner (Matches Reference Screenshot) ── */}

@@ -1404,6 +1404,24 @@ export const reviewService = {
 // ============================================================================
 export const menuService = {
   getCategories: async (businessId: string): Promise<MenuCategory[]> => {
+    // 1. Try server API route
+    try {
+      const res = await fetch(`/api/menu/categories?businessId=${encodeURIComponent(businessId)}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.categories) && json.categories.length > 0) {
+          if (isBrowser) {
+            try {
+              localStorage.setItem(`pixora_menu_cats_${businessId}`, JSON.stringify(json.categories));
+            } catch (e) {}
+          }
+          return json.categories;
+        }
+      }
+    } catch (e) {
+      // Fallback to client Supabase or localStorage
+    }
+
     if (isSupabaseConfigured() && !businessId.startsWith('biz_')) {
       try {
         const { data: menu } = await supabase
@@ -1452,7 +1470,70 @@ export const menuService = {
     return [{ categoryId: 'cat_all', businessId, name: 'All', order: 0 }];
   },
 
+  addCategory: async (businessId: string, name: string): Promise<MenuCategory> => {
+    try {
+      const res = await fetch('/api/menu/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId, name }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.category) {
+          if (isBrowser) {
+            try {
+              const key = `pixora_menu_cats_${businessId}`;
+              const raw = localStorage.getItem(key);
+              const list: MenuCategory[] = raw ? JSON.parse(raw) : [{ categoryId: 'cat_all', businessId, name: 'All', order: 0 }];
+              list.push(json.category);
+              localStorage.setItem(key, JSON.stringify(list));
+            } catch (e) {}
+          }
+          return json.category;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not add category via API:', e);
+    }
+
+    // Local fallback
+    const localCat: MenuCategory = {
+      categoryId: `cat_${Date.now()}`,
+      businessId,
+      name,
+      order: 0,
+    };
+    if (isBrowser) {
+      try {
+        const key = `pixora_menu_cats_${businessId}`;
+        const raw = localStorage.getItem(key);
+        const list: MenuCategory[] = raw ? JSON.parse(raw) : [{ categoryId: 'cat_all', businessId, name: 'All', order: 0 }];
+        list.push(localCat);
+        localStorage.setItem(key, JSON.stringify(list));
+      } catch (e) {}
+    }
+    return localCat;
+  },
+
   getItems: async (businessId: string): Promise<MenuItem[]> => {
+    // 1. Try server API route
+    try {
+      const res = await fetch(`/api/menu?businessId=${encodeURIComponent(businessId)}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.items)) {
+          if (isBrowser) {
+            try {
+              localStorage.setItem(`pixora_menu_items_${businessId}`, JSON.stringify(json.items));
+            } catch (e) {}
+          }
+          return json.items;
+        }
+      }
+    } catch (e) {
+      // Fallback
+    }
+
     if (isSupabaseConfigured() && !businessId.startsWith('biz_')) {
       try {
         const { data: menu } = await supabase
@@ -1473,6 +1554,7 @@ export const menuService = {
           if (!error && items && items.length > 0) {
             return items.map((it: any) => ({
               itemId: it.id,
+              businessId,
               categoryId: it.category_id || 'cat_all',
               name: it.name,
               description: it.description || '',
@@ -1500,10 +1582,29 @@ export const menuService = {
       return mockData.mockMenuItems;
     }
 
-    return []; // STRICT PRODUCTION: NO FAKE MENU ITEMS
+    return [];
   },
 
   updateItem: async (item: MenuItem): Promise<MenuItem> => {
+    let updatedItem = item;
+    // 1. Try server API route
+    try {
+      const res = await fetch('/api/menu', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId: item.itemId, businessId: item.businessId, item }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.item) {
+          updatedItem = json.item;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not update menu item via API:', e);
+    }
+
+    // 2. Fallback to Supabase direct
     if (isSupabaseConfigured() && !item.itemId.startsWith('item_')) {
       try {
         await supabase
@@ -1522,14 +1623,60 @@ export const menuService = {
       }
     }
 
+    // 3. Update in local storage
+    if (isBrowser) {
+      try {
+        const key = `pixora_menu_items_${item.businessId || 'default'}`;
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const list: MenuItem[] = JSON.parse(raw);
+          const idx = list.findIndex(i => i.itemId === item.itemId);
+          if (idx >= 0) {
+            list[idx] = updatedItem;
+            localStorage.setItem(key, JSON.stringify(list));
+          }
+        }
+      } catch (e) {}
+    }
+
     const idx = mockData.mockMenuItems.findIndex(i => i.itemId === item.itemId);
     if (idx >= 0) {
-      mockData.mockMenuItems[idx] = item;
+      mockData.mockMenuItems[idx] = updatedItem;
     }
-    return item;
+    return updatedItem;
   },
 
   addItem: async (item: MenuItem): Promise<MenuItem> => {
+    let savedItem = item;
+
+    // 1. Try server API route
+    try {
+      const res = await fetch('/api/menu', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId: item.businessId, item }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.item) {
+          savedItem = json.item;
+          if (isBrowser) {
+            try {
+              const key = `pixora_menu_items_${savedItem.businessId || 'default'}`;
+              const raw = localStorage.getItem(key);
+              const list: MenuItem[] = raw ? JSON.parse(raw) : [];
+              list.push(savedItem);
+              localStorage.setItem(key, JSON.stringify(list));
+            } catch (e) {}
+          }
+          return savedItem;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not add menu item via API:', e);
+    }
+
+    // 2. Direct Supabase fallback
     if (isSupabaseConfigured() && item.businessId && !item.businessId.startsWith('biz_')) {
       try {
         const { data: menu } = await supabase
@@ -1544,7 +1691,7 @@ export const menuService = {
             .from('menu_items')
             .insert({
               menu_id: menu.id,
-              category_id: item.categoryId !== 'cat_all' ? item.categoryId : null,
+              category_id: (item.categoryId && !item.categoryId.startsWith('cat_')) ? item.categoryId : null,
               name: item.name,
               description: item.description,
               price: item.price,
@@ -1555,7 +1702,7 @@ export const menuService = {
             .single();
 
           if (inserted) {
-            return {
+            savedItem = {
               ...item,
               itemId: inserted.id,
             };
@@ -1571,14 +1718,22 @@ export const menuService = {
         const key = `pixora_menu_items_${item.businessId || 'default'}`;
         const raw = localStorage.getItem(key);
         const list: MenuItem[] = raw ? JSON.parse(raw) : [];
-        list.push(item);
+        list.push(savedItem);
         localStorage.setItem(key, JSON.stringify(list));
       } catch (e) {}
     }
-    return item;
+    return savedItem;
   },
 
-  deleteItem: async (itemId: string): Promise<boolean> => {
+  deleteItem: async (itemId: string, businessId?: string): Promise<boolean> => {
+    try {
+      await fetch(`/api/menu?itemId=${encodeURIComponent(itemId)}`, {
+        method: 'DELETE',
+      });
+    } catch (e) {
+      console.warn('Could not delete menu item via API:', e);
+    }
+
     if (isSupabaseConfigured() && !itemId.startsWith('item_')) {
       try {
         await supabase.from('menu_items').delete().eq('id', itemId);
