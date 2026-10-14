@@ -170,12 +170,14 @@ export async function POST(req: NextRequest) {
 
     const orderNo = `PX-${crypto.randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`;
 
-    // Direct Plan Activation: Directly set payment_status='VERIFIED' and conversion_status='converted'
-    const order = await db.from('sales_orders').insert({
+    // verified_by references auth.users(id) - use authUserId, never staffId!
+    const verifiedBy = access.session.authUserId || null;
+
+    const baseOrderPayload = {
       order_no: orderNo,
       prospect_id: prospectId,
       demo_id: demoId || null,
-      sales_staff_id: access.session.staffId,
+      sales_staff_id: access.session.staffId || null,
       business_id: businessId,
       customer_id: null,
       plan_slug: planSlug,
@@ -185,16 +187,40 @@ export async function POST(req: NextRequest) {
       transaction_reference: txnRef,
       payment_status: 'VERIFIED',
       conversion_status: 'converted',
-      activated_at: now.toISOString(),
+      converted_at: now.toISOString(),
       verified_at: now.toISOString(),
-      verified_by: access.session.staffId,
-      verification_reason: paymentMethod === 'Cash' ? 'Cash Collected - Direct Plan Activation' : 'Salesperson Onboarding - Plan Directly Activated',
+      verified_by: verifiedBy,
       idempotency_key: idempotencyKey,
+    };
+
+    // Try insert with optional hardening columns first
+    let order = await db.from('sales_orders').insert({
+      ...baseOrderPayload,
+      activated_at: now.toISOString(),
+      verification_reason: paymentMethod === 'Cash' ? 'Cash Collected - Direct Plan Activation' : 'Salesperson Onboarding - Plan Directly Activated',
     }).select().single();
+
+    // Fallback 1: If optional columns don't exist in older migrations, retry with baseOrderPayload
+    if (order.error && (order.error.code === '42703' || order.error.message?.includes('does not exist'))) {
+      console.warn('sales_orders optional columns missing, falling back to base payload:', order.error.message);
+      order = await db.from('sales_orders').insert(baseOrderPayload).select().single();
+    }
+
+    // Fallback 2: If foreign key violation on verified_by, retry with verified_by: null
+    if (order.error && (order.error.code === '23503' || order.error.message?.includes('verified_by'))) {
+      console.warn('sales_orders foreign key violation, retrying with verified_by: null:', order.error.message);
+      order = await db.from('sales_orders').insert({
+        ...baseOrderPayload,
+        verified_by: null,
+      }).select().single();
+    }
 
     if (order.error || !order.data) {
       console.error('Order creation error:', order.error);
-      return databaseFailure('Unable to record order');
+      return NextResponse.json({
+        success: false,
+        error: order.error?.message || 'Unable to record order'
+      }, { status: 400 });
     }
 
     // Direct Activation of Prospect and Demo
