@@ -27,10 +27,27 @@ import {
   AlertTriangle,
   ChevronRight,
   UserCheck,
-  RotateCcw
+  RotateCcw,
+  Plus,
+  Trash2,
+  Power,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { decodeQrFromImageFile, constructUpiUri } from '@/lib/qrDecoder';
 import { paymentGatewayService, PaymentGatewayConfig, PaymentOrder } from '@/services/paymentGatewayService';
+
+export interface UpiAccount {
+  id: string;
+  upiId: string;
+  payeeName: string;
+  label: string;
+  isActive: boolean;
+  isPrimary: boolean;
+  qrImageUrl?: string;
+  dailyLimitInr?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export default function AdminPaymentsPage() {
   const [config, setConfig] = useState<PaymentGatewayConfig>(paymentGatewayService.getConfig());
@@ -38,6 +55,19 @@ export default function AdminPaymentsPage() {
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Multi-account UPI Management State
+  const [upiAccounts, setUpiAccounts] = useState<UpiAccount[]>([]);
+  const [isSwitchingUpiId, setIsSwitchingUpiId] = useState<string | null>(null);
+  const [isTogglingUpiId, setIsTogglingUpiId] = useState<string | null>(null);
+  const [showAddUpiModal, setShowAddUpiModal] = useState(false);
+  const [newUpiData, setNewUpiData] = useState({
+    upiId: '',
+    payeeName: 'Pixora Automations',
+    label: '',
+    dailyLimitInr: 100000,
+  });
+  const [isAddingUpi, setIsAddingUpi] = useState(false);
 
   // Active Tab: 'queue' | 'transactions' | 'scanner' | 'listener'
   const [activeTab, setActiveTab] = useState<'queue' | 'transactions' | 'scanner' | 'listener'>('queue');
@@ -72,21 +102,26 @@ export default function AdminPaymentsPage() {
   const [copiedSecret, setCopiedSecret] = useState(false);
 
   useEffect(() => {
-    // Load config from API
-    fetch('/api/payments/config')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.config) {
-          setConfig(data.config);
-        }
-      })
-      .catch(() => null);
+    // Load config and accounts from API
+    loadConfig();
 
     // Initial load of orders
     loadOrders();
     const interval = setInterval(loadOrders, 4000);
     return () => clearInterval(interval);
   }, []);
+
+  const loadConfig = () => {
+    fetch('/api/payments/config')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          if (data.config) setConfig(data.config);
+          if (Array.isArray(data.accounts)) setUpiAccounts(data.accounts);
+        }
+      })
+      .catch(() => null);
+  };
 
   const loadOrders = () => {
     fetch('/api/payments/transactions')
@@ -122,6 +157,125 @@ export default function AdminPaymentsPage() {
   const showNotice = (type: 'success' | 'error', message: string) => {
     setActionNotice({ type, message });
     setTimeout(() => setActionNotice(null), 4500);
+  };
+
+  // ── UPI Accounts Management ──
+  const handleSwitchUpi = async (id: string) => {
+    setIsSwitchingUpiId(id);
+    try {
+      const res = await fetch('/api/payments/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'switch', id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.config) {
+          setConfig(data.config);
+          paymentGatewayService.updateConfig(data.config);
+        }
+        if (Array.isArray(data.accounts)) {
+          setUpiAccounts(data.accounts);
+        }
+        showNotice('success', `✓ Switched active gateway to ${data.config?.upiId || 'selected account'}! Live orders and QR codes updated.`);
+      } else {
+        showNotice('error', data.error || 'Failed to switch active UPI account');
+      }
+    } catch (err: any) {
+      showNotice('error', 'Error switching UPI account: ' + err.message);
+    } finally {
+      setIsSwitchingUpiId(null);
+    }
+  };
+
+  const handleToggleUpiActive = async (id: string, currentlyActive: boolean) => {
+    setIsTogglingUpiId(id);
+    try {
+      const res = await fetch('/api/payments/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'toggle_active', id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.config) {
+          setConfig(data.config);
+          paymentGatewayService.updateConfig(data.config);
+        }
+        if (Array.isArray(data.accounts)) {
+          setUpiAccounts(data.accounts);
+        }
+        showNotice('success', currentlyActive ? 'UPI account disabled' : 'UPI account activated');
+      } else {
+        showNotice('error', data.error || 'Failed to update account status');
+      }
+    } catch (err: any) {
+      showNotice('error', 'Error toggling account: ' + err.message);
+    } finally {
+      setIsTogglingUpiId(null);
+    }
+  };
+
+  const handleAddUpiAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUpiData.upiId.trim().includes('@')) {
+      showNotice('error', 'Please enter a valid UPI address (must include @, e.g. business@ybl)');
+      return;
+    }
+    setIsAddingUpi(true);
+    try {
+      const res = await fetch('/api/payments/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add', account: newUpiData }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (Array.isArray(data.accounts)) {
+          setUpiAccounts(data.accounts);
+        }
+        setShowAddUpiModal(false);
+        setNewUpiData({
+          upiId: '',
+          payeeName: config.payeeName || 'Pixora Automations',
+          label: '',
+          dailyLimitInr: 100000,
+        });
+        showNotice('success', `✓ Added new UPI account: ${newUpiData.upiId}`);
+      } else {
+        showNotice('error', data.error || 'Failed to add UPI ID');
+      }
+    } catch (err: any) {
+      showNotice('error', 'Error adding account: ' + err.message);
+    } finally {
+      setIsAddingUpi(false);
+    }
+  };
+
+  const handleDeleteUpiAccount = async (id: string, upiId: string) => {
+    if (!window.confirm(`Are you sure you want to remove ${upiId}?`)) return;
+    try {
+      const res = await fetch('/api/payments/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.config) {
+          setConfig(data.config);
+          paymentGatewayService.updateConfig(data.config);
+        }
+        if (Array.isArray(data.accounts)) {
+          setUpiAccounts(data.accounts);
+        }
+        showNotice('success', `✓ Deleted UPI ID ${upiId}`);
+      } else {
+        showNotice('error', data.error || 'Failed to delete UPI ID');
+      }
+    } catch (err: any) {
+      showNotice('error', 'Error deleting account: ' + err.message);
+    }
   };
 
   // Copy UTR helper
@@ -535,22 +689,44 @@ export default function AdminPaymentsPage() {
         </div>
 
         {/* Metric 4: Active Gateway UPI VPA */}
-        <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Gateway VPA</span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <QrCode className="w-4 h-4" />
+        <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Gateway VPA</span>
+              <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                <QrCode className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <span className="text-lg font-mono font-extrabold text-slate-900 block truncate" title={config.upiId}>
+                {config.upiId}
+              </span>
+            </div>
+            <div className="mt-1 text-[11px] font-semibold text-slate-500 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="truncate">Payee: {config.payeeName}</span>
             </div>
           </div>
-          <div className="mt-3">
-            <span className="text-lg font-mono font-extrabold text-slate-900 block truncate" title={config.upiId}>
-              {config.upiId}
-            </span>
-          </div>
-          <div className="mt-2 text-[11px] font-semibold text-slate-500 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>Payee: {config.payeeName}</span>
-          </div>
+          {upiAccounts.filter((a) => a.isActive).length > 1 && (
+            <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1">
+              <span className="text-[10px] text-slate-400 font-bold uppercase shrink-0">Switch:</span>
+              <select
+                value={upiAccounts.find((a) => a.isPrimary)?.id || ''}
+                onChange={(e) => {
+                  if (e.target.value) handleSwitchUpi(e.target.value);
+                }}
+                disabled={isSwitchingUpiId !== null}
+                className="text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200/80 rounded-lg px-2 py-1 outline-none cursor-pointer hover:bg-purple-100 transition max-w-[170px] truncate"
+                title="Switch Primary Gateway UPI ID"
+              >
+                {upiAccounts.filter((a) => a.isActive).map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.label ? `${acc.label} (${acc.upiId})` : acc.upiId}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
@@ -963,7 +1139,195 @@ export default function AdminPaymentsPage() {
 
       {/* ── TAB 3: SCANNER & VPA CONFIGURATION ── */}
       {activeTab === 'scanner' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="space-y-6">
+          {/* UPI Accounts Management & Switcher Card */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-purple-50 text-purple-700 text-[11px] font-bold uppercase tracking-wider mb-1">
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  <span>Multi-VPA Routing Controller</span>
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <span>Manage UPI IDs, Status &amp; Gateway Switching</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5 max-w-3xl">
+                  Configure multiple company UPI accounts, toggle active/disabled states to control transaction flow, and 1-click switch which primary VPA receives customer checkout payments and generates dynamic QR codes.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setNewUpiData({
+                    upiId: '',
+                    payeeName: config.payeeName || 'Pixora Automations',
+                    label: '',
+                    dailyLimitInr: 100000,
+                  });
+                  setShowAddUpiModal(true);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-sm transition cursor-pointer flex items-center gap-1.5 shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add New UPI ID</span>
+              </button>
+            </div>
+
+            {/* List / Grid of Accounts */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {upiAccounts.map((acc) => {
+                const isCurrentLive = acc.isPrimary;
+                return (
+                  <div
+                    key={acc.id}
+                    className={`p-5 rounded-2xl border transition-all flex flex-col justify-between gap-4 relative overflow-hidden ${
+                      isCurrentLive
+                        ? 'bg-gradient-to-br from-emerald-50/70 via-white to-blue-50/40 border-emerald-400 shadow-md ring-2 ring-emerald-400/20'
+                        : acc.isActive
+                        ? 'bg-white border-slate-200 hover:border-slate-300 shadow-xs'
+                        : 'bg-slate-50/80 border-slate-200/80 opacity-75'
+                    }`}
+                  >
+                    {/* Top status badges */}
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        {isCurrentLive ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                            <span>PRIMARY GATEWAY (LIVE)</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">
+                            <span>STANDBY</span>
+                          </span>
+                        )}
+
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${
+                            acc.isActive
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-slate-200 text-slate-700'
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              acc.isActive ? 'bg-emerald-600' : 'bg-slate-500'
+                            }`}
+                          />
+                          <span>{acc.isActive ? 'Active' : 'Disabled'}</span>
+                        </span>
+                      </div>
+
+                      {/* Label & Payee */}
+                      <div className="space-y-0.5">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-extrabold text-slate-900 truncate">
+                            {acc.label || 'UPI Account'}
+                          </h4>
+                          {!acc.isPrimary && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteUpiAccount(acc.id, acc.upiId)}
+                              className="text-slate-400 hover:text-rose-600 p-1 rounded-lg transition"
+                              title="Delete this UPI ID"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 truncate">Payee: {acc.payeeName}</p>
+                      </div>
+
+                      {/* VPA Address */}
+                      <div className="mt-3 p-2.5 rounded-xl bg-slate-100/80 border border-slate-200/60 flex items-center justify-between gap-2">
+                        <span className="font-mono font-bold text-xs text-slate-900 select-all truncate">
+                          {acc.upiId}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(acc.upiId);
+                            showNotice('success', `Copied ${acc.upiId}`);
+                          }}
+                          className="text-slate-500 hover:text-slate-800 p-1 rounded transition"
+                          title="Copy UPI ID"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {acc.dailyLimitInr ? (
+                        <div className="mt-2 text-[10px] font-semibold text-slate-400 flex items-center gap-1">
+                          <span>Limit: ₹{acc.dailyLimitInr.toLocaleString('en-IN')}/day</span>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* Actions: Switch to this ID & Active/Disable toggle */}
+                    <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                      {isCurrentLive ? (
+                        <div className="flex-1 py-2 px-3 rounded-xl bg-emerald-100/80 text-emerald-800 font-extrabold text-[11px] flex items-center justify-center gap-1.5">
+                          <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                          <span>Routing All Payments</span>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={!acc.isActive || isSwitchingUpiId !== null}
+                          onClick={() => handleSwitchUpi(acc.id)}
+                          className={`flex-1 py-2 px-3 rounded-xl font-bold text-[11px] transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer ${
+                            !acc.isActive
+                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                              : 'bg-slate-900 hover:bg-black text-white hover:shadow'
+                          }`}
+                          title={!acc.isActive ? 'Enable account first before switching' : 'Switch active gateway to this UPI ID'}
+                        >
+                          {isSwitchingUpiId === acc.id ? (
+                            <>
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              <span>Switching...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Zap className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Switch to this ID</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {/* Active/Disable Toggle Button */}
+                      <button
+                        type="button"
+                        disabled={isTogglingUpiId !== null || (isCurrentLive && acc.isActive)}
+                        onClick={() => handleToggleUpiActive(acc.id, acc.isActive)}
+                        className={`py-2 px-3 rounded-xl font-bold text-[11px] border transition cursor-pointer flex items-center gap-1 ${
+                          isCurrentLive && acc.isActive
+                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                            : acc.isActive
+                            ? 'bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-700 border-slate-200 hover:border-rose-300'
+                            : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 font-extrabold'
+                        }`}
+                        title={
+                          isCurrentLive && acc.isActive
+                            ? 'Primary gateway cannot be disabled. Switch to another UPI first.'
+                            : acc.isActive
+                            ? 'Disable this UPI ID'
+                            : 'Activate this UPI ID'
+                        }
+                      >
+                        <Power className="w-3.5 h-3.5" />
+                        <span>{acc.isActive ? 'Disable' : 'Enable'}</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Form: VPA & Image Upload */}
           <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs space-y-6">
             <div className="border-b border-slate-100 pb-4">
@@ -1160,6 +1524,7 @@ export default function AdminPaymentsPage() {
               </p>
             </div>
           </div>
+        </div>
         </div>
       )}
 
@@ -1428,6 +1793,121 @@ export default function AdminPaymentsPage() {
                 Confirm Rejection
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADD UPI ACCOUNT MODAL ── */}
+      {showAddUpiModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-scaleUp">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                  <Plus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Add New UPI ID</h3>
+                  <p className="text-[11px] text-slate-500">Configure another bank VPA for payment routing</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddUpiModal(false)}
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-full cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddUpiAccount} className="space-y-3.5">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  UPI VPA Address *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newUpiData.upiId}
+                  onChange={(e) => setNewUpiData({ ...newUpiData, upiId: e.target.value.trim() })}
+                  placeholder="e.g. yourbusiness@okaxis, 9876543210@paytm"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-500/20 outline-none"
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  Must be a valid VPA with @ symbol (e.g. 9257378047@ybl)
+                </span>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Account Label / Nickname *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newUpiData.label}
+                  onChange={(e) => setNewUpiData({ ...newUpiData, label: e.target.value })}
+                  placeholder="e.g. HDFC Current Account, Backup PhonePe"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-500/20 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Payee Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newUpiData.payeeName}
+                    onChange={(e) => setNewUpiData({ ...newUpiData, payeeName: e.target.value })}
+                    placeholder="e.g. Pixora Automations"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-500/20 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Daily Limit (₹ INR)
+                  </label>
+                  <input
+                    type="number"
+                    value={newUpiData.dailyLimitInr}
+                    onChange={(e) => setNewUpiData({ ...newUpiData, dailyLimitInr: Number(e.target.value) || 100000 })}
+                    placeholder="100000"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-500/20 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2.5 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAddUpiModal(false)}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isAddingUpi}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs transition cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
+                >
+                  {isAddingUpi ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Adding...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Save UPI ID</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
