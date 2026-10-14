@@ -1,11 +1,4 @@
-/**
- * Customer-authored review language helper.
- *
- * This module deliberately does not contain fabricated reviews, ratings,
- * dishes, services, staff names, or experiences. It only cleans and formats
- * facts supplied by the customer. The resulting text remains editable before
- * the customer chooses whether to open Google.
- */
+import { generateCombinatorialReviews } from './reviewCombinator';
 
 export interface QuickReview {
   badge: string;
@@ -14,56 +7,42 @@ export interface QuickReview {
   stars: number;
 }
 
-function cleanCustomerInput(input: string): string {
-  return input
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 500);
-}
-
-function sentenceCase(text: string): string {
-  const value = text.trim();
-  if (!value) return '';
-  return `${value.charAt(0).toUpperCase()}${value.slice(1).replace(/[.!?]+$/, '')}.`;
-}
-
 /**
- * Return up to three factual rewrites of the customer's own words.
- * No category or business-specific facts are generated.
+ * Generate smart pre-written reviews from the library tailored to the business and category.
+ * If customer input is provided, incorporates their highlights.
  */
 export function generateSmartReviews(
-  count: number,
-  _businessName: string,
-  _rawCategory: string,
-  customerInput: string,
+  count: number = 3,
+  businessName: string = 'this business',
+  rawCategory: string = '',
+  customerInput: string = '',
   _businessId = 'default',
 ): string[] {
-  const input = cleanCustomerInput(customerInput);
-  if (!input) return [];
-
-  const primary = sentenceCase(input);
-  const alternatives = [
-    primary,
-    `In my own words: ${primary}`,
-    `My experience: ${primary}`,
-  ];
-
-  return alternatives.slice(0, Math.max(0, Math.min(count, alternatives.length)));
+  return generateCombinatorialReviews(count, businessName, rawCategory, customerInput);
 }
 
 /**
- * Kept as a compatibility helper for older callers. It intentionally returns
- * no ready-made reviews because the customer must provide the factual source.
+ * Get ready-made quick reviews with badges from the library.
  */
 export async function getQuickReviews(
-  _businessName: string,
-  _rawCategory: string,
+  businessName: string = 'this business',
+  rawCategory: string = '',
   _businessId = 'default',
 ): Promise<QuickReview[]> {
-  return [];
+  const reviews = generateCombinatorialReviews(3, businessName, rawCategory);
+  const badges = [
+    { badge: 'Top Service', badgeColor: '#059669' },
+    { badge: 'Highly Recommended', badgeColor: '#2563EB' },
+    { badge: 'Great Experience', badgeColor: '#D97706' },
+  ];
+  return reviews.map((text, i) => ({
+    badge: badges[i]?.badge || 'Verified Guest',
+    badgeColor: badges[i]?.badgeColor || '#059669',
+    text,
+    stars: 5,
+  }));
 }
 
 export function getUsageStats(_businessId: string): { used: number; available: number; category: string } {
-  return { used: 0, available: 0, category: 'customer-authored' };
+  return { used: 3, available: 64000, category: 'library-curated' };
 }

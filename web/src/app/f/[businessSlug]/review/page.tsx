@@ -33,10 +33,24 @@ export default function ReviewExperiencePage() {
   useEffect(() => {
     analyticsService.trackEvent('experience_started', { slug: businessSlug });
 
-    // Load business details for personalized copy and branding
+    // Load business details and immediate library suggestions
     businessService.getBusinessBySlug(businessSlug).then(async (biz) => {
-      if (biz) {
-        setBusiness(biz);
+      setBusiness(biz);
+      const name = biz?.name || 'this business';
+      const cat = biz?.category || '';
+      const id = biz?.id || businessSlug;
+      try {
+        const storedExp = sessionStorage.getItem('temp_experience') || '';
+        const generated = await reviewEngine.generateReviewSuggestions(storedExp, name, cat, id);
+        if (generated && generated.length > 0) {
+          setSuggestions(generated);
+          setSelectedSuggestionIndex(0);
+          const initialText = storedExp || generated[0];
+          setExperience(initialText);
+          sessionStorage.setItem('final_review_text', initialText);
+        }
+      } catch (err) {
+        console.error('Error generating initial library reviews:', err);
       }
     });
 
@@ -54,49 +68,56 @@ export default function ReviewExperiencePage() {
 
   const primaryColor = business?.theme?.primaryColor || '#0B3D2E';
 
-  // ── Handler 1: Post 1-Click Selected Quick Review on Google ──
-  // ── Handler 2: Custom Review -> AI Enhance ──
-  const handleGenerate = async () => {
-    if (!experience.trim()) return;
+  // ── Handler 1: Generate or Refresh Suggestions ──
+  const handleGenerate = async (customPrompt?: string) => {
     setIsGenerating(true);
     setGenerationError(null);
-    analyticsService.trackEvent('suggestions_generated', { inputLength: experience.length });
-    sessionStorage.setItem('temp_experience', experience.trim());
+    const inputText = (typeof customPrompt === 'string' ? customPrompt : experience).trim();
+    analyticsService.trackEvent('suggestions_generated', { inputLength: inputText.length });
+    sessionStorage.setItem('temp_experience', inputText);
     const bizId = business?.id || businessSlug;
 
-    void (async () => {
-      try {
-        const generated = await reviewEngine.generateReviewSuggestions(
-          experience,
-          business?.name || 'this business',
-          business?.category,
-          bizId
-        );
+    try {
+      const generated = await reviewEngine.generateReviewSuggestions(
+        inputText,
+        business?.name || 'this business',
+        business?.category,
+        bizId
+      );
+      if (generated && generated.length > 0) {
         setSuggestions(generated);
-        if (generated.length === 0) {
-          setGenerationError('No suggestions were generated. You can continue with your own words.');
-        }
-      } catch {
-        setGenerationError('Suggestions are unavailable right now. You can continue with your own words.');
-      } finally {
-        setIsGenerating(false);
+        setSelectedSuggestionIndex(0);
+        setExperience(generated[0]);
+        sessionStorage.setItem('final_review_text', generated[0]);
+      } else {
+        setGenerationError('No suggestions were generated. You can continue with your own words.');
       }
-    })();
+    } catch {
+      setGenerationError('Suggestions are unavailable right now. You can continue with your own words.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleUseSuggestion = (index: number) => {
     setSelectedSuggestionIndex(index);
     analyticsService.trackEvent('suggestion_selected', { index });
-    sessionStorage.setItem('final_review_text', suggestions[index]);
+    const text = suggestions[index];
+    if (text) {
+      sessionStorage.setItem('final_review_text', text);
+      setExperience(text);
+    }
   };
 
-  // ── Handler 3: Customer-controlled Google hand-off for every rating ──
+  // ── Handler 3: Customer-controlled Google hand-off ──
   const handlePostCustomOnGoogle = () => {
     let finaltext = '';
-    if (selectedSuggestionIndex !== null && suggestions[selectedSuggestionIndex]) {
-      finaltext = suggestions[selectedSuggestionIndex];
-    } else if (experience.trim().length > 0) {
+    if (experience.trim().length > 0) {
       finaltext = experience.trim();
+    } else if (selectedSuggestionIndex !== null && suggestions[selectedSuggestionIndex]) {
+      finaltext = suggestions[selectedSuggestionIndex];
+    } else if (suggestions.length > 0) {
+      finaltext = suggestions[0];
     }
 
     if (!finaltext) return;
@@ -185,7 +206,7 @@ export default function ReviewExperiencePage() {
               ))}
             </div>
 
-            {/* Rating status: every rating stays under the customer's control */}
+            {/* Rating status */}
             <div className="mb-4 text-center">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-900">
                 <ShieldCheck className="h-3.5 w-3.5 text-blue-700" />
@@ -193,115 +214,110 @@ export default function ReviewExperiencePage() {
               </span>
             </div>
 
-            {/* Textarea Input */}
-            <div className="relative mb-4">
-              <Textarea
-                placeholder="Describe what actually happened during your visit. A few words is enough…"
-                className="funnel-focus-ring min-h-[110px] resize-none rounded-xl border-stone-200 bg-white p-3.5 text-xs sm:text-sm text-stone-900 focus-visible:ring-[#0B3D2E]"
-                value={experience}
-                onChange={(e) => setExperience(e.target.value)}
-                maxLength={500}
-              />
-              <div className="absolute bottom-2.5 right-3 text-[10px] text-stone-400">
-                {experience.length}/500
-              </div>
-            </div>
-
-            {/* Customer-authored suggestions and Google hand-off */}
+            {/* Positive Reviews (Rating > 3): Pre-written reviews ready from library */}
             {rating > 3 ? (
               <div>
-                {suggestions.length === 0 ? (
-                  <div className="space-y-2.5">
-                    <Button
-                      className="funnel-focus-ring w-full text-sm font-bold shadow-md transition-all hover:-translate-y-0.5 rounded-xl py-5 cursor-pointer text-white"
-                      onClick={handleGenerate}
-                      disabled={isGenerating || experience.trim().length === 0}
-                      style={{ backgroundColor: primaryColor }}
-                      aria-busy={isGenerating}
-                    >
-                       {isGenerating ? 'Formatting your words…' : 'Suggest clearer wording ✨'}
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full text-xs font-semibold py-2.5 rounded-xl border-stone-300 text-stone-700 hover:bg-stone-100 cursor-pointer flex items-center justify-center gap-1.5"
-                      disabled={experience.trim().length === 0}
-                      onClick={handlePostCustomOnGoogle}
-                    >
-                      <span>Post on Google Directly with My Words</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Button>
+                <div className="flex items-center justify-between mb-1.5 px-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-amber-500">✨</span>
+                    <h3 className="font-bold text-sm text-stone-900">Ready-Made AI Reviews</h3>
                   </div>
-                ) : (
-                  /* AI Suggestions Chosen */
-                  <div className="mt-4 animate-in slide-in-from-bottom-3">
-                    <div className="flex items-center justify-center gap-1.5 mb-2">
-                      <span className="text-[#0B3D2E]">✨</span>
-                       <h3 className="font-bold text-sm text-stone-900">Wording from your own words</h3>
-                      <Info className="w-3.5 h-3.5 text-stone-400" />
-                    </div>
-                    <p className="text-[11px] text-center text-stone-500 mb-4">
-                       Choose the version you like best, then review it before Google opens:
-                    </p>
+                  <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    1-Click Select
+                  </span>
+                </div>
+                <p className="text-[11px] text-stone-500 mb-3 px-1">
+                  Select a ready review below or edit your own words:
+                </p>
 
-                    <div className="space-y-3 mb-5">
-                      {suggestions.map((suggestion, idx) => (
-                        <Card
-                          key={idx}
-                          role="button"
-                          tabIndex={0}
-                          aria-pressed={selectedSuggestionIndex === idx}
-                          onClick={() => handleUseSuggestion(idx)}
-                          className={`funnel-focus-ring cursor-pointer rounded-2xl border-2 p-3.5 transition-all text-left ${
-                            selectedSuggestionIndex === idx
-                              ? 'border-[#0B3D2E] bg-[#F2F7F5]'
-                              : 'border-transparent shadow-xs hover:border-stone-200 bg-white'
-                          }`}
-                          style={selectedSuggestionIndex === idx ? { borderColor: primaryColor } : undefined}
-                        >
-                          <div className="flex mb-1.5">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} className="w-3.5 h-3.5 fill-[#F4B400] text-[#F4B400]" />
-                            ))}
-                          </div>
-                          <p className="text-xs text-stone-800 leading-relaxed mb-3">{suggestion}</p>
-                          <div className="flex justify-end">
-                            {selectedSuggestionIndex === idx ? (
-                              <div 
-                                className="text-white rounded-full p-1 shadow-sm"
-                                style={{ backgroundColor: primaryColor }}
-                              >
-                                <CheckCircle2 className="w-4 h-4" />
-                              </div>
-                            ) : (
-                              <span className="text-[11px] font-semibold text-stone-600 bg-stone-100 px-2.5 py-1 rounded-full">
-                                Use this
-                              </span>
-                            )}
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-
-                    <Button
-                      className="funnel-focus-ring w-full text-sm font-bold shadow-md transition-all hover:-translate-y-0.5 rounded-xl py-5 cursor-pointer text-white flex items-center justify-center gap-2"
-                      disabled={selectedSuggestionIndex === null}
-                      style={{ backgroundColor: primaryColor }}
-                      onClick={handlePostCustomOnGoogle}
+                {/* 3 Library Review Cards */}
+                <div className="space-y-2.5 mb-4">
+                  {suggestions.map((suggestion, idx) => (
+                    <Card
+                      key={idx}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={selectedSuggestionIndex === idx}
+                      onClick={() => handleUseSuggestion(idx)}
+                      className={`funnel-focus-ring cursor-pointer rounded-2xl border-2 p-3.5 transition-all text-left ${
+                        selectedSuggestionIndex === idx
+                          ? 'border-[#0B3D2E] bg-[#F2F7F5] shadow-xs'
+                          : 'border-stone-200/80 shadow-2xs hover:border-stone-300 bg-white'
+                      }`}
+                      style={selectedSuggestionIndex === idx ? { borderColor: primaryColor } : undefined}
                     >
-                      <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center p-0.5 mr-1">
-                        <svg viewBox="0 0 24 24" width="14" height="14">
-                          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.31-1.03 2.41-2.16 3.16v2.62h3.49c2.04-1.89 3.22-4.67 3.22-7.79z" fill="#4285F4" />
-                          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.49-2.62c-.98.66-2.23 1.05-3.79 1.05-2.91 0-5.38-1.97-6.26-4.62H2.12v2.71C3.94 20.48 7.68 23 12 23z" fill="#34A853" />
-                          <path d="M5.74 14.15c-.22-.66-.35-1.36-.35-2.15s.13-1.49.35-2.15V7.14H2.12C1.4 8.59 1 10.25 1 12s.4 3.41 1.12 4.86l3.62-2.71z" fill="#FBBC05" />
-                          <path d="M12 5.38c1.62 0 3.07.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.68 1 3.94 3.52 2.12 7.14l3.62 2.71c.88-2.65 3.35-4.47 6.26-4.47z" fill="#EA4335" />
-                        </svg>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex gap-0.5">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className="w-3.5 h-3.5 fill-[#F4B400] text-[#F4B400]" />
+                          ))}
+                        </div>
+                        {selectedSuggestionIndex === idx ? (
+                          <span
+                            className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full flex items-center gap-1"
+                            style={{ backgroundColor: primaryColor }}
+                          >
+                            <CheckCircle2 className="w-3 h-3" /> Selected
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 px-2 py-0.5 rounded-full transition-colors">
+                            Use this
+                          </span>
+                        )}
                       </div>
-                      <span>Post on Google →</span>
-                    </Button>
+                      <p className="text-xs text-stone-800 leading-relaxed">{suggestion}</p>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Editable Textarea */}
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-1 px-1">
+                    <label className="text-[11px] font-semibold text-stone-700">
+                      Customize your review:
+                    </label>
+                    <span className="text-[10px] text-stone-400">{experience.length}/500</span>
                   </div>
-                )}
+                  <Textarea
+                    placeholder="Type or customize your review here…"
+                    className="funnel-focus-ring min-h-[85px] resize-none rounded-xl border-stone-200 bg-white p-3 text-xs sm:text-sm text-stone-900 focus-visible:ring-[#0B3D2E]"
+                    value={experience}
+                    onChange={(e) => {
+                      setExperience(e.target.value);
+                      sessionStorage.setItem('final_review_text', e.target.value);
+                    }}
+                    maxLength={500}
+                  />
+                </div>
+
+                {/* Regenerate from Library Button */}
+                <div className="mb-4">
+                  <button
+                    type="button"
+                    onClick={() => handleGenerate(experience)}
+                    disabled={isGenerating}
+                    className="w-full text-xs font-semibold py-2 rounded-xl text-stone-700 bg-stone-100 hover:bg-stone-200 cursor-pointer flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+                  >
+                    <span>{isGenerating ? 'Generating more options…' : 'Generate more reviews from library ✨'}</span>
+                  </button>
+                </div>
+
+                {/* Primary Post on Google Button */}
+                <Button
+                  className="funnel-focus-ring w-full text-sm font-bold shadow-md transition-all hover:-translate-y-0.5 rounded-xl py-5 cursor-pointer text-white flex items-center justify-center gap-2 mb-2"
+                  style={{ backgroundColor: primaryColor }}
+                  onClick={handlePostCustomOnGoogle}
+                >
+                  <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center p-0.5 mr-1">
+                    <svg viewBox="0 0 24 24" width="14" height="14">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.31-1.03 2.41-2.16 3.16v2.62h3.49c2.04-1.89 3.22-4.67 3.22-7.79z" fill="#4285F4" />
+                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.49-2.62c-.98.66-2.23 1.05-3.79 1.05-2.91 0-5.38-1.97-6.26-4.62H2.12v2.71C3.94 20.48 7.68 23 12 23z" fill="#34A853" />
+                      <path d="M5.74 14.15c-.22-.66-.35-1.36-.35-2.15s.13-1.49.35-2.15V7.14H2.12C1.4 8.59 1 10.25 1 12s.4 3.41 1.12 4.86l3.62-2.71z" fill="#FBBC05" />
+                      <path d="M12 5.38c1.62 0 3.07.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.68 1 3.94 3.52 2.12 7.14l3.62 2.71c.88-2.65 3.35-4.47 6.26-4.47z" fill="#EA4335" />
+                    </svg>
+                  </div>
+                  <span>Post on Google →</span>
+                </Button>
               </div>
             ) : (
               <div className="space-y-3">

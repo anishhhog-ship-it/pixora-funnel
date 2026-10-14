@@ -45,6 +45,9 @@ import {
   X,
   SlidersHorizontal,
   ChevronRight,
+  Star,
+  Bot,
+  Clock,
 } from 'lucide-react';
 import SalesQrActions from '@/components/sales/SalesQrActions';
 import {
@@ -867,10 +870,10 @@ function DemoBuilderPage() {
                   </p>
                 </div>
 
-                {/* Central White Review Card */}
+                {/* Central White Review Card: Exact Customer Funnel Layout */}
                 <div className="relative z-10 mx-4 mb-4 rounded-[28px] border border-white/80 bg-white/95 p-5 shadow-2xl backdrop-blur-md text-center">
                   {/* Official Google G Logo Badge */}
-                  <div className="flex justify-center mb-3">
+                  <div className="flex justify-center mb-4">
                     <div className="w-11 h-11 rounded-full bg-white border border-slate-100 shadow-md flex items-center justify-center">
                       <svg viewBox="0 0 24 24" width="24" height="24">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.31-1.03 2.41-2.16 3.16v2.62h3.49c2.04-1.89 3.22-4.67 3.22-7.79z" fill="#4285F4" />
@@ -881,17 +884,42 @@ function DemoBuilderPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-3 text-left">
-                    <div className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>Production flow preview</span>
+                  {/* 5 Stars */}
+                  <div className="mb-4 flex justify-center gap-1.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star key={star} className="h-8 w-8 fill-[#F4B400] text-[#F4B400] drop-shadow-xs" />
+                    ))}
+                  </div>
+
+                  {/* Continue Button */}
+                  <div
+                    className="h-11 w-full rounded-full text-xs font-bold text-white shadow-md flex items-center justify-center cursor-pointer transition-transform hover:scale-[1.02]"
+                    style={{ backgroundColor: primaryColor }}
+                  >
+                    <span>Continue</span>
+                    <span className="ml-1.5 font-bold">→</span>
+                  </div>
+
+                  {/* 3 Circular Micro-Features */}
+                  <div className="mt-4 grid grid-cols-3 gap-1 border-t border-gray-100 pt-3 text-center">
+                    <div className="flex flex-col items-center">
+                      <div className="mx-auto mb-1 flex h-6 w-6 items-center justify-center rounded-full border border-[#FED7AA]/50 bg-[#FFF7ED]">
+                        <Zap className="w-3 h-3 text-[#D97706]" />
+                      </div>
+                      <span className="text-[9px] font-semibold text-gray-800">Quick<br/>&amp; easy</span>
                     </div>
-                    <p className="text-[11px] leading-relaxed text-slate-600">
-                      Owners will use the live funnel to submit their own rating and feedback. This builder does not simulate, gate, or generate a review.
-                    </p>
-                    <a href={reviewDestinationUrl || '#'} target="_blank" rel="noreferrer" className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white">
-                      Open configured review destination <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
+                    <div className="flex flex-col items-center">
+                      <div className="mx-auto mb-1 flex h-6 w-6 items-center justify-center rounded-full border border-[#FED7AA]/50 bg-[#FFF7ED]">
+                        <Bot className="w-3 h-3 text-[#D97706]" />
+                      </div>
+                      <span className="text-[9px] font-semibold text-gray-800">Writing<br/>support</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="mx-auto mb-1 flex h-6 w-6 items-center justify-center rounded-full border border-[#FED7AA]/50 bg-[#FFF7ED]">
+                        <Clock className="w-3 h-3 text-[#D97706]" />
+                      </div>
+                      <span className="text-[9px] font-semibold text-gray-800">Private<br/>feedback</span>
+                    </div>
                   </div>
                 </div>
 

@@ -23,10 +23,6 @@ export default function ReviewSuggestionsPage() {
     businessService.getBusinessBySlug(businessSlug).then(async (biz) => {
       setBusiness(biz);
       const storedInput = sessionStorage.getItem('temp_experience') || '';
-      if (!storedInput.trim()) {
-        setIsLoading(false);
-        return;
-      }
       try {
         const generated = await reviewEngine.generateReviewSuggestions(
           storedInput,
