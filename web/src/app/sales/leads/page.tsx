@@ -362,7 +362,7 @@ export default function LeadsPage() {
                         <Link
                           href={`/sales/demo-builder?prospectId=${lead.id}&name=${encodeURIComponent(
                             lead.business_name
-                          )}&cat=${encodeURIComponent(lead.category)}`}
+                          )}&cat=${encodeURIComponent(lead.category)}&mapsUrl=${encodeURIComponent(lead.google_maps_url || '')}`}
                           className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-[#5356EC] text-[#5356EC] hover:text-white border border-indigo-100 text-[11px] font-bold flex items-center gap-1 transition-all"
                         >
                           <Sparkles className="w-3 h-3" />
@@ -421,7 +421,9 @@ export default function LeadsPage() {
                       )}
                       <div className="pt-2 border-t border-slate-200/60 flex justify-between items-center text-[10px]">
                         <Link
-                          href={`/sales/demo-builder?prospectId=${lead.id}`}
+                          href={`/sales/demo-builder?prospectId=${lead.id}&name=${encodeURIComponent(
+                            lead.business_name
+                          )}&cat=${encodeURIComponent(lead.category)}&mapsUrl=${encodeURIComponent(lead.google_maps_url || '')}`}
                           className="text-[#5356EC] hover:underline font-bold"
                         >
                           Build Demo →

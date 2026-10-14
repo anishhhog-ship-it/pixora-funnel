@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Load prospect
-    const prospect = await db.from('prospects').select('id,business_name,phone,category,city,assigned_to').eq('id', prospectId).maybeSingle();
+    const prospect = await db.from('prospects').select('id,business_name,phone,category,city,assigned_to,google_maps_url').eq('id', prospectId).maybeSingle();
     if (prospect.error) return databaseFailure();
     if (!prospect.data) return NextResponse.json({ success: false, error: 'Prospect not found' }, { status: 404 });
     if (access.session.role === 'salesperson' && prospect.data.assigned_to !== access.session.staffId) {
@@ -83,15 +83,23 @@ export async function POST(req: NextRequest) {
     let businessSlug: string;
 
     if (demoId) {
-      const demo = await db.from('sales_demos').select('id,slug,business_id,business_name,category,created_by,status').eq('id', demoId).eq('prospect_id', prospectId).maybeSingle();
+      const demo = await db.from('sales_demos').select('id,slug,business_id,business_name,category,created_by,status,review_destination_url').eq('id', demoId).eq('prospect_id', prospectId).maybeSingle();
       if (demo.error || !demo.data?.business_id) {
         return NextResponse.json({ success: false, error: 'Associated demo could not be found' }, { status: 404 });
       }
       businessId = demo.data.business_id;
       businessSlug = demo.data.slug;
-      // Ensure category is synced to the business record
+      // Ensure category and review destination URL are synced to the business record
+      const updateData: Record<string, any> = {};
       if (demo.data.category || prospect.data.category) {
-        await db.from('businesses').update({ category: demo.data.category || prospect.data.category }).eq('id', businessId);
+        updateData.category = demo.data.category || prospect.data.category;
+      }
+      const targetReviewUrl = demo.data.review_destination_url || prospect.data.google_maps_url;
+      if (targetReviewUrl) {
+        updateData.website = targetReviewUrl;
+      }
+      if (Object.keys(updateData).length > 0) {
+        await db.from('businesses').update(updateData).eq('id', businessId);
       }
     } else {
       // Direct onboarding without a prior demo
@@ -100,6 +108,7 @@ export async function POST(req: NextRequest) {
         name: prospect.data.business_name,
         slug: businessSlug,
         category: prospect.data.category || 'General Business',
+        website: prospect.data.google_maps_url || null,
         phone: boundedText(body.customerPhone, 40) || prospect.data.phone || null,
         email: customerEmail,
         status: 'active',

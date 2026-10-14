@@ -205,6 +205,7 @@ function DemoBuilderPage() {
   const initialProspectId = searchParams.get('prospectId') || '';
   const initialName = searchParams.get('name') || '';
   const initialCat = searchParams.get('cat') || '';
+  const initialMapsUrl = searchParams.get('mapsUrl') || '';
 
   const allCategories = getAllCategories();
 
@@ -213,7 +214,7 @@ function DemoBuilderPage() {
 
   const [businessName, setBusinessName] = useState(initialName || '');
   const [category, setCategory] = useState(initialCat || 'Restaurant & Fine Dining');
-  const [reviewDestinationUrl, setReviewDestinationUrl] = useState('https://maps.app.goo.gl/');
+  const [reviewDestinationUrl, setReviewDestinationUrl] = useState(initialMapsUrl || '');
   const [primaryColor, setPrimaryColor] = useState('#0B3D2E');
   const [secondaryColor, setSecondaryColor] = useState('#D4AF37');
   const [templateSlug, setTemplateSlug] = useState('classic');
@@ -262,6 +263,20 @@ function DemoBuilderPage() {
         const data = await res.json();
         if (data.success && data.prospects) {
           setProspects(data.prospects);
+          const targetId = initialProspectId || selectedProspectId;
+          if (targetId) {
+            const found = data.prospects.find((p: any) => p.id === targetId);
+            if (found) {
+              setBusinessName(found.business_name);
+              setCategory(found.category || 'Restaurant & Fine Dining');
+              const catConfig = normalizeBusinessCategory(found.category);
+              if (catConfig.defaultPrimaryColor) setPrimaryColor(catConfig.defaultPrimaryColor);
+              if (catConfig.defaultSecondaryColor) setSecondaryColor(catConfig.defaultSecondaryColor);
+              if (found.google_maps_url) {
+                setReviewDestinationUrl(found.google_maps_url);
+              }
+            }
+          }
         }
       } catch (e) {
         console.warn('Prospects fetch error:', e);
@@ -281,6 +296,8 @@ function DemoBuilderPage() {
       if (catConfig.defaultSecondaryColor) setSecondaryColor(catConfig.defaultSecondaryColor);
       if (found.google_maps_url) {
         setReviewDestinationUrl(found.google_maps_url);
+      } else {
+        setReviewDestinationUrl('');
       }
     }
   };
@@ -737,7 +754,7 @@ function DemoBuilderPage() {
               <input
                 type="url"
                 required
-                placeholder="https://maps.app.goo.gl/..."
+                placeholder="https://search.google.com/local/writereview?placeid=... or Maps link"
                 value={reviewDestinationUrl}
                 onChange={(e) => setReviewDestinationUrl(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-500"

@@ -126,9 +126,22 @@ export default function PostOnGooglePage() {
    * Resolves the direct Google write-review URL for this business
    */
   const resolveGoogleReviewUrl = (): string => {
-    // 1. Explicit review URL stored on business
-    if (business?.googleReviewUrl && business.googleReviewUrl.startsWith('http')) {
-      return business.googleReviewUrl;
+    let targetUrl = (business?.googleReviewUrl || '').trim();
+
+    // Guard against empty root or placeholder links that redirect to goo.gl/app/maps/?_nr=1
+    if (
+      targetUrl === 'https://maps.app.goo.gl/' || 
+      targetUrl === 'https://maps.app.goo.gl' || 
+      targetUrl === 'https://maps.google.com/' || 
+      targetUrl === 'https://maps.google.com' ||
+      targetUrl.includes('goo.gl/app/maps')
+    ) {
+      targetUrl = '';
+    }
+
+    // 1. Explicit review URL stored on business or demo (e.g. search.google.com/local/writereview?placeid=...)
+    if (targetUrl.startsWith('http')) {
+      return targetUrl;
     }
 
     // 2. Official Google Place ID write-review dialog
@@ -136,9 +149,17 @@ export default function PostOnGooglePage() {
       return `https://search.google.com/local/writereview?placeid=${business.googlePlaceId}`;
     }
 
-    // 3. If googlePlaceId contains a full URL
-    if (business?.googlePlaceId && business.googlePlaceId.startsWith('http')) {
-      return business.googlePlaceId;
+    // 3. If googlePlaceId contains a full URL (that isn't a generic fallback)
+    const placeIdUrl = (business?.googlePlaceId || '').trim();
+    if (
+      placeIdUrl.startsWith('http') && 
+      placeIdUrl !== 'https://maps.app.goo.gl/' && 
+      placeIdUrl !== 'https://maps.app.goo.gl' && 
+      placeIdUrl !== 'https://maps.google.com' &&
+      placeIdUrl !== 'https://maps.google.com/' &&
+      !placeIdUrl.includes('goo.gl/app/maps')
+    ) {
+      return placeIdUrl;
     }
 
     // 4. Default: Google Maps search for this business + city

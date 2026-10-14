@@ -69,13 +69,106 @@ export async function POST(req: NextRequest) {
     const prospectId = body.prospectId == null ? null : body.prospectId;
     if (prospectId && !isUuid(prospectId)) return NextResponse.json({ success: false, error: 'Invalid prospect ID' }, { status: 400 });
     const defaults = categoryDefaults(typeof body.category === 'string' ? body.category : DEFAULT_CATEGORY);
-    const reviewUrl = boundedText(body.reviewDestinationUrl, 2000) || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(businessName)}`;
-    if (!isHttpsUrl(reviewUrl)) return NextResponse.json({ success: false, error: 'Review destination must be HTTPS' }, { status: 400 });
-    const slug = await uniqueSlug(db, businessName);
+    let reviewUrl = boundedText(body.reviewDestinationUrl, 2000);
+
+    // If reviewUrl is missing or the generic placeholder https://maps.app.goo.gl/, fetch from prospect
+    if (!reviewUrl || reviewUrl === 'https://maps.app.goo.gl/' || reviewUrl === 'https://maps.app.goo.gl' || reviewUrl === 'https://maps.google.com') {
+      if (prospectId) {
+        const { data: prospectData } = await db.from('prospects').select('google_maps_url').eq('id', prospectId).maybeSingle();
+        if (prospectData?.google_maps_url) {
+          reviewUrl = prospectData.google_maps_url;
+        }
+      }
+    }
+
+    if (!reviewUrl || !isHttpsUrl(reviewUrl)) {
+      reviewUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(businessName)}`;
+    }
+
     const config = body.config && typeof body.config === 'object' ? body.config : {};
     const color = /^#[0-9a-f]{6}$/i.test(body.primaryColor || '') ? body.primaryColor : defaults.color;
     const now = new Date();
     const expires = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
+
+    // Check if a demo already exists for this lead (prospectId)
+    // If yes, REUSE THE SAME SLUG & DEMO so URLs do NOT get numbers like -2, -3 appended!
+    let existingDemo = null;
+    if (prospectId) {
+      const { data: foundDemo } = await db
+        .from('sales_demos')
+        .select('id, slug, business_id, created_by, status')
+        .eq('prospect_id', prospectId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (foundDemo?.slug) {
+        existingDemo = foundDemo;
+      }
+    }
+
+    if (existingDemo) {
+      const slug = existingDemo.slug;
+      businessId = existingDemo.business_id;
+
+      // Update existing business record
+      if (businessId) {
+        await db.from('businesses').update({
+          name: businessName,
+          category: defaults.category,
+          website: reviewUrl,
+          primary_color: color,
+          secondary_color: '#D4AF37',
+          status: 'trial',
+          plan_status: 'trial',
+          trial_expires_at: expires,
+          headline: config.headline || defaults.headline,
+          subheadline: config.subheadline || null,
+          updated_at: now.toISOString(),
+        }).eq('id', businessId);
+      }
+
+      // Update existing demo record
+      const { data: updatedDemo, error: demoUpdateErr } = await db.from('sales_demos').update({
+        business_name: businessName,
+        category: defaults.category,
+        review_destination_url: reviewUrl,
+        primary_color: color,
+        logo_url: boundedText(body.logoUrl, 2000),
+        cover_url: boundedText(body.coverUrl, 2000),
+        template_slug: boundedText(body.templateSlug, 80) || 'classic',
+        config,
+        status: 'active',
+        expires_at: expires,
+        updated_at: now.toISOString(),
+      }).eq('id', existingDemo.id).select().single();
+
+      if (demoUpdateErr) throw new Error('Unable to update demo');
+
+      // Refresh demo activity
+      try {
+        await db.from('prospects').update({ stage: 'Demo In Progress', updated_at: now.toISOString() }).eq('id', prospectId);
+        await db.from('sales_activities').insert({
+          prospect_id: prospectId,
+          staff_id: access.session.staffId,
+          type: 'demo_updated',
+          title: 'Review Funnel Updated',
+          description: `Updated trial demo on same link /f/${slug}.`,
+          metadata: { demoId: existingDemo.id, slug },
+        });
+      } catch (actErr) {
+        console.warn('Unable to record demo update activity:', actErr);
+      }
+
+      return NextResponse.json({
+        success: true,
+        demo: updatedDemo || existingDemo,
+        publicFunnelUrl: `/f/${slug}`,
+        publicDemoUrl: `/f/${slug}`,
+      });
+    }
+
+    // New demo generation (first time for this lead):
+    const slug = await uniqueSlug(db, businessName);
 
     // The demo tenant is deliberately ownerless and trial-only. It is the same
     // tenant that the activation RPC later upgrades; no paid entitlement here.
