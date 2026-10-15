@@ -189,7 +189,7 @@ export const googleBusinessProfileService = {
           .update({
             google_place_id: placeId,
             google_review_url: cleanReviewUrl,
-            website: payload.mapsUrl || cleanReviewUrl,
+            google_maps_url: payload.mapsUrl || null,
           })
           .eq('id', businessId);
 
@@ -317,7 +317,7 @@ export const googleBusinessProfileService = {
       success: false,
       status: 'not_connected',
       locations: [],
-      error: 'Direct Google Business OAuth API requires verified Google Cloud Console credentials. Use your direct Google Review Link or Place ID to route customer reviews.',
+      error: 'Thank you, but we are working on this feature! We will launch it soon — this is a beta version of the client dashboard.',
       errorType: 'api_error',
     };
   },
@@ -405,9 +405,13 @@ export const googleBusinessProfileService = {
   }> => {
     try {
       if (typeof window !== 'undefined') {
+        const { data: { session } } = await supabase.auth.getSession();
         const res = await fetch('/api/google/reviews/sync', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
           body: JSON.stringify({ businessId }),
         });
 

@@ -110,9 +110,9 @@ function ConversionsPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('UPI');
   const [transactionReference, setTransactionReference] = useState('');
 
-  // Shipping details for NFC
-  const [shippingAddress, setShippingAddress] = useState('');
-  const city = '';
+  // Business Address & Details (filled during onboarding by salesperson)
+  const [businessAddress, setBusinessAddress] = useState('');
+  const [city, setCity] = useState('');
   const state = 'Maharashtra';
   const [pincode, setPincode] = useState('');
 
@@ -165,12 +165,14 @@ function ConversionsPage() {
         if (p) {
           if (!customerName) setCustomerName(p.contact_name || p.business_name);
           if (!customerPhone && p.phone) setCustomerPhone(p.phone);
-          if (p.notes && !shippingAddress && p.notes.includes('Address:')) setShippingAddress(p.notes.split('Address:')[1].trim());
+          if (p.address && !businessAddress) setBusinessAddress(p.address);
+          if (p.city && !city) setCity(p.city);
+          if (p.notes && !businessAddress && p.notes.includes('Address:')) setBusinessAddress(p.notes.split('Address:')[1].trim());
         }
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [selectedProspectId, prospects, customerName, customerPhone, shippingAddress]);
+  }, [selectedProspectId, prospects, customerName, customerPhone, businessAddress, city]);
 
   const selectedPlan = plans.find((p) => p.slug === selectedPlanSlug);
   const includesNfc = selectedPlan?.includes_nfc ?? false;
@@ -195,8 +197,8 @@ function ConversionsPage() {
       setErrorMessage('Please enter the UPI Reference / UTR Number for payment verification.');
       return;
     }
-    if (includesNfc && (!shippingAddress.trim() || !pincode.trim())) {
-      setErrorMessage('This plan includes physical NFC hardware. Please provide complete shipping address and pincode.');
+    if (includesNfc && (!businessAddress.trim() || !pincode.trim())) {
+      setErrorMessage('This plan includes physical NFC hardware. Please provide complete business/shipping address and pincode.');
       return;
     }
 
@@ -215,15 +217,16 @@ function ConversionsPage() {
         body: JSON.stringify({
           prospectId: selectedProspectId,
           demoId: selectedDemoId || null,
-           planSlug: selectedPlanSlug,
+          planSlug: selectedPlanSlug,
           customerName,
           customerEmail,
           customerPassword: customerPassword.trim() || 'Client@1234',
           customerPhone: customerPhone.trim() || null,
+          address: businessAddress.trim() || null,
+          city: city.trim() || null,
           paymentMethod,
           transactionReference: transactionReference.trim() || null,
-          shippingAddress: includesNfc ? shippingAddress : null,
-          city: includesNfc ? city : null,
+          shippingAddress: businessAddress.trim() || null,
           state: includesNfc ? state : null,
           pincode: includesNfc ? pincode : null,
           idempotencyKey,
@@ -551,12 +554,40 @@ function ConversionsPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-slate-700 font-semibold">Phone / WhatsApp</label>
+                <label className="text-slate-700 font-semibold">Mobile / Phone Number</label>
                 <input
                   type="tel"
                   placeholder="9876543210"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#5356EC] focus:border-[#5356EC]"
+                />
+              </div>
+            </div>
+
+            {/* Business Address & Location (Shown on customer funnel) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs pt-1">
+              <div className="sm:col-span-2 space-y-1">
+                <label className="text-slate-700 font-semibold flex items-center justify-between">
+                  <span>Business Address</span>
+                  <span className="text-[10px] text-slate-400 font-normal">Shows on customer funnel</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Shop/Office number, street, landmark"
+                  value={businessAddress}
+                  onChange={(e) => setBusinessAddress(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#5356EC] focus:border-[#5356EC]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-700 font-semibold">City / Area</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Mumbai, Bandra West"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#5356EC] focus:border-[#5356EC]"
                 />
               </div>
@@ -622,8 +653,8 @@ function ConversionsPage() {
                       type="text"
                       required
                       placeholder="Shop/Office number, street, landmark"
-                      value={shippingAddress}
-                      onChange={(e) => setShippingAddress(e.target.value)}
+                      value={businessAddress}
+                      onChange={(e) => setBusinessAddress(e.target.value)}
                       className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#5356EC] focus:border-[#5356EC]"
                     />
                   </div>

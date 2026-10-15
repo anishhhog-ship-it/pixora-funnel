@@ -16,14 +16,16 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      // If client credentials are not yet entered in environment, redirect cleanly with informative parameter
-      const targetUrl = new URL(returnUrl, req.nextUrl.origin);
-      targetUrl.searchParams.set('google_status', 'credentials_missing');
-      targetUrl.searchParams.set('google_message', 'Google OAuth 2.0 Client ID is not configured in server environment.');
-      return NextResponse.redirect(targetUrl.toString());
-    }
+    const clientId = process.env.GOOGLE_CLIENT_ID || '';
+
+    // Feature is under active preparation for launch - inform user gracefully during Beta
+    const targetUrl = new URL(returnUrl, req.nextUrl.origin);
+    targetUrl.searchParams.set('google_status', 'beta_feature');
+    targetUrl.searchParams.set(
+      'google_message',
+      'Thank you, but we are working on this feature! We will launch it soon — this is a beta version of the client dashboard.'
+    );
+    return NextResponse.redirect(targetUrl.toString());
 
     const defaultRedirect = `${req.nextUrl.origin}/api/google/callback`;
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || defaultRedirect;

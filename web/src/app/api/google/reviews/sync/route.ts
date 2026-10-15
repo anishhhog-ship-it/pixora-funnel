@@ -55,6 +55,36 @@ function parseStarRating(rawRating: any): number {
   return 5;
 }
 
+const MAX_REVIEW_PAGES_PER_SYNC = 100;
+
+function isScheduledSync(req: NextRequest): boolean {
+  const configuredSecret = process.env.NETLIFY_REVIEW_SYNC_SECRET;
+  return Boolean(configuredSecret) && req.headers.get('x-pixora-cron-secret') === configuredSecret;
+}
+
+async function assertBusinessAccess(req: NextRequest, businessId: string, admin: any): Promise<NextResponse | null> {
+  const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim();
+  if (!token) {
+    return NextResponse.json({ success: false, status: 'requires_auth', message: 'Sign in and connect your Google Business Profile before syncing reviews.' }, { status: 401 });
+  }
+
+  const { data: { user }, error } = await admin.auth.getUser(token);
+  if (error || !user) {
+    return NextResponse.json({ success: false, status: 'requires_auth', message: 'Your session is invalid or expired. Please sign in again.' }, { status: 401 });
+  }
+
+  const [{ data: business }, { data: membership }] = await Promise.all([
+    admin.from('businesses').select('id').eq('id', businessId).eq('owner_id', user.id).maybeSingle(),
+    admin.from('business_members').select('business_id').eq('business_id', businessId).eq('user_id', user.id).maybeSingle(),
+  ]);
+
+  if (!business && !membership) {
+    return NextResponse.json({ success: false, error: 'You do not have access to this business.' }, { status: 403 });
+  }
+
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
@@ -63,7 +93,8 @@ export async function POST(req: NextRequest) {
     const pageToken = body.pageToken || searchParams.get('pageToken') || undefined;
     const pageSize = Math.min(50, Math.max(1, body.pageSize || parseInt(searchParams.get('pageSize') || '50', 10)));
 
-    if (!businessId) {
+    const syncAll = Boolean(body.syncAll || searchParams.get('syncAll') === 'true');
+    if (!businessId && !syncAll) {
       return NextResponse.json(
         { success: false, error: 'Missing businessId parameter for Google review synchronization.' },
         { status: 400 }
@@ -72,10 +103,56 @@ export async function POST(req: NextRequest) {
 
     const supabaseAdmin = getSupabaseAdminClient();
 
+    // The scheduled worker is the only caller allowed to request a batch sync.
+    // Client requests must identify a business and carry the signed-in user's token.
+    const scheduled = isScheduledSync(req);
+    if (syncAll) {
+      if (!scheduled) {
+        return NextResponse.json({ success: false, error: 'Scheduled sync authorization required.' }, { status: 401 });
+      }
+
+      const { data: connections, error: connectionsError } = await (supabaseAdmin as any)
+        .from('google_connections')
+        .select('business_id')
+        .eq('status', 'connected');
+
+      if (connectionsError) {
+        return NextResponse.json({ success: false, error: 'Could not load connected Google Business Profiles.' }, { status: 500 });
+      }
+
+      const results = await Promise.all(
+        (connections || []).map(async ({ business_id }: { business_id: string }) => {
+          const internalRequest = new NextRequest(req.url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-pixora-cron-secret': process.env.NETLIFY_REVIEW_SYNC_SECRET || '',
+            },
+            body: JSON.stringify({ businessId: business_id, pageSize }),
+          });
+          const response = await POST(internalRequest);
+          return response.json();
+        })
+      );
+
+      return NextResponse.json({
+        success: results.every((result) => result.success),
+        status: 'scheduled',
+        businesses: results.length,
+        syncedCount: results.reduce((sum, result) => sum + (result.syncedCount || 0), 0),
+        results,
+      });
+    }
+
+    if (!scheduled) {
+      const accessError = await assertBusinessAccess(req, businessId, supabaseAdmin);
+      if (accessError) return accessError;
+    }
+
     // 1. Fetch business and connection records from Supabase
     const { data: business, error: bizError } = await (supabaseAdmin as any)
       .from('businesses')
-      .select('id, name, slug, website')
+      .select('id, name, slug, website, google_review_url, google_maps_url')
       .eq('id', businessId)
       .maybeSingle();
 
@@ -221,33 +298,39 @@ export async function POST(req: NextRequest) {
       fullLocationPath = `${accountName}/locations/${locationName || 'primary'}`;
     }
 
-    // 5. Query Google My Business API v4 Reviews
-    const reviewsUrl = new URL(`https://mybusiness.googleapis.com/v4/${fullLocationPath}/reviews`);
-    reviewsUrl.searchParams.set('pageSize', pageSize.toString());
-    if (pageToken) {
-      reviewsUrl.searchParams.set('pageToken', pageToken);
-    }
+    // 5. Query every page through the official Google Business Profile API.
+    // This imports the historical set on first connection and remains idempotent
+    // because rows are upserted by (business_id, google_review_id) below.
+    let nextPageToken = pageToken;
+    let gmbData: any = {};
+    const rawReviews: any[] = [];
 
-    const gmbRes = await fetch(reviewsUrl.toString(), {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    for (let page = 0; page < MAX_REVIEW_PAGES_PER_SYNC; page += 1) {
+      const reviewsUrl = new URL(`https://mybusiness.googleapis.com/v4/${fullLocationPath}/reviews`);
+      reviewsUrl.searchParams.set('pageSize', pageSize.toString());
+      reviewsUrl.searchParams.set('orderBy', 'updateTime desc');
+      if (nextPageToken) reviewsUrl.searchParams.set('pageToken', nextPageToken);
 
-    if (!gmbRes.ok) {
-      const gmbErrData = await gmbRes.json().catch(() => ({}));
-      const errMsg = gmbErrData.error?.message || '';
-      const errStatus = gmbErrData.error?.status || '';
+      const gmbRes = await fetch(reviewsUrl.toString(), {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-      if (
-        gmbRes.status === 403 ||
-        errStatus === 'PERMISSION_DENIED' ||
-        errMsg.toLowerCase().includes('permission') ||
-        errMsg.toLowerCase().includes('not been used') ||
-        errMsg.toLowerCase().includes('disabled')
-      ) {
+      if (!gmbRes.ok) {
+        const gmbErrData = await gmbRes.json().catch(() => ({}));
+        const errMsg = gmbErrData.error?.message || '';
+        const errStatus = gmbErrData.error?.status || '';
+
+        if (
+          gmbRes.status === 403 ||
+          errStatus === 'PERMISSION_DENIED' ||
+          errMsg.toLowerCase().includes('permission') ||
+          errMsg.toLowerCase().includes('not been used') ||
+          errMsg.toLowerCase().includes('disabled')
+        ) {
         // Record last synced probe attempt
         const now = new Date().toISOString();
         await (supabaseAdmin as any)
@@ -266,32 +349,35 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      if (gmbRes.status === 401) {
+        if (gmbRes.status === 401) {
+          return NextResponse.json(
+            {
+              success: false,
+              status: 'reconnect_required',
+              message: 'Google authorization expired or revoked. Please reconnect in Settings.',
+              syncedCount: 0,
+            },
+            { status: 401 }
+          );
+        }
+
         return NextResponse.json(
           {
             success: false,
-            status: 'reconnect_required',
-            message: 'Google authorization expired or revoked. Please reconnect in Settings.',
+            status: 'api_error',
+            message: errMsg || 'Google Business Profile API returned an error during review sync.',
             syncedCount: 0,
           },
-          { status: 401 }
+          { status: gmbRes.status }
         );
       }
 
-      return NextResponse.json(
-        {
-          success: false,
-          status: 'api_error',
-          message: errMsg || 'Google My Business API v4 returned an error during review sync.',
-          syncedCount: 0,
-        },
-        { status: gmbRes.status }
-      );
+      const pageData = await gmbRes.json();
+      gmbData = { ...gmbData, ...pageData };
+      if (Array.isArray(pageData.reviews)) rawReviews.push(...pageData.reviews);
+      nextPageToken = pageData.nextPageToken || undefined;
+      if (!nextPageToken) break;
     }
-
-    // 6. Parse Google Reviews payload
-    const gmbData = await gmbRes.json();
-    const rawReviews = Array.isArray(gmbData.reviews) ? gmbData.reviews : [];
 
     // Query existing local reviews to avoid overwriting pending local drafts
     const { data: existingReviews } = await (supabaseAdmin as any)
@@ -345,9 +431,10 @@ export async function POST(req: NextRequest) {
         reply_status: replyStatus,
         reply_text: replyText,
         google_review_url:
-          conn?.google_location_id && conn.google_location_id.startsWith('ChI')
+          business.google_review_url ||
+          (conn?.google_location_id && conn.google_location_id.startsWith('ChI')
             ? `https://search.google.com/local/writereview?placeid=${conn.google_location_id}`
-            : business.website || null,
+            : business.google_maps_url || business.website || null),
         updated_at: new Date().toISOString(),
       };
     });
@@ -365,6 +452,7 @@ export async function POST(req: NextRequest) {
 
     // 8. Update timestamps
     const now = new Date().toISOString();
+    const nextSyncAt = new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString();
     const avgRating =
       typeof gmbData.averageRating === 'number'
         ? gmbData.averageRating
@@ -386,7 +474,13 @@ export async function POST(req: NextRequest) {
 
     await (supabaseAdmin as any)
       .from('google_connections')
-      .update({ last_synced_at: now, updated_at: now })
+      .update({
+        last_synced_at: now,
+        next_sync_at: nextSyncAt,
+        initial_sync_completed_at: conn?.initial_sync_completed_at || now,
+        sync_error: null,
+        updated_at: now,
+      })
       .eq('business_id', businessId);
 
     await (supabaseAdmin as any)

@@ -26,7 +26,7 @@ export default function ThankYouPage() {
         if (isActive) setLoadError(true);
       })
       .finally(() => {
-        if (isActive) setIsLoading(false);
+        setIsLoading(false);
       });
 
     return () => {

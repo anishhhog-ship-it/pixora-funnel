@@ -50,7 +50,8 @@ import {
   User as UserIcon,
   ShieldAlert,
   Search,
-  MapPin
+  MapPin,
+  Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GoogleConnectionBadge } from '@/components/GoogleConnectionBadge';
@@ -167,6 +168,7 @@ export default function SettingsPage() {
   });
   const [showGoogleLinkModal, setShowGoogleLinkModal] = useState(false);
   const [googleInputUrl, setGoogleInputUrl] = useState('');
+  const [googleMapsInputUrl, setGoogleMapsInputUrl] = useState('');
   const [googleSearchQuery, setGoogleSearchQuery] = useState('');
   const [isSearchingGoogle, setIsSearchingGoogle] = useState(false);
   const [googleCandidates, setGoogleCandidates] = useState<GoogleBusinessDetails[]>([]);
@@ -178,6 +180,7 @@ export default function SettingsPage() {
   const [googleIntegrationStatus, setGoogleIntegrationStatus] = useState<'connected' | 'access_pending' | 'requires_auth' | null>(null);
   const [googleApiWarning, setGoogleApiWarning] = useState<string | null>(null);
   const [googleOAuthStatusBanner, setGoogleOAuthStatusBanner] = useState<{ type: 'success' | 'warning' | 'info'; message: string } | null>(null);
+  const [showGoogleOAuthBetaModal, setShowGoogleOAuthBetaModal] = useState(false);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
   const [isSavingGoogleLink, setIsSavingGoogleLink] = useState(false);
   const [googleLinkError, setGoogleLinkError] = useState<string | null>(null);
@@ -358,7 +361,13 @@ export default function SettingsPage() {
       const googleMsg = params.get('google_message');
       const googleEmail = params.get('google_email');
 
-      if (googleStatus === 'connected') {
+      if (googleStatus === 'beta_feature') {
+        setShowGoogleOAuthBetaModal(true);
+        setGoogleOAuthStatusBanner({
+          type: 'info',
+          message: googleMsg || 'Thank you, but we are working on this feature! We will launch it soon — this is a beta version of the client dashboard.',
+        });
+      } else if (googleStatus === 'connected') {
         setGoogleOAuthStatusBanner({
           type: 'success',
           message: `Google Business Profile successfully connected${googleEmail ? ` (${googleEmail})` : ''}!`,
@@ -395,7 +404,7 @@ export default function SettingsPage() {
 
   const isRestaurant = activeBiz?.category?.toLowerCase().includes('restaurant') || activeBiz?.category?.toLowerCase().includes('cafe') || false;
   const profileLabel = isRestaurant ? 'Restaurant Profile' : 'Business Profile';
-  const TABS = [profileLabel, 'Integrations', 'Notifications', 'Business Hours', 'Appearance', 'Account', 'Billing'];
+  const TABS = [profileLabel, 'Integrations', 'Notifications', 'Business Hours', 'Account', 'Billing'];
   const isLocallyActiveSettings = typeof window !== 'undefined' && activeBiz && (
     localStorage.getItem(`pixora_plan_active_${activeBiz.id}`) === 'true' ||
     localStorage.getItem(`pixora_plan_active_${activeBiz.businessId}`) === 'true' ||
@@ -539,8 +548,9 @@ export default function SettingsPage() {
   };
 
   const handleOpenGoogleLinkModal = () => {
-    const existing = activeBiz?.googleReviewUrl || (activeBiz as any)?.googleMapsUrl || '';
+    const existing = activeBiz?.googleReviewUrl || '';
     setGoogleInputUrl(existing);
+    setGoogleMapsInputUrl(activeBiz?.googleMapsUrl || '');
     const initialQuery = businessName || activeBiz?.name || existing || '';
     setGoogleSearchQuery(initialQuery);
     setGoogleLinkError(null);
@@ -548,24 +558,16 @@ export default function SettingsPage() {
     setGoogleCandidates([]);
     setSelectedCandidate(null);
     setGoogleConsoleNotice(null);
-    setGoogleActiveMode('search');
+    setGoogleActiveMode('direct_link'); // Automated Location Fetcher is turned off for beta; default to manual link
     setShowGoogleLinkModal(true);
-
-    handleLoadGoogleAccounts();
-
-    // Auto-search if business name is available and not yet searched
-    if (initialQuery.trim() && initialQuery.length > 2) {
-      handleFetchGoogleLocations(initialQuery.trim());
-    }
   };
 
   const handleConnectGoogleOAuth = () => {
-    const bizId = activeBiz?.businessId || activeBiz?.id || '';
-    if (!bizId) {
-      setGoogleLinkError('Please select a business before authorizing with Google.');
-      return;
-    }
-    googleBusinessProfileService.initiateOAuth(bizId, '/dashboard/settings');
+    setShowGoogleOAuthBetaModal(true);
+    setGoogleOAuthStatusBanner({
+      type: 'info',
+      message: 'Thank you, but we are working on this feature! We will launch it soon — this is a beta version of the client dashboard.',
+    });
   };
 
   const handleLoadGoogleAccounts = async () => {
@@ -657,7 +659,8 @@ export default function SettingsPage() {
           rating: target.rating || activeBiz.rating || 5.0,
           reviewsCount: target.reviewCount || activeBiz.reviewsCount || 0,
           googlePlaceId: target.locationId || target.placeId,
-          googleReviewUrl: finalReviewUrl,
+           googleReviewUrl: finalReviewUrl,
+           googleMapsUrl: target.googleMapsUri || activeBiz.googleMapsUrl,
           coverImage: target.photoUrl || activeBiz.coverImage,
         };
         setActiveBiz(updatedBiz);
@@ -682,7 +685,14 @@ export default function SettingsPage() {
         setGoogleInfo(status);
       }
 
-      setGoogleLinkSuccess(`Location "${target.name}" connected! Business details imported.`);
+      const reviewSync = await googleBusinessProfileService.syncReviews(bizId);
+      if (reviewSync.success) {
+        setGoogleLinkSuccess(`Location "${target.name}" connected! Business details and ${reviewSync.syncedCount} historical reviews imported.`);
+      } else if (reviewSync.status === 'access_pending' || reviewSync.status === 'requires_auth') {
+        setGoogleLinkSuccess(`Location "${target.name}" connected. Google review access still needs OAuth/API approval before historical reviews can be imported.`);
+      } else {
+        setGoogleLinkSuccess(`Location "${target.name}" connected! Business details imported. Review import can be retried from the Reviews dashboard.`);
+      }
       setTimeout(() => {
         setShowGoogleLinkModal(false);
         setGoogleLinkSuccess(null);
@@ -696,7 +706,7 @@ export default function SettingsPage() {
 
   const handleSaveGoogleLink = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const url = googleInputUrl.trim();
+      const url = googleInputUrl.trim();
     if (!url) {
       setGoogleLinkError('Please enter a Google Maps review URL or place link.');
       return;
@@ -706,7 +716,8 @@ export default function SettingsPage() {
     setGoogleLinkError(null);
     try {
       const bizId = activeBiz?.businessId || activeBiz?.id || '';
-      const res = await googleBusinessProfileService.linkGoogleProfile(bizId, { reviewUrl: url });
+      const mapsUrl = googleMapsInputUrl.trim();
+      const res = await googleBusinessProfileService.linkGoogleProfile(bizId, { reviewUrl: url, mapsUrl: mapsUrl || undefined });
       if (!res.success) {
         setGoogleLinkError(res.message);
         return;
@@ -720,6 +731,7 @@ export default function SettingsPage() {
         const updatedBiz: Business = {
           ...activeBiz,
           googleReviewUrl: url,
+          googleMapsUrl: mapsUrl || activeBiz.googleMapsUrl,
           googlePlaceId: derivedPlaceId,
         };
         setActiveBiz(updatedBiz);
@@ -752,6 +764,7 @@ export default function SettingsPage() {
       ...activeBiz,
       googlePlaceId: undefined,
       googleReviewUrl: undefined,
+      googleMapsUrl: undefined,
     };
     setActiveBiz(updatedBiz);
     await businessService.createOrUpdateBusiness(updatedBiz);
@@ -1031,39 +1044,10 @@ export default function SettingsPage() {
             Settings &amp; Personalization
           </h1>
           <p className="text-xs text-stone-500 mt-1">
-            Manage your business profile, integrations, automated notifications, and customer review funnel visual theme.
+            Manage your business profile, integrations, automated notifications, and customer review funnel details.
           </p>
         </div>
 
-        {activeTab === 4 && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleResetToRecommended}
-              disabled={isSavingAppearance}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-stone-300 hover:border-slate-800 text-xs font-semibold text-slate-700 transition cursor-pointer shadow-2xs"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-stone-500" />
-              <span>Reset to Recommended</span>
-            </button>
-            <button
-              onClick={handleSaveAppearance}
-              disabled={isSavingAppearance}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-white text-xs font-semibold transition cursor-pointer shadow-xs disabled:opacity-60"
-            >
-              {isSavingAppearance ? (
-                <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Saving...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-3.5 h-3.5" />
-                  <span>Save Appearance</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Tab bar */}
@@ -1078,17 +1062,12 @@ export default function SettingsPage() {
             )}
           >
             {tab}
-            {tab === 'Appearance' && (
-              <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-wider">
-                Theme Studio
-              </span>
-            )}
           </button>
         ))}
       </div>
 
       {/* TAB 4: FUNNEL APPEARANCE & CATEGORY VISUAL THEME STUDIO */}
-      {activeTab === 4 && (
+      {activeTab === 99 && (
         <div className="grid grid-cols-12 gap-8 items-start animate-fade-in">
           
           {/* LEFT 7 COLS: VISUAL CONFIGURATION STUDIO */}
@@ -1456,6 +1435,7 @@ export default function SettingsPage() {
                       className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-lg text-xs text-slate-900"
                     />
                   </div>
+
                   <div>
                     <label className="block text-xs font-semibold text-stone-700 mb-1">
                       Post-Completion CTA
@@ -1725,22 +1705,6 @@ export default function SettingsPage() {
         <div className="grid grid-cols-12 gap-5 animate-fade-in">
           {/* Left: Main Form */}
           <div className="col-span-12 lg:col-span-8 space-y-5">
-            {/* Banner promoting Appearance Studio */}
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Personalization Engine</span>
-                <h4 className="text-sm font-bold text-white mt-0.5">Customize Your Customer Review Funnel Visuals</h4>
-                <p className="text-xs text-stone-300">Switch category themes, curate 9:16 portrait backgrounds, or upload custom photography.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveTab(4)}
-                className="px-4 py-2 rounded-xl bg-white text-emerald-950 font-bold text-xs hover:bg-emerald-50 transition cursor-pointer shrink-0 self-start sm:self-auto shadow-xs"
-              >
-                Open Theme Studio →
-              </button>
-            </div>
-
             {/* Restaurant Info */}
             <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6">
               <div className="flex justify-between items-start mb-5">
@@ -1752,11 +1716,11 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={handleOpenGoogleLinkModal}
-                    className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-300 text-emerald-900 text-xs font-bold px-3.5 py-2.5 rounded-xl cursor-pointer transition shadow-2xs"
-                    title="Fetch locations and details from Google Business Profile"
+                    className="flex items-center gap-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-900 text-xs font-bold px-3.5 py-2.5 rounded-xl cursor-pointer transition shadow-2xs"
+                    title="Google Business Profile & Location Fetcher (Turned off for beta · Launching with Auto Reply in 14 Days)"
                   >
-                    <GoogleIcon />
-                    <span>Fetch from Google</span>
+                    <Lock className="w-3.5 h-3.5 text-purple-700" />
+                    <span>Location Fetcher (In 14 Days)</span>
                   </button>
                   <button 
                     onClick={handleSaveChanges}
@@ -1838,6 +1802,18 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              <div className="mt-5 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5">
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />
+                <div>
+                  <p className="text-xs font-bold text-emerald-950">
+                    Category-managed customer funnel: {normalizeBusinessCategory(activeBiz?.category).name}
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-emerald-900/75">
+                    Your funnel image, review prompts, colors, and customer copy are selected automatically for this business category. Update the profile details above to keep the landing page in sync.
+                  </p>
+                </div>
+              </div>
+
               {/* Contact Info */}
               <div className="grid grid-cols-3 gap-4 mt-5">
                 <div>
@@ -1891,8 +1867,13 @@ export default function SettingsPage() {
             <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-gray-900 text-sm">Google Business Integration</h3>
-                  <p className="text-[11px] text-gray-400 mt-0.5">Live connection to your Google Maps review system</p>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-gray-900 text-sm">Google Business Integration</h3>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                      Beta · In 14 Days
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-0.5">Automated fetcher launches with AI Auto Reply</p>
                 </div>
                 <GoogleIcon />
               </div>
@@ -1952,20 +1933,20 @@ export default function SettingsPage() {
                       <div className="w-2 h-2 rounded-full bg-amber-500" />
                       <span className="text-xs font-bold text-slate-800">Not Connected</span>
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 font-semibold text-amber-800">
-                      Action Needed
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 font-semibold text-purple-800">
+                      Beta
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 leading-relaxed">
-                    Connect your Google Business Profile or Review URL so customer NFC taps and QR scans route directly to your 5-star Google review page.
+                    Automated Google Business Profile &amp; Location Fetcher is turned off for now and will launch with the AI Auto Reply feature in 14 days. You can enter your Google Review URL manually below.
                   </p>
                   <button
                     type="button"
                     onClick={handleOpenGoogleLinkModal}
-                    className="w-full py-2 px-3 bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
+                    className="w-full py-2 px-3 bg-emerald-950 hover:bg-emerald-900 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
                   >
-                    <span>Connect Google Profile</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
+                    <Link2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Add Google Review Link Manually</span>
                   </button>
                 </div>
               )}
@@ -2221,12 +2202,18 @@ export default function SettingsPage() {
                 <div className="flex items-start gap-2.5">
                   {googleOAuthStatusBanner.type === 'success' ? (
                     <CheckCircle className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                  ) : googleOAuthStatusBanner.type === 'info' ? (
+                    <Info className="w-4 h-4 text-blue-700 shrink-0 mt-0.5" />
                   ) : (
                     <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                   )}
                   <div>
                     <p className="font-bold">
-                      {googleOAuthStatusBanner.type === 'success' ? 'Google Account Connected' : 'Google OAuth Status'}
+                      {googleOAuthStatusBanner.type === 'success' 
+                        ? 'Google Account Connected' 
+                        : googleOAuthStatusBanner.type === 'info' 
+                        ? 'Google Business Profile OAuth (Beta)' 
+                        : 'Google OAuth Status'}
                     </p>
                     <p className="mt-0.5 text-[11px] opacity-90">{googleOAuthStatusBanner.message}</p>
                   </div>
@@ -2956,7 +2943,7 @@ export default function SettingsPage() {
       )}
 
       {/* TAB 5: ACCOUNT & SECURITY MANAGEMENT */}
-      {activeTab === 5 && (
+      {activeTab === 4 && (
         <div className="space-y-6 animate-fade-in max-w-4xl">
           {/* Header Card */}
           <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -3227,7 +3214,7 @@ export default function SettingsPage() {
       )}
 
       {/* TAB 6: SUBSCRIPTION, BILLING & INSTANT LICENSE KEY ACTIVATION */}
-      {activeTab === 6 && (
+      {activeTab === 5 && (
         <div className="space-y-6 animate-fade-in max-w-5xl">
           {/* Header Card */}
           <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -3628,59 +3615,34 @@ export default function SettingsPage() {
               <div className="w-13 h-13 mx-auto mb-3 rounded-2xl bg-slate-50 text-emerald-700 flex items-center justify-center border border-slate-200 shadow-xs">
                 <GoogleIcon />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 tracking-tight">
-                Google Business Profile &amp; Location Fetcher
-              </h3>
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+                  Google Business Profile &amp; Location Fetcher
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-purple-600 text-white tracking-wide">
+                  Beta
+                </span>
+              </div>
               <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto leading-relaxed">
-                Fetch and auto-fill your customer Google Business Profile locations, verified address, phone, star ratings, and review routing links into your dashboard.
+                Automated Google Business Profile &amp; Location Fetcher is turned off for now and will launch with the AI Auto Reply feature in 14 days.
               </p>
 
-              {/* Status Indicator */}
-              <div className="mt-3 flex items-center justify-center gap-2 flex-wrap text-[11px]">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
-                  <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-                  API Key Configured (AIzaSyDab...iPuJw)
-                </span>
-                {googleLiveActive && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 font-semibold">
-                    <CheckCircle2 className="w-3 h-3 text-blue-600" />
-                    Google Places API (Live)
-                  </span>
-                )}
+              {/* Status Indicator Banner */}
+              <div className="mt-3 p-3 bg-purple-50/80 rounded-2xl border border-purple-200 text-left max-w-lg mx-auto flex items-start gap-2.5">
+                <Lock className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="text-xs font-bold text-purple-950">
+                    Feature Turned Off for Now · Launching with Auto Reply (14 Days)
+                  </p>
+                  <p className="text-[11px] text-purple-900/90 leading-relaxed">
+                    Automated location fetching &amp; Google API sync will be launched together with the <strong>AI Auto Reply feature in 14 days</strong>. In this beta version, please use the <strong>Manual Link</strong> tab to enter your Google Review URL.
+                  </p>
+                </div>
               </div>
             </div>
 
             {/* Tabs for Mode Selection */}
             <div className="flex border-b border-slate-200 mb-4 shrink-0">
-              <button
-                type="button"
-                onClick={() => setGoogleActiveMode('search')}
-                className={cn(
-                  'flex-1 pb-2.5 text-xs font-bold transition border-b-2 cursor-pointer flex items-center justify-center gap-1.5',
-                  googleActiveMode === 'search'
-                    ? 'border-emerald-800 text-emerald-950'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                )}
-              >
-                <Search className="w-3.5 h-3.5" />
-                <span>Search Locations</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setGoogleActiveMode('accounts');
-                  if (googleAccountsList.length === 0) handleLoadGoogleAccounts();
-                }}
-                className={cn(
-                  'flex-1 pb-2.5 text-xs font-bold transition border-b-2 cursor-pointer flex items-center justify-center gap-1.5',
-                  googleActiveMode === 'accounts'
-                    ? 'border-emerald-800 text-emerald-950'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                )}
-              >
-                <Store className="w-3.5 h-3.5" />
-                <span>Accounts to Activate</span>
-              </button>
               <button
                 type="button"
                 onClick={() => setGoogleActiveMode('direct_link')}
@@ -3692,313 +3654,91 @@ export default function SettingsPage() {
                 )}
               >
                 <Link2 className="w-3.5 h-3.5" />
-                <span>Manual Link</span>
+                <span>Manual Link (Active)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setGoogleActiveMode('search')}
+                className={cn(
+                  'flex-1 pb-2.5 text-xs font-bold transition border-b-2 cursor-pointer flex items-center justify-center gap-1.5',
+                  googleActiveMode === 'search'
+                    ? 'border-purple-700 text-purple-950'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                )}
+              >
+                <Lock className="w-3.5 h-3.5 text-purple-600" />
+                <span>Location Fetcher (Locked)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setGoogleActiveMode('accounts')}
+                className={cn(
+                  'flex-1 pb-2.5 text-xs font-bold transition border-b-2 cursor-pointer flex items-center justify-center gap-1.5',
+                  googleActiveMode === 'accounts'
+                    ? 'border-purple-700 text-purple-950'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                )}
+              >
+                <Lock className="w-3.5 h-3.5 text-purple-600" />
+                <span>Accounts (Locked)</span>
               </button>
             </div>
 
             {/* Modal Body (Scrollable) */}
             <div className="overflow-y-auto flex-1 pr-1 space-y-4">
               {googleActiveMode === 'search' ? (
-                <div className="space-y-4">
-                  {/* Search Box */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                      Business Name, City, or Google Maps Link
-                    </label>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <input
-                          type="text"
-                          value={googleSearchQuery}
-                          onChange={(e) => setGoogleSearchQuery(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleFetchGoogleLocations();
-                            }
-                          }}
-                          placeholder="e.g. Starbucks Mumbai, or Pizza Express, or paste Maps URL..."
-                          className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-800"
-                        />
-                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleFetchGoogleLocations()}
-                        disabled={isSearchingGoogle || !googleSearchQuery.trim()}
-                        className="px-4 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-50 shrink-0 flex items-center gap-1.5 shadow-2xs"
-                      >
-                        {isSearchingGoogle ? (
-                          <>
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                            <span>Fetching...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Search className="w-3.5 h-3.5" />
-                            <span>Fetch Details</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
+                <div className="py-10 px-6 text-center bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-4">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mx-auto shadow-xs">
+                    <Lock className="w-6 h-6 text-purple-600" />
                   </div>
-
-                  {/* Google Cloud Console Project Enablement Info (if needed) */}
-                  {googleConsoleNotice && (
-                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1.5">
-                      <div className="flex items-center gap-1.5 font-bold">
-                        <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
-                        <span>Google Cloud Places API (New) Activation Notice</span>
-                      </div>
-                      <p className="text-[11px] text-amber-800 leading-relaxed">
-                        To enable direct live searching from Google servers, ensure <strong>Places API (New)</strong> is enabled on your Google Cloud Project (ID: <code>234396771853</code>).
-                      </p>
-                      <a
-                        href="https://console.developers.google.com/apis/api/places.googleapis.com/overview?project=234396771853"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 font-bold text-emerald-800 hover:underline pt-1"
-                      >
-                        <span>Open Google Cloud Console to Enable Places API (New)</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
+                  <div className="space-y-1.5">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold">
+                      <Sparkles className="w-3 h-3 text-purple-600" />
+                      <span>Feature Locked · Beta Version</span>
                     </div>
-                  )}
-
-                  {/* Candidate Locations List */}
-                  {googleCandidates.length > 0 && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-800">
-                          Found Google Business Locations ({googleCandidates.length})
-                        </span>
-                        <span className="text-[10px] text-slate-500">
-                          Click to select and import location details
-                        </span>
-                      </div>
-
-                      <div className="space-y-2.5">
-                        {googleCandidates.map((candidate, idx) => {
-                          const isSelected = selectedCandidate?.placeId === candidate.placeId;
-                          return (
-                            <div
-                              key={candidate.placeId || idx}
-                              onClick={() => setSelectedCandidate(candidate)}
-                              className={cn(
-                                'p-3.5 rounded-2xl border transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left',
-                                isSelected
-                                  ? 'bg-emerald-50/70 border-emerald-600 ring-2 ring-emerald-600/20'
-                                  : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                              )}
-                            >
-                              <div className="flex items-start gap-3">
-                                {candidate.photoUrl ? (
-                                  <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-slate-200 bg-slate-100">
-                                    <img
-                                      src={candidate.photoUrl}
-                                      alt={candidate.name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-slate-600">
-                                    <Store className="w-5 h-5" />
-                                  </div>
-                                )}
-
-                                <div className="space-y-0.5">
-                                  <div className="flex items-center gap-2">
-                                    <h4 className="text-xs font-bold text-slate-900">
-                                      {candidate.name}
-                                    </h4>
-                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                                      {candidate.category}
-                                    </span>
-                                  </div>
-
-                                  <div className="flex items-center gap-1 text-[11px] text-slate-500">
-                                    <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                                    <span className="truncate max-w-xs">{candidate.address}</span>
-                                  </div>
-
-                                  <div className="flex items-center gap-3 pt-0.5 text-[11px]">
-                                    <div className="flex items-center gap-1 font-bold text-amber-600">
-                                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                                      <span>{candidate.rating.toFixed(1)}</span>
-                                      <span className="text-slate-400 font-normal">
-                                        ({candidate.reviewCount} reviews)
-                                      </span>
-                                    </div>
-                                    {candidate.phone && (
-                                      <span className="text-slate-500 text-[10px]">
-                                        📞 {candidate.phone}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleApplyGoogleProfile(candidate);
-                                }}
-                                disabled={isSavingGoogleLink}
-                                className="px-3.5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs transition cursor-pointer shrink-0 shadow-2xs self-end sm:self-auto flex items-center gap-1.5"
-                              >
-                                {isSavingGoogleLink && isSelected ? (
-                                  <span>Importing...</span>
-                                ) : (
-                                  <>
-                                    <Check className="w-3.5 h-3.5" />
-                                    <span>Import to Dashboard</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                    <h4 className="text-sm font-bold text-slate-900">Google Location Fetcher is Turned Off</h4>
+                    <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+                      This automated search &amp; location fetcher is turned off for now. It will launch together with the <strong>AI Auto Reply feature</strong> in 14 days.
+                    </p>
+                    <p className="text-[11px] text-slate-500 max-w-md mx-auto">
+                      In the meantime, you can easily connect your business using the <strong>Manual Link</strong> tab to route your customer reviews.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setGoogleActiveMode('direct_link')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                  >
+                    <Link2 className="w-3.5 h-3.5" />
+                    <span>Switch to Manual Link (Active)</span>
+                  </button>
                 </div>
               ) : googleActiveMode === 'accounts' ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900">
-                        Accessible Google Accounts &amp; Locations
-                      </h4>
-                      <p className="text-[11px] text-slate-500">
-                        Retrieved via My Business Account Management API
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={handleConnectGoogleOAuth}
-                        className="px-2.5 py-1.5 rounded-lg bg-emerald-950 text-white text-[11px] font-bold hover:bg-emerald-900 transition cursor-pointer flex items-center gap-1"
-                      >
-                        <Lock className="w-3 h-3" />
-                        <span>OAuth Login</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleLoadGoogleAccounts}
-                        disabled={isLoadingAccounts}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer flex items-center gap-1"
-                      >
-                        <RefreshCw className={`w-3 h-3 ${isLoadingAccounts ? 'animate-spin' : ''}`} />
-                        <span>Refresh</span>
-                      </button>
-                    </div>
+                <div className="py-10 px-6 text-center bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-4">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mx-auto shadow-xs">
+                    <Lock className="w-6 h-6 text-purple-600" />
                   </div>
-
-                  {isLoadingAccounts ? (
-                    <div className="py-12 flex flex-col items-center justify-center text-center">
-                      <RefreshCw className="w-6 h-6 text-emerald-700 animate-spin mb-2" />
-                      <p className="text-xs text-slate-600 font-semibold">
-                        Fetching Business Profile accounts...
-                      </p>
+                  <div className="space-y-1.5">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold">
+                      <Sparkles className="w-3 h-3 text-purple-600" />
+                      <span>Feature Locked · Beta Version</span>
                     </div>
-                  ) : googleAccountsList.length === 0 ? (
-                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-2.5">
-                      <Store className="w-8 h-8 text-slate-400 mx-auto" />
-                      <p className="text-xs font-bold text-slate-800">No business profile attached to this email</p>
-                      <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-                        No Google Business Profile was found attached to this email address. Make sure you authorize the exact Google email that manages your business on Google Maps.
-                      </p>
-                      <div className="flex items-center justify-center gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={handleConnectGoogleOAuth}
-                          className="px-4 py-2 bg-emerald-950 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5"
-                        >
-                          <Lock className="w-3.5 h-3.5" />
-                          <span>Authorize with Google (OAuth)</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleLoadGoogleAccounts}
-                          className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
-                        >
-                          Fetch Accounts
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    googleAccountsList.map((acc, aIdx) => (
-                      <div key={acc.accountId || aIdx} className="space-y-2.5">
-                        <div className="flex items-center justify-between px-1">
-                          <span className="text-xs font-bold text-slate-900">{acc.accountName}</span>
-                          <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                            {acc.locations.length} Locations Available
-                          </span>
-                        </div>
-
-                        <div className="space-y-2">
-                          {acc.locations.map((loc, lIdx) => (
-                            <div
-                              key={loc.locationId || lIdx}
-                              className="p-3.5 rounded-2xl border border-slate-200 bg-white hover:border-emerald-600/50 hover:bg-emerald-50/20 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left"
-                            >
-                              <div className="space-y-0.5">
-                                <div className="flex items-center gap-2">
-                                  <h5 className="text-xs font-bold text-slate-900">{loc.name}</h5>
-                                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                                    {loc.category}
-                                  </span>
-                                </div>
-                                <p className="text-[11px] text-slate-500 flex items-center gap-1">
-                                  <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                                  <span>{loc.address}</span>
-                                </p>
-                                <div className="flex items-center gap-2 pt-0.5 text-[11px]">
-                                  <span className="font-bold text-amber-600 flex items-center gap-0.5">
-                                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                                    <span>{loc.rating.toFixed(1)}</span>
-                                  </span>
-                                  <span className="text-slate-400">({loc.reviewsCount} reviews)</span>
-                                </div>
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleApplyGoogleProfile({
-                                    placeId: loc.locationId,
-                                    locationId: loc.locationId,
-                                    accountId: loc.accountId,
-                                    name: loc.name,
-                                    category: loc.category,
-                                    categorySlug: loc.categorySlug,
-                                    address: loc.address,
-                                    city: loc.city,
-                                    phone: loc.phone,
-                                    website: loc.website,
-                                    rating: loc.rating,
-                                    reviewCount: loc.reviewsCount,
-                                    photoUrl: loc.photoUrl,
-                                    menuEnabled: loc.menuEnabled,
-                                    servicesEnabled: loc.servicesEnabled,
-                                    productsEnabled: loc.productsEnabled,
-                                    googleMapsUri: loc.mapsUrl,
-                                    reviewUrl: loc.reviewUrl,
-                                  })
-                                }
-                                disabled={isSavingGoogleLink}
-                                className="px-3.5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs transition cursor-pointer shrink-0 shadow-2xs self-end sm:self-auto flex items-center gap-1"
-                              >
-                                <Check className="w-3.5 h-3.5" />
-                                <span>Activate Location</span>
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))
-                  )}
+                    <h4 className="text-sm font-bold text-slate-900">Google Business Accounts Sync is Turned Off</h4>
+                    <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+                      Google Account &amp; Location sync via OAuth is turned off for now. This will officially launch alongside the <strong>AI Auto Reply feature</strong> in 14 days.
+                    </p>
+                    <p className="text-[11px] text-slate-500 max-w-md mx-auto">
+                      Use the <strong>Manual Link</strong> tab to input your direct Google Review Link or Place ID.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setGoogleActiveMode('direct_link')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                  >
+                    <Link2 className="w-3.5 h-3.5" />
+                    <span>Switch to Manual Link (Active)</span>
+                  </button>
                 </div>
               ) : (
                 /* Mode 2: Manual Direct Review URL */
@@ -4020,6 +3760,22 @@ export default function SettingsPage() {
                     />
                     <p className="text-[11px] text-slate-400 mt-1.5 leading-normal">
                       Tip: In Google Maps, search for your business, tap &ldquo;Ask for reviews&rdquo;, and copy the review link.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Google Maps business link <span className="text-slate-400 font-normal">(optional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={googleMapsInputUrl}
+                      onChange={(e) => setGoogleMapsInputUrl(e.target.value)}
+                      placeholder="https://maps.google.com/... or https://maps.app.goo.gl/..."
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-800"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1.5 leading-normal">
+                      This is shown as the fallback Maps option on the customer funnel.
                     </p>
                   </div>
 
@@ -4079,6 +3835,99 @@ export default function SettingsPage() {
                   )}
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Google Business Profile OAuth Beta Modal ── */}
+      {showGoogleOAuthBetaModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0">
+                  <GoogleIcon />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-slate-900">Google Business Profile</h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-500 text-white tracking-wide">
+                      Beta
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">Google OAuth 2.0 Integration</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGoogleOAuthBetaModal(false)}
+                className="p-1 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Main Thank You & Working On It Card */}
+            <div className="p-4 bg-gradient-to-br from-amber-50/80 via-white to-orange-50/50 rounded-2xl border border-amber-200/80 mb-4">
+              <div className="flex items-start gap-2.5">
+                <Sparkles className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-amber-950">
+                    Thank you! We are working on this feature
+                  </h4>
+                  <p className="text-xs text-amber-900/90 leading-relaxed font-medium">
+                    We will launch it soon — this is a beta version of the client dashboard.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Informational Guidance */}
+            <div className="space-y-3 text-xs sm:text-sm text-slate-600 leading-relaxed mb-6">
+              <p>
+                Automated one-click Google OAuth 2.0 sync for Business Profiles is currently in active development for our upcoming launch.
+              </p>
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                <div className="text-xs font-bold text-slate-800">
+                  Ready to use right now in this Beta:
+                </div>
+                <div className="flex items-start gap-2 text-xs text-slate-600">
+                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Instant Google Search:</strong> Search your business name or city to instantly link your live Google Maps location.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2 text-xs text-slate-600">
+                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Direct Review URL / Place ID:</strong> Paste your direct Google Review Link or Place ID to route customer reviews immediately.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex flex-col sm:flex-row gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowGoogleOAuthBetaModal(false);
+                  setShowGoogleLinkModal(true);
+                  setGoogleActiveMode('direct_link');
+                }}
+                className="flex-1 py-3 px-4 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-white font-bold text-xs shadow-md transition-all cursor-pointer text-center flex items-center justify-center gap-1.5"
+              >
+                <Link2 className="w-3.5 h-3.5" />
+                <span>Add Review Link Manually</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowGoogleOAuthBetaModal(false)}
+                className="py-3 px-5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs transition cursor-pointer text-center"
+              >
+                Got it
+              </button>
             </div>
           </div>
         </div>

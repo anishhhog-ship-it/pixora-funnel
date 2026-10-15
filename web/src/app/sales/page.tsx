@@ -137,13 +137,22 @@ export default function WhiteSalesDashboardPage() {
           </p>
         </div>
 
-        <Link
-          href="/sales/leads"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#5356EC] hover:bg-[#4346DB] text-white font-bold text-xs shadow-sm shadow-indigo-500/20 transition-all self-start sm:self-auto cursor-pointer"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>Add New Lead</span>
-        </Link>
+        <div className="flex flex-col gap-2 self-start sm:flex-row sm:self-auto">
+          <Link
+            href="/sales/demo-builder?quick=1"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#5356EC] px-5 py-2.5 text-xs font-extrabold text-white shadow-sm shadow-indigo-500/20 transition-all hover:bg-[#4346DB]"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>Create New Demo</span>
+          </Link>
+          <Link
+            href="/sales/leads"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-50"
+          >
+            <Plus className="h-4 w-4 stroke-[2.5]" />
+            <span>Add Lead</span>
+          </Link>
+        </div>
       </div>
 
       {/* Top 10 Metrics Cards (2 Rows of 5 Cards) */}
@@ -435,9 +444,9 @@ export default function WhiteSalesDashboardPage() {
 
           {recentLeads.length === 0 ? (
             <div className="py-12 text-center text-slate-400 text-xs space-y-2">
-              <p>No registered prospects in database.</p>
-              <Link href="/sales/leads" className="text-[#5356EC] font-bold hover:underline inline-block">
-                + Create First Lead
+              <p>No registered prospects in database yet.</p>
+              <Link href="/sales/demo-builder?quick=1" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#5356EC] px-4 text-xs font-extrabold text-white hover:bg-[#4346DB]">
+                Create your first demo
               </Link>
             </div>
           ) : (

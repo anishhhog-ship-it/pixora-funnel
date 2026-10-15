@@ -20,6 +20,8 @@ import {
   Sparkles,
   FolderPlus,
   Loader2,
+  Upload,
+  X,
   Image as ImageIcon
 } from 'lucide-react';
 import { menuService, businessService, getCatalogTerminology } from '@/services';
@@ -42,6 +44,50 @@ const IMAGE_PRESETS = [
   { label: 'Fitness / Health 🏋️', url: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&h=400&fit=crop' },
 ];
 
+/**
+ * Optimizes and compresses an uploaded image file via canvas.
+ * Reduces raw mobile photos (5-15MB) to ~80-150KB for fast saving and loading.
+ */
+function compressImageFile(file: File, maxWidth = 1000, quality = 0.85): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (!dataUrl) {
+        resolve('');
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(dataUrl);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        } catch {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function MenuManagementPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -62,6 +108,10 @@ export default function MenuManagementPage() {
   const [showAddCatInput, setShowAddCatInput] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [isAddingCat, setIsAddingCat] = useState(false);
+
+  // Direct Product Photo Upload State & Ref
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Ref to edit card for smooth scrolling on mobile
   const editPanelRef = useRef<HTMLDivElement>(null);
@@ -116,7 +166,7 @@ export default function MenuManagementPage() {
       name: '',
       description: '',
       price: 0,
-      image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&h=400&fit=crop',
+      image: '',
       isLive: true,
       isBestseller: false,
     };
@@ -379,11 +429,18 @@ export default function MenuManagementPage() {
                       }
                     }}
                   >
-                    <img 
-                      src={item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop'} 
-                      alt={item.name} 
-                      className="w-16 h-16 rounded-xl object-cover shrink-0" 
-                    />
+                    {item.image ? (
+                      <img 
+                        src={item.image} 
+                        alt={item.name} 
+                        className="w-16 h-16 rounded-xl object-cover shrink-0" 
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 flex flex-col items-center justify-center shrink-0 text-slate-400">
+                        <ImageIcon className="w-5 h-5" />
+                        <span className="text-[8px] font-medium mt-0.5">No photo</span>
+                      </div>
+                    )}
                     <div className="flex-1 flex flex-col justify-center min-w-0">
                       <div className="flex justify-between items-start mb-0.5">
                         <h4 className="font-bold text-gray-900 text-sm truncate">{item.name}</h4>
@@ -495,28 +552,153 @@ export default function MenuManagementPage() {
                     </div>
                   </div>
 
-                  {/* Image Field & Quick Presets */}
+                  {/* Direct Photo Upload Section (No paste link) */}
                   <div>
-                    <label className="text-xs font-semibold text-gray-700 mb-1 flex items-center justify-between">
-                      <span>Item Photo / Image URL</span>
-                      <ImageIcon className="w-3.5 h-3.5 text-gray-400" />
-                    </label>
-                    <Input 
-                      value={editingItem.image || ''} 
-                      onChange={e => setEditingItem({...editingItem, image: e.target.value})}
-                      placeholder="https://images.unsplash.com/..."
-                      className="rounded-xl border-gray-200 bg-gray-50 text-xs focus-visible:ring-[#0B3D2E]"
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                        <span>{terminology.itemLabel} Photo</span>
+                        <span className="text-[10px] text-gray-400 font-normal">(Upload directly)</span>
+                      </label>
+                      {editingItem.image && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingItem({ ...editingItem, image: '' })}
+                          className="text-[11px] text-red-500 hover:text-red-700 font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Remove</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Hidden Native File Input */}
+                    <input 
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file || !editingItem) return;
+                        setIsUploadingImage(true);
+                        try {
+                          const dataUrl = await compressImageFile(file);
+                          if (dataUrl) {
+                            setEditingItem({
+                              ...editingItem,
+                              image: dataUrl,
+                            });
+                            setToastMsg({ type: 'success', text: 'Photo uploaded successfully! 📸' });
+                            setTimeout(() => setToastMsg(null), 3000);
+                          }
+                        } catch (err) {
+                          console.error('Failed to process image:', err);
+                          setToastMsg({ type: 'error', text: 'Failed to upload photo.' });
+                        } finally {
+                          setIsUploadingImage(false);
+                          if (e.target) e.target.value = '';
+                        }
+                      }}
+                      className="hidden"
+                      id="product-photo-upload"
                     />
-                    
-                    {/* Quick Preset Chips */}
-                    <div className="mt-2">
-                      <p className="text-[10px] text-gray-500 mb-1.5 font-medium">Quick Photo Presets:</p>
+
+                    {/* Image Preview & Upload Controls */}
+                    {editingItem.image ? (
+                      <div className="space-y-2">
+                        <div className="relative w-full h-36 rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 shadow-xs group">
+                          <img 
+                            src={editingItem.image} 
+                            alt="Product Preview" 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              (e.target as any).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&h=400&fit=crop';
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                          
+                          <span className="absolute bottom-2 left-2.5 inline-flex items-center gap-1 bg-black/60 backdrop-blur-md text-white text-[10px] font-medium px-2 py-0.5 rounded-full border border-white/20">
+                            <Check className="w-3 h-3 text-emerald-400" />
+                            <span>Photo Uploaded</span>
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => photoInputRef.current?.click()}
+                            disabled={isUploadingImage}
+                            className="absolute bottom-2 right-2 inline-flex items-center gap-1 bg-white hover:bg-slate-100 text-slate-800 text-[10px] font-bold px-2.5 py-1 rounded-xl shadow-md transition-all cursor-pointer hover:scale-105 disabled:opacity-60"
+                          >
+                            <Camera className="w-3 h-3 text-[#0B3D2E]" />
+                            <span>{isUploadingImage ? 'Uploading...' : 'Change Photo'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Click or Drag-and-Drop Upload Area */
+                      <div
+                        onClick={() => photoInputRef.current?.click()}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={async (e) => {
+                          e.preventDefault();
+                          const file = e.dataTransfer.files?.[0];
+                          if (!file || !editingItem) return;
+                          setIsUploadingImage(true);
+                          try {
+                            const dataUrl = await compressImageFile(file);
+                            if (dataUrl) {
+                              setEditingItem({
+                                ...editingItem,
+                                image: dataUrl,
+                              });
+                              setToastMsg({ type: 'success', text: 'Photo uploaded! 📸' });
+                              setTimeout(() => setToastMsg(null), 3000);
+                            }
+                          } catch (err) {
+                            console.error('Failed to process dropped image:', err);
+                          } finally {
+                            setIsUploadingImage(false);
+                          }
+                        }}
+                        className={`w-full p-5 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center text-center gap-2 group ${
+                          isUploadingImage 
+                            ? 'border-emerald-500 bg-emerald-50/40' 
+                            : 'border-slate-300 hover:border-[#0B3D2E] bg-slate-50/80 hover:bg-emerald-50/20'
+                        }`}
+                      >
+                        {isUploadingImage ? (
+                          <div className="py-2 flex flex-col items-center gap-1.5">
+                            <Loader2 className="w-6 h-6 text-[#0B3D2E] animate-spin" />
+                            <p className="text-xs font-semibold text-slate-700">Optimizing &amp; uploading photo...</p>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="w-11 h-11 rounded-2xl bg-white shadow-xs border border-slate-200 flex items-center justify-center text-[#0B3D2E] group-hover:scale-110 transition-transform">
+                              <Upload className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-slate-800 group-hover:text-[#0B3D2E] transition-colors">
+                                Upload Product Photo
+                              </p>
+                              <p className="text-[10px] text-slate-500 mt-0.5">
+                                Tap to choose from your device or take a photo
+                              </p>
+                            </div>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-200/60 text-[9px] font-medium text-slate-600">
+                              PNG, JPG, WebP supported
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Quick Preset Chips (Optional fallback) */}
+                    <div className="mt-3">
+                      <p className="text-[10px] text-gray-500 mb-1.5 font-medium">Or choose a preset photo (optional):</p>
                       <div className="flex flex-wrap gap-1.5">
                         {IMAGE_PRESETS.map((p, idx) => (
                           <button
                             key={idx}
                             type="button"
-                            onClick={() => setEditingItem({...editingItem, image: p.url})}
+                            onClick={() => setEditingItem({ ...editingItem, image: p.url })}
                             className="px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[10px] text-slate-700 font-medium transition-colors cursor-pointer"
                           >
                             {p.label}
@@ -524,23 +706,6 @@ export default function MenuManagementPage() {
                         ))}
                       </div>
                     </div>
-
-                    {/* Image Preview */}
-                    {editingItem.image && (
-                      <div className="mt-2.5 relative w-full h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
-                        <img 
-                          src={editingItem.image} 
-                          alt="Preview" 
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as any).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&h=400&fit=crop';
-                          }}
-                        />
-                        <span className="absolute bottom-1 right-2 bg-black/60 backdrop-blur-xs text-white text-[9px] px-1.5 py-0.5 rounded">
-                          Live Photo Preview
-                        </span>
-                      </div>
-                    )}
                   </div>
                   
                   {/* Toggles */}

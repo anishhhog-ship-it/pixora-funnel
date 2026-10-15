@@ -596,6 +596,17 @@ export default function LeadsPage() {
                 </div>
 
                 <div className="space-y-1">
+                  <label className="text-slate-700 font-bold">Business Address</label>
+                  <input
+                    type="text"
+                    placeholder="Shop/Office No, Street, Landmark"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
                   <label className="text-slate-700 font-bold">City / Area</label>
                   <input
                     type="text"

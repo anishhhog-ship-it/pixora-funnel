@@ -33,8 +33,8 @@ import { GoogleConnectionBadge, GoogleBadgeStatus } from '@/components/GoogleCon
 import { Review, Business } from '@/types';
 import { PortalErrorState, PortalLoadingState } from '@/components/client-portal/PortalUI';
 
-// 7-Day Beta Launch Countdown: October 21, 2026, 12:00:00 IST (7 days from Oct 14)
-const AUTO_REPLY_BETA_LAUNCH_DATE = new Date('2026-10-21T12:00:00+05:30').getTime();
+// 14-Day Beta Launch Countdown: October 29, 2026, 12:00:00 IST (14 days from Oct 15)
+const AUTO_REPLY_BETA_LAUNCH_DATE = new Date('2026-10-29T12:00:00+05:30').getTime();
 
 const TABS = ['Settings', 'Reply Templates', 'Review Categories', 'Smart Customisation', 'Activity Log'];
 const TONES = ['Warm & Friendly', 'Professional', 'Short & Simple', 'Traditional'];
@@ -64,7 +64,7 @@ export default function AutoReplyPage() {
     seconds: number;
     isLocked: boolean;
   }>({
-    days: 7,
+    days: 14,
     hours: 0,
     minutes: 0,
     seconds: 0,
@@ -375,7 +375,7 @@ export default function AutoReplyPage() {
             className={`w-12 h-6 rounded-full relative transition-colors cursor-pointer ${
               timeLeft.isLocked ? 'bg-purple-200' : isEnabled && !isTrial ? 'bg-blue-600' : 'bg-slate-300'
             }`}
-            title={timeLeft.isLocked ? 'Auto Reply is currently locked for 7-day Beta testing. Click for details.' : isTrial ? 'Auto Reply is turned off for trial accounts. Click to upgrade.' : undefined}
+            title={timeLeft.isLocked ? 'Auto Reply is currently locked for 14-day Beta testing. Click for details.' : isTrial ? 'Auto Reply is turned off for trial accounts. Click to upgrade.' : undefined}
             aria-label={timeLeft.isLocked ? 'Auto Reply locked in Beta' : isTrial ? 'Auto Reply requires an active plan' : 'Toggle Auto Reply'}
             aria-pressed={isEnabled && !isTrial && !timeLeft.isLocked}
           >
@@ -411,7 +411,7 @@ export default function AutoReplyPage() {
         </div>
       </div>
 
-      {/* ── 7-Day Beta Launch Countdown Hero Banner ── */}
+      {/* ── 14-Day Beta Launch Countdown Hero Banner ── */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 text-white p-6 sm:p-8 shadow-xl border border-indigo-900/60">
         {/* Glow Effects */}
         <div className="absolute top-0 right-0 -mt-12 -mr-12 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
@@ -422,7 +422,7 @@ export default function AutoReplyPage() {
             <div className="flex items-center gap-2 flex-wrap">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-purple-500/30 to-indigo-500/30 border border-purple-400/30 text-purple-200 text-xs font-bold uppercase tracking-wider backdrop-blur-md">
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Beta Version Launching in 7 Days</span>
+                <span>Beta Version Launching in 14 Days</span>
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 text-xs font-semibold">
                 <Lock className="w-3 h-3" />
@@ -514,7 +514,7 @@ export default function AutoReplyPage() {
             </div>
 
             <div className="mt-3 text-[11px] text-slate-400 text-center font-medium">
-              Beta Go-Live: <span className="text-slate-200 font-semibold">Oct 21, 2026 · 12:00 PM IST</span>
+              Beta Go-Live: <span className="text-slate-200 font-semibold">Oct 29, 2026 · 12:00 PM IST</span>
             </div>
           </div>
         </div>

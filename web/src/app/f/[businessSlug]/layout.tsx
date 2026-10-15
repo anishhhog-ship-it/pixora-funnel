@@ -1,22 +1,8 @@
-import { businessService, getFunnelBackground } from '@/services';
+import { businessService } from '@/services';
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
-import Image from 'next/image';
-import { Lock, AlertTriangle, ArrowRight, PhoneCall, Sparkles } from 'lucide-react';
+import { Lock, AlertTriangle, PhoneCall, Sparkles } from 'lucide-react';
 import UnlockFunnelClient from './UnlockFunnelClient';
-
-// Luxury Lotus Floral SVG Mark (matches reference screenshot)
-function LotusBrandIcon({ className = "w-10 h-10", fill = "#D4AF37" }: { className?: string; fill?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M50 14 C44 32 40 54 50 78 C60 54 56 32 50 14 Z" stroke={fill} strokeWidth="3.2" fill={fill} fillOpacity="0.15" strokeLinecap="round" />
-      <path d="M50 78 C36 60 28 42 36 24 C44 34 48 55 50 78 Z" stroke={fill} strokeWidth="3.2" fill={fill} fillOpacity="0.15" strokeLinecap="round" />
-      <path d="M50 78 C64 60 72 42 64 24 C56 34 52 55 50 78 Z" stroke={fill} strokeWidth="3.2" fill={fill} fillOpacity="0.15" strokeLinecap="round" />
-      <path d="M50 78 C24 68 16 50 22 36 C30 44 44 64 50 78 Z" stroke={fill} strokeWidth="3.2" fill={fill} fillOpacity="0.15" strokeLinecap="round" />
-      <path d="M50 78 C76 68 84 50 78 36 C70 44 56 64 50 78 Z" stroke={fill} strokeWidth="3.2" fill={fill} fillOpacity="0.15" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 export default async function FunnelLayout({
   children,
@@ -52,107 +38,41 @@ export default async function FunnelLayout({
       business.planStatus !== 'active')
   );
 
-  // Resolve background & theme via centralized category engine
-  const { desktop, mobile, overlay, categoryConfig } = getFunnelBackground(business);
-  const primaryColor = business.theme?.primaryColor || categoryConfig.defaultPrimaryColor || '#0B3D2E';
-  const secondaryColor = business.theme?.secondaryColor || categoryConfig.defaultSecondaryColor || '#D4AF37';
-  const tagline = business.theme?.tagline || categoryConfig.subheadline || 'GOOD FOOD • GREAT COMPANY • BRIGHTER DAYS';
-  const hasCustomLogo = business.theme?.logo && business.theme.logo !== '/placeholder.png';
-  const logoUrl = business.theme?.logo || business.logo;
-
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-slate-950 font-sans text-gray-900">
-      
-      {/* ── Full Bleed Background Ambience (Responsive Desktop & Mobile) ── */}
-      <div className="fixed inset-0 w-full h-full z-0 pointer-events-none">
-        {/* Desktop Image */}
-        <div className="hidden sm:block absolute inset-0 w-full h-full">
-          <Image 
-            src={desktop} 
-            alt={`${business.name} Background`} 
-            fill 
-            priority
-            className="object-cover object-center"
-          />
-        </div>
-        {/* Mobile Image */}
-        <div className="sm:hidden absolute inset-0 w-full h-full">
-          <Image 
-            src={mobile} 
-            alt={`${business.name} Mobile Background`} 
-            fill 
-            priority
-            className="object-cover object-center"
-          />
-        </div>
-
-        {/* Dynamic Category Vignette & Contrast Overlay */}
+    <div className="relative min-h-screen overflow-x-hidden bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900">
+      {/* ── Soft Ambient Background Gradients (Subtle Light Blue & Mint Green) ── */}
+      <div 
+        className="fixed inset-0 pointer-events-none z-0 overflow-hidden" 
+        aria-hidden="true"
+      >
+        {/* Soft light-blue ambient bloom top right */}
         <div 
-          className="absolute inset-0 backdrop-blur-[1px]"
+          className="absolute -top-24 -right-24 h-96 w-96 rounded-full blur-3xl opacity-60"
           style={{
-            background: overlay.gradient || `rgba(0, 0, 0, ${overlay.opacity || 0.65})`,
+            background: 'radial-gradient(circle, rgba(186, 230, 253, 0.55) 0%, rgba(224, 242, 254, 0.2) 70%, transparent 100%)'
+          }}
+        />
+        {/* Soft mint-green ambient bloom mid-left */}
+        <div 
+          className="absolute top-1/3 -left-28 h-96 w-96 rounded-full blur-3xl opacity-50"
+          style={{
+            background: 'radial-gradient(circle, rgba(167, 243, 208, 0.45) 0%, rgba(209, 250, 229, 0.15) 70%, transparent 100%)'
+          }}
+        />
+        {/* Soft light-blue / ice ambient bloom bottom right */}
+        <div 
+          className="absolute -bottom-24 -right-16 h-80 w-80 rounded-full blur-3xl opacity-45"
+          style={{
+            background: 'radial-gradient(circle, rgba(191, 219, 254, 0.4) 0%, rgba(240, 249, 255, 0.1) 70%, transparent 100%)'
           }}
         />
       </div>
 
-      {/* ── Top Floating Language Selector ── */}
-      <div className="relative z-20 mx-auto flex w-full max-w-md justify-end px-4 pt-3">
-        <div className="flex items-center gap-1.5 rounded-full border border-white/20 bg-black/35 px-3 py-1.5 text-xs font-medium text-white shadow-sm backdrop-blur-md" aria-label="Language: English">
-          <svg className="w-3.5 h-3.5 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="2" y1="12" x2="22" y2="12" />
-            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-          </svg>
-          <span>English</span>
-          <svg className="w-3 h-3 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="m6 9 6 6 6-6" />
-          </svg>
-        </div>
-      </div>
-
-      {/* ── Main Content Container ── */}
-      <div className="relative z-10 mx-auto flex w-full max-w-md flex-grow flex-col px-4 pb-6 pt-3">
-        
-        {/* Brand Header */}
-        <header className="mb-7 flex flex-col items-center text-center text-white">
-          {hasCustomLogo && logoUrl ? (
-              <div className="relative mb-2 h-14 w-14 overflow-hidden rounded-2xl border border-white/20 bg-white/10 shadow-lg backdrop-blur-md">
-              <Image 
-                src={logoUrl} 
-                alt={`${business.name} Logo`} 
-                fill 
-                unoptimized
-                className="object-cover" 
-              />
-            </div>
-          ) : (
-            <div className="mb-1 flex items-center justify-center drop-shadow-[0_5px_12px_rgba(212,175,55,0.25)]">
-              <LotusBrandIcon className="w-12 h-12" fill={secondaryColor} />
-            </div>
-          )}
-
-          <h1 
-            className="font-serif text-3xl font-bold tracking-tight text-[#F7F2E7] sm:text-4xl"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
-            {business.name}
-          </h1>
-
-          <p className="text-[11px] tracking-[0.24em] uppercase font-medium text-[#E5C278] opacity-90">
-            {business.category}
-          </p>
-
-          {tagline && (
-            <div className="flex items-center justify-center gap-2 mt-2.5 text-[10px] tracking-[0.2em] uppercase text-white/75 font-normal">
-              <span>{tagline}</span>
-            </div>
-          )}
-        </header>
-
-        {/* Page Body */}
-        <main className="flex-grow flex flex-col justify-center">
-          {isExpired ? (
-            <div className="mx-auto my-auto w-full max-w-sm rounded-[32px] border border-rose-200 bg-white/95 p-6 text-center text-slate-900 shadow-2xl backdrop-blur-md animate-in zoom-in-95 duration-300 sm:p-7">
+      {/* ── Main Funnel Container (Mobile-first, centered) ── */}
+      <div className="relative z-10 mx-auto flex w-full max-w-md min-h-screen flex-col px-4 py-4 sm:px-6 sm:py-6">
+        {isExpired ? (
+          <main className="my-auto w-full">
+            <div className="mx-auto w-full max-w-sm rounded-[32px] border border-rose-200 bg-white p-6 text-center text-slate-900 shadow-xl sm:p-7">
               {/* Lock Badge Icon */}
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-rose-500 to-rose-600 text-white flex items-center justify-center shadow-lg shadow-rose-500/25">
                 <Lock className="w-8 h-8" />
@@ -163,22 +83,22 @@ export default async function FunnelLayout({
                 <span>Scanner Inactive</span>
               </div>
 
-              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-slate-900 tracking-tight leading-tight">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
                 Free Trial Has Ended
               </h2>
 
               <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
-                The free trial for <strong>{business.name}</strong> review funnel has concluded and this scanner has been taken down.
+                The free trial for <strong>{business.name}</strong> review funnel has concluded and this scanner has been paused.
               </p>
 
               {/* Requirement Box */}
-              <div className="my-5 p-3.5 bg-amber-50 rounded-2xl border border-amber-200/90 text-left text-xs text-amber-950 space-y-1.5">
+              <div className="my-5 p-3.5 bg-amber-50 rounded-2xl border border-amber-200 text-left text-xs text-amber-950 space-y-1.5">
                 <p className="font-bold flex items-center gap-1.5 text-amber-900">
                   <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                   <span>How to Unlock Your Funnel:</span>
                 </p>
                 <p className="text-[12px] text-amber-800 leading-relaxed">
-                  Activate an active 2-year plan to re-activate your customer review system and turn on AI Auto Reply:
+                  Activate a plan to re-activate your customer review system and turn on AI Auto Reply:
                 </p>
                 <div className="pt-1 space-y-1 text-[11px] text-slate-700 font-medium">
                   <div>• <strong>₹2,599:</strong> 2-Year Plan (Without NFC Card)</div>
@@ -186,18 +106,17 @@ export default async function FunnelLayout({
                 </div>
               </div>
 
-              {/* Purchase & Unlock Buttons Redirecting to 9257378047 */}
+              {/* Purchase & Unlock Buttons */}
               <UnlockFunnelClient businessId={business.id || businessSlug} businessName={business.name || 'Your Business'} />
 
               <div className="space-y-2 pt-1">
-
                 <a
                   href={`https://wa.me/919257378047?text=${encodeURIComponent(
                     `Hi Admin! Please unlock the QR review scanner for ${business.name}.`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-2 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
                 >
                   <PhoneCall className="w-3.5 h-3.5 text-slate-600" />
                   <span>Request Admin to Unlock (+91 92573 78047)</span>
@@ -211,30 +130,11 @@ export default async function FunnelLayout({
                 </a>
               </div>
             </div>
-          ) : (
-            children
-          )}
-        </main>
+          </main>
+        ) : (
+          children
+        )}
       </div>
-
-      {/* ── Global Wave Footer ── */}
-      <footer className="relative z-10 mt-auto w-full overflow-hidden py-5 text-center">
-        <div 
-          className="w-full h-16 absolute bottom-0 -z-10 rounded-t-[100%] scale-150 transform translate-y-7 shadow-2xl border-t border-[#D4AF37]/30"
-          style={{ backgroundColor: primaryColor }}
-        ></div>
-        <div className="relative z-20 flex items-center justify-center gap-2">
-          <span className="text-[11px] sm:text-xs text-white/80 font-medium">Powered by</span>
-          <Image
-            src="/pixora-logo-white.png"
-            alt="Pixora Automations"
-            width={140}
-            height={36}
-            className="h-6 sm:h-7 w-auto object-contain inline-block opacity-95"
-          />
-          <span className="text-rose-400 text-xs">❤️</span>
-        </div>
-      </footer>
     </div>
   );
 }

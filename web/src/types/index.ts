@@ -48,6 +48,7 @@ export type Business = {
   visualThemeId?: string;
   googlePlaceId?: string;
   googleReviewUrl?: string;
+  googleMapsUrl?: string;
   ownerName?: string;
   phone?: string;
   email?: string;

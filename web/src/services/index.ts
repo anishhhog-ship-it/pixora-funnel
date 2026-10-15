@@ -116,23 +116,37 @@ export const businessService = {
     // 1. Query Supabase businesses table when configured
     if (isSupabaseConfigured()) {
       try {
-        const { data: b, error } = await supabase
-          .from('businesses')
-          .select('*')
-          .or(`slug.eq.${cleanSlug},slug.eq.${baseSlug}`)
-          .maybeSingle();
+        const queryWithTimeout = <T>(p: Promise<T>, ms = 2500): Promise<T> =>
+          Promise.race([
+            p,
+            new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`Query timed out after ${ms}ms`)), ms))
+          ]);
+
+        const { data: b, error } = (await queryWithTimeout(
+          supabase
+            .from('businesses')
+            .select('*')
+            .or(`slug.eq.${cleanSlug},slug.eq.${baseSlug}`)
+            .maybeSingle()
+        )) as any;
 
         if (!error && b) {
           const mappedBiz: Business = {
+            id: b.id,
             businessId: b.id,
             slug: b.slug,
             name: b.name,
             category: b.category || 'Local Business',
-            city: b.city || 'Jaipur',
-            logo: b.logo_url || mockData.mockBusiness.logo,
-            coverImage: b.cover_image_url || mockData.mockBusiness.coverImage,
-            googlePlaceId: b.website || 'https://maps.google.com',
-            googleReviewUrl: b.website || undefined,
+            city: b.city || '',
+            address: b.address || '',
+            website: b.website || '',
+            description: b.description || '',
+            logo: b.logo_url || '',
+            coverImage: b.custom_cover_image || b.cover_image_url || '',
+            customCoverImage: b.custom_cover_image || '',
+            googlePlaceId: b.google_place_id || '',
+            googleReviewUrl: b.google_review_url || undefined,
+            googleMapsUrl: b.google_maps_url || undefined,
             ownerName: 'Business Owner',
             phone: b.phone || '',
             email: b.email || '',
@@ -142,14 +156,14 @@ export const businessService = {
             reviewsCount: 0,
             createdAt: b.created_at,
             theme: {
-              primaryColor: b.primary_color || '#0B3D2E',
+              primaryColor: b.primary_color || '#1A73E8',
               secondaryColor: b.secondary_color || '#D4AF37',
               accentColor: b.accent_color || '#FDFBF7',
-              logo: b.logo_url || mockData.mockBusiness.logo,
-              coverImage: b.cover_image_url || mockData.mockBusiness.coverImage,
+              logo: b.logo_url || '',
+              coverImage: b.custom_cover_image || b.cover_image_url || '',
               businessName: b.name,
               category: b.category || 'Local Business',
-              tagline: b.tagline || 'Experience exceptional local service.',
+              tagline: b.tagline || '',
               menuEnabled: b.menu_enabled ?? true,
             },
           };
@@ -157,44 +171,51 @@ export const businessService = {
           return mappedBiz;
         }
         // 1b. Also check sales_demos so real customer funnels (/f/[slug]) load for sales demos
-        const { data: demo } = await supabase
-          .from('sales_demos')
-          .select('*')
-          .or(`slug.eq.${cleanSlug},slug.eq.${baseSlug},slug.ilike.${baseSlug}%`)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        const { data: demo } = (await queryWithTimeout(
+          supabase
+            .from('sales_demos')
+            .select('*')
+            .or(`slug.eq.${cleanSlug},slug.eq.${baseSlug},slug.ilike.${baseSlug}%`)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        )) as any;
 
         if (demo) {
+          const demoConfig = (demo.config as any) || {};
           const mappedDemoBiz: Business = {
+            id: demo.id,
             businessId: demo.id,
             slug: demo.slug,
             name: demo.business_name,
             category: demo.category || 'Local Business',
-            city: 'Jaipur',
-            logo: demo.logo_url || mockData.mockBusiness.logo,
-            coverImage: demo.cover_url || mockData.mockBusiness.coverImage,
-            googlePlaceId: demo.review_destination_url || 'https://maps.google.com',
+            city: demoConfig.city || '',
+            address: demoConfig.address || '',
+            logo: demo.logo_url || '',
+            coverImage: demo.cover_url || '',
+            customCoverImage: demo.cover_url || '',
+            googlePlaceId: demo.review_destination_url || '',
             googleReviewUrl: demo.review_destination_url || undefined,
-            ownerName: 'Business Owner',
-            phone: '',
-            email: '',
+            ownerName: demoConfig.owner_name || 'Business Owner',
+            phone: demoConfig.phone || '',
+            email: demoConfig.email || '',
             planStatus: 'active',
             trialExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             qrScans: 0,
             reviewsCount: 0,
             createdAt: demo.created_at,
             theme: {
-              primaryColor: demo.primary_color || '#0B3D2E',
+              primaryColor: demo.primary_color || '#1A73E8',
               secondaryColor: '#D4AF37',
               accentColor: '#FDFBF7',
-              logo: demo.logo_url || mockData.mockBusiness.logo,
-              coverImage: demo.cover_url || mockData.mockBusiness.coverImage,
+              logo: demo.logo_url || '',
+              coverImage: demo.cover_url || '',
               businessName: demo.business_name,
               category: demo.category || 'Local Business',
-              tagline: (demo.config as any)?.headline || 'Experience exceptional local service.',
+              tagline: demoConfig.headline || demoConfig.tagline || '',
               menuEnabled: true,
-            },
+              topics: demoConfig.topics || undefined,
+            } as any,
           };
           runtimeBusinesses[cleanSlug] = mappedDemoBiz;
           return mappedDemoBiz;
@@ -274,28 +295,35 @@ export const businessService = {
 
         if (!error && b) {
           return {
+            id: b.id,
             businessId: b.id,
             slug: b.slug,
             name: b.name,
             category: b.category || 'Local Business',
-            city: b.city || 'Jaipur',
-            logo: b.logo_url || mockData.mockBusiness.logo,
-            coverImage: b.cover_image_url || mockData.mockBusiness.coverImage,
-            googlePlaceId: b.website || 'https://maps.google.com',
+            city: b.city || '',
+            address: b.address || '',
+            website: b.website || '',
+            description: b.description || '',
+            logo: b.logo_url || '',
+            coverImage: b.custom_cover_image || b.cover_image_url || '',
+            customCoverImage: b.custom_cover_image || '',
+            googlePlaceId: b.google_place_id || '',
+            googleReviewUrl: b.google_review_url || undefined,
+            googleMapsUrl: b.google_maps_url || undefined,
             ownerName: 'Business Owner',
             phone: b.phone || '',
             email: b.email || '',
-            planStatus: 'active',
-            trialExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            planStatus: (b.status === 'active' ? 'active' : 'trial') as 'trial' | 'active' | 'expired',
+            trialExpiresAt: b.trial_expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
             qrScans: 0,
             reviewsCount: 0,
             createdAt: b.created_at,
             theme: {
-              primaryColor: b.primary_color || '#0B3D2E',
+              primaryColor: b.primary_color || '#1A73E8',
               secondaryColor: b.secondary_color || '#D4AF37',
               accentColor: b.accent_color || '#FDFBF7',
-              logo: b.logo_url || mockData.mockBusiness.logo,
-              coverImage: b.cover_image_url || mockData.mockBusiness.coverImage,
+              logo: b.logo_url || '',
+              coverImage: b.custom_cover_image || b.cover_image_url || '',
               businessName: b.name,
               category: b.category || 'Local Business',
               tagline: b.tagline || '',
@@ -307,7 +335,7 @@ export const businessService = {
     }
 
     const all = await businessService.getAllBusinesses();
-    return all.find(b => b.businessId === id) || (isDemoMode() ? mockData.mockBusiness : null);
+    return all.find(b => b.businessId === id) || null;
   },
 
   getAllBusinesses: async (userId?: string): Promise<Business[]> => {
@@ -626,6 +654,9 @@ export const businessService = {
     ownerId?: string;
     category: string;
     city: string;
+    address?: string;
+    website?: string;
+    description?: string;
     tagline?: string;
     googleMapsUrl?: string;
     googlePlaceId?: string;
@@ -676,10 +707,15 @@ export const businessService = {
             slug: uniqueSlug,
             category: params.category || 'Local Business',
             city: params.city || 'Jaipur',
+            address: params.address || null,
+            website: params.website || null,
+            description: params.description || null,
             tagline,
             phone: params.phone,
             email: ownerEmail,
-            website: params.googleMapsUrl,
+            google_place_id: params.googlePlaceId || null,
+            google_review_url: params.googleReviewUrl || null,
+            google_maps_url: params.googleMapsUrl || null,
             logo_url: logo,
             cover_image_url: coverImage,
             primary_color: params.primaryColor || '#0B3D2E',
@@ -775,14 +811,18 @@ export const businessService = {
       categoryConfidence: getCategoryConfidence(params.category),
       visualThemeId: catConfig.id,
       city: params.city || 'Your City',
+      address: params.address || '',
+      website: params.website || '',
+      description: params.description || '',
       logo,
       coverImage,
       googlePlaceId: params.googlePlaceId || params.googleMapsUrl || 'https://maps.google.com',
-      googleReviewUrl:
+       googleReviewUrl:
         params.googleReviewUrl ||
         (params.googlePlaceId && params.googlePlaceId.startsWith('ChI')
           ? `https://search.google.com/local/writereview?placeid=${params.googlePlaceId}`
-          : params.googleMapsUrl),
+           : params.googleMapsUrl),
+       googleMapsUrl: params.googleMapsUrl,
       ownerName: params.ownerName || currentUser?.name || 'Business Owner',
       phone: params.phone || currentUser?.phone || '',
       email: ownerEmail,
@@ -869,7 +909,8 @@ export const businessService = {
           phone: params.phone || existing.phone,
           email: params.email || existing.email || currentUser?.email,
           googlePlaceId: params.googlePlaceId || existing.googlePlaceId,
-          googleReviewUrl: params.googleReviewUrl || existing.googleReviewUrl,
+           googleReviewUrl: params.googleReviewUrl || existing.googleReviewUrl,
+           googleMapsUrl: params.googleMapsUrl || existing.googleMapsUrl,
           logo: params.logoUrl || existing.logo,
           coverImage: params.coverImageUrl || existing.coverImage,
           theme: {
@@ -892,6 +933,9 @@ export const businessService = {
               name: updatedBiz.name,
               category: updatedBiz.category,
               city: updatedBiz.city,
+              address: updatedBiz.address || null,
+              website: updatedBiz.website || null,
+              description: updatedBiz.description || null,
               phone: updatedBiz.phone,
               email: updatedBiz.email,
               tagline: updatedBiz.theme.tagline,
@@ -900,6 +944,9 @@ export const businessService = {
               primary_color: updatedBiz.theme.primaryColor,
               secondary_color: updatedBiz.theme.secondaryColor,
               menu_enabled: updatedBiz.theme.menuEnabled,
+              google_place_id: updatedBiz.googlePlaceId || null,
+              google_review_url: updatedBiz.googleReviewUrl || null,
+              google_maps_url: updatedBiz.googleMapsUrl || null,
             }).eq('id', existingId);
           } catch (e) {}
         }
@@ -919,6 +966,9 @@ export const businessService = {
       ownerId: ownerId,
       category: params.category,
       city: params.city || 'Jaipur',
+      address: params.address,
+      website: params.website,
+      description: params.description,
       tagline: params.tagline,
       googleMapsUrl: params.googleMapsUrl,
       googlePlaceId: params.googlePlaceId,

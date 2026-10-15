@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSalesSession, salesDb, databaseFailure, boundedText, isUuid } from '@/services/salesServer';
-import { isHttpsUrl } from '@/services/salesValidation';
+import { isAllowedGoogleMapsUrl, isAllowedGoogleReviewUrl, isAllowedReviewDestinationUrl, isHttpsUrl } from '@/services/salesValidation';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://funnel.pixoraautomations.com';
 const DEFAULT_CATEGORY = 'General Business';
@@ -70,19 +70,33 @@ export async function POST(req: NextRequest) {
     if (prospectId && !isUuid(prospectId)) return NextResponse.json({ success: false, error: 'Invalid prospect ID' }, { status: 400 });
     const defaults = categoryDefaults(typeof body.category === 'string' ? body.category : DEFAULT_CATEGORY);
     let reviewUrl = boundedText(body.reviewDestinationUrl, 2000);
+    const googleMapsUrl = boundedText(body.googleMapsUrl, 2000);
+    const googleReviewUrl = boundedText(body.googleReviewUrl, 2000);
+    const googlePlaceId = boundedText(body.googlePlaceId, 200);
+    if (googleMapsUrl && !isAllowedGoogleMapsUrl(googleMapsUrl)) {
+      return NextResponse.json({ success: false, error: 'Google Maps link is not supported.' }, { status: 400 });
+    }
+    if (googleReviewUrl && !isAllowedGoogleReviewUrl(googleReviewUrl)) {
+      return NextResponse.json({ success: false, error: 'Google review URL is not supported.' }, { status: 400 });
+    }
 
     // If reviewUrl is missing or the generic placeholder https://maps.app.goo.gl/, fetch from prospect
-    if (!reviewUrl || reviewUrl === 'https://maps.app.goo.gl/' || reviewUrl === 'https://maps.app.goo.gl' || reviewUrl === 'https://maps.google.com') {
-      if (prospectId) {
-        const { data: prospectData } = await db.from('prospects').select('google_maps_url').eq('id', prospectId).maybeSingle();
-        if (prospectData?.google_maps_url) {
-          reviewUrl = prospectData.google_maps_url;
+    let prospectData: any = null;
+    if (prospectId) {
+      const { data: p } = await db.from('prospects').select('google_maps_url, address, city, phone').eq('id', prospectId).maybeSingle();
+      if (p) {
+        prospectData = p;
+        if (p.google_maps_url && (!reviewUrl || reviewUrl === 'https://maps.app.goo.gl/' || reviewUrl === 'https://maps.app.goo.gl' || reviewUrl === 'https://maps.google.com')) {
+          reviewUrl = p.google_maps_url;
         }
       }
     }
 
     if (!reviewUrl || !isHttpsUrl(reviewUrl)) {
-      reviewUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(businessName)}`;
+      return NextResponse.json({ success: false, error: 'A real Google review URL is required. Generate it from the business Maps link or use the manual review URL fallback.' }, { status: 400 });
+    }
+    if (!isAllowedReviewDestinationUrl(reviewUrl)) {
+      return NextResponse.json({ success: false, error: 'Review destination must be a Google review-writing URL or an existing Google Maps business URL.' }, { status: 400 });
     }
 
     const config = body.config && typeof body.config === 'object' ? body.config : {};
@@ -112,7 +126,7 @@ export async function POST(req: NextRequest) {
 
       // Update existing business record
       if (businessId) {
-        await db.from('businesses').update({
+        const businessUpdate: Record<string, unknown> = {
           name: businessName,
           category: defaults.category,
           website: reviewUrl,
@@ -124,7 +138,22 @@ export async function POST(req: NextRequest) {
           headline: config.headline || defaults.headline,
           subheadline: config.subheadline || null,
           updated_at: now.toISOString(),
-        }).eq('id', businessId);
+        };
+        const demoAddress = boundedText(body.address || prospectData?.address, 300);
+        const demoCity = boundedText(body.city || prospectData?.city, 100);
+        const demoPhone = boundedText(body.phone || prospectData?.phone, 40);
+        if (demoAddress) businessUpdate.address = demoAddress;
+        if (demoCity) businessUpdate.city = demoCity;
+        if (demoPhone) businessUpdate.phone = demoPhone;
+
+        // Do not clear previously confirmed Google data when an older demo edit
+        // does not include the new Quick Demo fields.
+        if (googlePlaceId) businessUpdate.google_place_id = googlePlaceId;
+        if (googleMapsUrl) businessUpdate.google_maps_url = googleMapsUrl;
+        if (googleReviewUrl || isAllowedGoogleReviewUrl(reviewUrl)) {
+          businessUpdate.google_review_url = googleReviewUrl || reviewUrl;
+        }
+        await db.from('businesses').update(businessUpdate).eq('id', businessId);
       }
 
       // Update existing demo record
@@ -174,9 +203,15 @@ export async function POST(req: NextRequest) {
     // tenant that the activation RPC later upgrades; no paid entitlement here.
     const businessResult = await db.from('businesses').insert({
       name: businessName, slug, category: defaults.category, website: reviewUrl,
+      address: boundedText(body.address || prospectData?.address, 300) || null,
+      city: boundedText(body.city || prospectData?.city, 100) || null,
+      phone: boundedText(body.phone || prospectData?.phone, 40) || null,
       primary_color: color, secondary_color: '#D4AF37', status: 'trial', plan_status: 'trial', trial_expires_at: expires,
       headline: config.headline || defaults.headline, subheadline: config.subheadline || null,
       menu_enabled: true, products_enabled: true,
+      google_place_id: googlePlaceId || null,
+      google_review_url: googleReviewUrl || (isAllowedGoogleReviewUrl(reviewUrl) ? reviewUrl : null),
+      google_maps_url: googleMapsUrl || null,
     }).select('id,name,slug').single();
     if (businessResult.error || !businessResult.data) return databaseFailure();
     businessId = businessResult.data.id;

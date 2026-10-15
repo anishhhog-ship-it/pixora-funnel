@@ -112,7 +112,7 @@ export default function CustomerMenuPage() {
         if (isActive) setLoadError(true);
       })
       .finally(() => {
-        if (isActive) setIsLoading(false);
+        setIsLoading(false);
       });
 
     return () => {

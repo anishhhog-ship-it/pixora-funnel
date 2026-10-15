@@ -1149,6 +1149,48 @@ export const BUSINESS_CATEGORIES: Record<string, BusinessCategoryConfig> = {
 };
 
 /**
+ * Category-managed review topics for every supported funnel category.
+ * The public funnel uses these prompts to keep review assistance relevant to
+ * the business type without exposing a second funnel customization surface.
+ */
+export const CATEGORY_REVIEW_TOPICS: Record<string, string[]> = {
+  restaurant: ['Food Quality', 'Taste & Freshness', 'Menu Variety', 'Ambience', 'Staff Service', 'Overall Experience'],
+  cafe: ['Coffee & Brews', 'Fresh Bakes', 'Food Quality', 'Cozy Ambience', 'Staff Service', 'Overall Experience'],
+  hotel: ['Room Comfort', 'Cleanliness', 'Hospitality', 'Scenic Views', 'Breakfast & Dining', 'Overall Experience'],
+  salon: ['Service Quality', 'Staff Professionalism', 'Treatment Experience', 'Cleanliness', 'Ambience', 'Overall Experience'],
+  clinic: ['Doctor Care', 'Treatment Quality', 'Staff Professionalism', 'Cleanliness', 'Waiting Time', 'Overall Experience'],
+  dentist: ['Gentle Care', 'Treatment Quality', 'Modern Equipment', 'Cleanliness', 'Staff Professionalism', 'Overall Experience'],
+  retail: ['Product Variety', 'Product Quality', 'Staff Assistance', 'Store Ambience', 'Buying Experience', 'Overall Experience'],
+  fashion: ['Product Variety', 'Fabric Quality', 'Fit & Comfort', 'Design & Collection', 'Staff Assistance', 'Overall Experience'],
+  gym: ['Trainer Guidance', 'Workout Experience', 'Equipment Quality', 'Cleanliness', 'Motivating Atmosphere', 'Overall Experience'],
+  beauty: ['Treatment Quality', 'Staff Professionalism', 'Visible Results', 'Cleanliness', 'Relaxing Ambience', 'Overall Experience'],
+  automotive: ['Service Quality', 'Workmanship', 'Parts Quality', 'Service Time', 'Pricing & Value', 'Overall Experience'],
+  'real-estate': ['Property Quality', 'Design & Layout', 'Transparent Dealings', 'Staff Guidance', 'Timely Updates', 'Overall Experience'],
+  education: ['Teaching Quality', 'Faculty Support', 'Learning Environment', 'Course Content', 'Progress & Results', 'Overall Experience'],
+  professional: ['Expert Guidance', 'Communication', 'Service Quality', 'Timely Delivery', 'Value for Money', 'Overall Experience'],
+  travel: ['Trip Planning', 'Guide Support', 'Itinerary Quality', 'Accommodation', 'Value for Money', 'Overall Experience'],
+  events: ['Event Planning', 'Venue & Decor', 'Food & Catering', 'Staff Coordination', 'Service Quality', 'Overall Experience'],
+  'home-services': ['Work Quality', 'Technician Professionalism', 'Punctuality', 'Clean Work', 'Pricing & Value', 'Overall Experience'],
+  electronics: ['Product Selection', 'Product Quality', 'Staff Assistance', 'Product Demonstration', 'Buying Experience', 'Installation & Support'],
+  jewellery: ['Design & Collection', 'Craftsmanship', 'Product Quality', 'Staff Assistance', 'Buying Experience', 'Overall Experience'],
+  grocery: ['Product Freshness', 'Product Variety', 'Store Cleanliness', 'Pricing & Value', 'Checkout Speed', 'Overall Experience'],
+  bakery: ['Taste & Freshness', 'Product Variety', 'Ingredient Quality', 'Custom Orders', 'Staff Service', 'Overall Experience'],
+  pharmacy: ['Medicine Availability', 'Product Quality', 'Pharmacist Guidance', 'Service Speed', 'Store Cleanliness', 'Overall Experience'],
+  creative: ['Creative Direction', 'Work Quality', 'Professionalism', 'Communication', 'Delivery Time', 'Overall Experience'],
+  'pet-care': ['Gentle Handling', 'Veterinary Care', 'Grooming Quality', 'Cleanliness', 'Staff Kindness', 'Overall Experience'],
+  hardware: ['Product Quality', 'Product Variety', 'Stock Availability', 'Pricing & Value', 'Staff Advice', 'Overall Experience'],
+  'pvc-plumbing': ['Product Quality', 'Product Variety', 'Size Availability', 'Pricing & Value', 'Loading & Delivery', 'Staff Expertise'],
+  electrical: ['Product Quality', 'Product Variety', 'Brand Selection', 'Staff Guidance', 'Pricing & Value', 'Buying Experience'],
+  paint: ['Colour Selection', 'Finish Quality', 'Product Variety', 'Colour Advice', 'Pricing & Value', 'Overall Experience'],
+  other: ['Service Quality', 'Staff Professionalism', 'Communication', 'Timely Delivery', 'Pricing & Value', 'Overall Experience'],
+};
+
+export function getReviewTopics(rawCategory?: string): string[] {
+  const config = normalizeBusinessCategory(rawCategory);
+  return CATEGORY_REVIEW_TOPICS[config.id] || CATEGORY_REVIEW_TOPICS.other;
+}
+
+/**
  * Normalizes any category string (from Google Places API, URL, or user input)
  * into a matching Pixora BusinessCategoryConfig.
  * 
@@ -1246,13 +1288,13 @@ export function getCategoryConfidence(rawCategory?: string): CategoryConfidence 
 }
 
 /**
- * Fallback Hierarchy for Customer Funnel Background:
- * 1. Client custom uploaded image (customCoverImage)
- * 2. Explicit coverImage on business (if valid URL and not generic)
- * 3. Category-specific background image
- * 4. Default Pixora restaurant image (/categories/restaurant.webp)
+ * Category-managed Customer Funnel Background:
+ * 1. Category-specific desktop/mobile image
+ * 2. Default Pixora image when a category asset is unavailable
  * 
- * Never returns null, blank, or broken link.
+ * The public funnel intentionally does not consume client-uploaded cover images
+ * or manually selected theme variants. Business profile details remain editable
+ * in the portal, while the funnel presentation stays consistent per category.
  */
 export function getFunnelBackground(business?: {
   customCoverImage?: string;
@@ -1269,28 +1311,6 @@ export function getFunnelBackground(business?: {
 } {
   const categoryConfig = normalizeBusinessCategory(business?.category);
 
-  // 1. Explicit custom user upload
-  if (business?.customCoverImage && business.customCoverImage.trim().length > 0) {
-    return {
-      desktop: business.customCoverImage,
-      mobile: business.customCoverImage,
-      overlay: categoryConfig.overlay,
-      categoryConfig,
-    };
-  }
-
-  // 2. Business theme cover image (if explicitly defined and distinct from legacy default)
-  const themeCover = business?.theme?.coverImage || business?.coverImage;
-  if (themeCover && themeCover.startsWith('http') && !themeCover.includes('placeholder')) {
-    return {
-      desktop: themeCover,
-      mobile: themeCover,
-      overlay: categoryConfig.overlay,
-      categoryConfig,
-    };
-  }
-
-  // 3. Category image
   return {
     desktop: categoryConfig.backgroundImage || DEFAULT_FUNNEL_BACKGROUND,
     mobile: categoryConfig.mobileBackgroundImage || categoryConfig.backgroundImage || DEFAULT_FUNNEL_MOBILE_BACKGROUND,

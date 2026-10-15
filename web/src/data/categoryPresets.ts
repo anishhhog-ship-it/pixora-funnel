@@ -29,7 +29,7 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
     coverImage: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&h=800&fit=crop',
     logo: '/placeholder.png',
     tagline: 'Experience authentic royal cuisine crafted with the finest ingredients.',
-    keywords: ['Food Quality', 'Ambience', 'Staff Courteous', 'Fast Service', 'Thali'],
+    keywords: ['Food Quality', 'Taste & Freshness', 'Menu Variety', 'Ambience', 'Staff Courteous', 'Overall Experience'],
     sampleCategories: ['Starters', 'Main Course', 'Breads & Rice', 'Desserts', 'Beverages'],
     sampleItems: [
       {
@@ -78,7 +78,7 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
     coverImage: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&h=800&fit=crop',
     logo: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=200&h=200&fit=crop',
     tagline: 'Single-origin espresso, freshly baked sourdough, and artisanal patisserie.',
-    keywords: ['Espresso & Brews', 'Cozy Vibe', 'Fresh Pastries', 'Avocado Toast', 'Work Friendly'],
+    keywords: ['Coffee & Brews', 'Fresh Pastries', 'Food Quality', 'Cozy Ambience', 'Staff Service', 'Overall Experience'],
     sampleCategories: ['Specialty Coffee', 'Artisan Bakery', 'All-Day Brunch', 'Iced Drinks'],
     sampleItems: [
       {
@@ -127,7 +127,7 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
     coverImage: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200&h=800&fit=crop',
     logo: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=200&h=200&fit=crop',
     tagline: 'Transformative hair rituals, glowing skincare, and relaxing holistic spa therapies.',
-    keywords: ['Expert Stylist', 'Hydra Facial', 'Hair Spa', 'Clean & Sanitized', 'Relaxing Vibe'],
+    keywords: ['Service Quality', 'Staff Professionalism', 'Treatment Experience', 'Cleanliness', 'Ambience', 'Overall Experience'],
     sampleCategories: ['Hair Rituals', 'Skin & Facials', 'Nail Lounge', 'Body Wellness & Spa'],
     sampleItems: [
       {
@@ -176,7 +176,7 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
     coverImage: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=1200&h=800&fit=crop',
     logo: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=200&h=200&fit=crop',
     tagline: 'Advanced painless dentistry, cosmetic smile design, and gentle family dental care.',
-    keywords: ['Painless Treatment', 'Friendly Doctors', 'Zero Waiting Time', 'Modern Clinic', 'Invisalign'],
+    keywords: ['Treatment Quality', 'Doctor Care', 'Staff Professionalism', 'Cleanliness', 'Waiting Time', 'Overall Experience'],
     sampleCategories: ['Smile Aesthetics', 'Preventive Care', 'Aligners & Braces', 'Implants'],
     sampleItems: [
       {
@@ -217,7 +217,7 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
     coverImage: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&h=800&fit=crop',
     logo: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=200&h=200&fit=crop',
     tagline: 'Boutique hospitality, tranquil luxury suites, and unforgettable getaway experiences.',
-    keywords: ['Luxury Rooms', 'Stunning Pool', 'Courteous Staff', 'Scenic Views', 'Breakfast Spread'],
+    keywords: ['Room Comfort', 'Cleanliness', 'Hospitality', 'Scenic Views', 'Breakfast & Dining', 'Overall Experience'],
     sampleCategories: ['Stay & Suites', 'Dining & Rooftop', 'Wellness & Spa', 'Experiences'],
     sampleItems: [
       {
@@ -258,7 +258,7 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
     coverImage: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=800&fit=crop',
     logo: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=200&h=200&fit=crop',
     tagline: 'Curated artisanal collections, bespoke tailoring, and timeless luxury wardrobe.',
-    keywords: ['Unique Collection', 'Helpful Staff', 'Fabric Quality', 'Bespoke Fit', 'Packaging'],
+    keywords: ['Product Variety', 'Fabric & Product Quality', 'Fit & Comfort', 'Design & Collection', 'Staff Assistance', 'Overall Experience'],
     sampleCategories: ['New Arrivals', 'Signature Ensembles', 'Accessories & Leather', 'Gift Sets'],
     sampleItems: [
       {
@@ -291,7 +291,7 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
     coverImage: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&h=800&fit=crop',
     logo: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=200&h=200&fit=crop',
     tagline: 'High-intensity coaching, premier functional equipment, and results-driven training.',
-    keywords: ['Certified Trainers', 'Clean & Spacious', 'Modern Equipment', 'Motivating Energy'],
+    keywords: ['Trainer Guidance', 'Workout Experience', 'Equipment Quality', 'Cleanliness', 'Motivating Atmosphere', 'Overall Experience'],
     sampleCategories: ['Memberships', 'Personal Coaching', 'Recovery & Spa', 'Nutrition'],
     sampleItems: [
       {
@@ -324,7 +324,7 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
     coverImage: '/default-funnel-bg.jpg',
     logo: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=200&h=200&fit=crop',
     tagline: 'Artisanal craft brews, mixology cocktails, and electric weekend live music.',
-    keywords: ['Craft Brews', 'Cocktail Mixology', 'Electric Vibe', 'DJ & Music', 'Great Starters'],
+    keywords: ['Food Quality', 'Craft Brews & Drinks', 'Cocktails', 'Music & Ambience', 'Service', 'Overall Experience'],
     sampleCategories: ['Craft Beer on Tap', 'Signature Cocktails', 'Bar Bites & Grills', 'Woodfired Pizza'],
     sampleItems: [
       {
@@ -357,7 +357,7 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
     coverImage: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=1200&h=800&fit=crop',
     logo: '/placeholder.png',
     tagline: 'Heavy duty construction hardware, genuine power tools & contractor fasteners.',
-    keywords: ['Genuine Power Tools', 'Heavy Duty Stock', 'Contractor Rates', 'Fasteners & Screws', 'Helpful Advice'],
+    keywords: ['Product Quality', 'Product Variety', 'Stock Availability', 'Pricing & Value', 'Staff Advice', 'Overall Experience'],
     sampleCategories: ['Power Tools', 'Hand Tools & Sets', 'Fasteners & Screws', 'Safety & PPE'],
     sampleItems: [
       {
@@ -390,7 +390,7 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
     coverImage: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=1200&h=800&fit=crop',
     logo: '/placeholder.png',
     tagline: 'Leading distributor of PVC, CPVC & uPVC pipes, sanitary fittings & water storage tanks.',
-    keywords: ['Leak-Proof Quality', 'All Pipe Sizes', 'Wholesale Rates', 'Fast Loading', 'Plumbing Expertise'],
+    keywords: ['Product Quality', 'Product Variety', 'Size Availability', 'Pricing & Value', 'Loading & Delivery', 'Staff Expertise'],
     sampleCategories: ['CPVC Hot & Cold', 'uPVC Heavy Duty', 'Drainage & SWR', 'Water Storage Tanks'],
     sampleItems: [
       {
@@ -423,7 +423,7 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
     coverImage: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=1200&h=800&fit=crop',
     logo: '/placeholder.png',
     tagline: 'Next-gen 4K Smart TVs, smartphones, laptops & energy-efficient home appliances.',
-    keywords: ['Brand Warranty', 'Live Demos', 'Honest Advice', 'Exciting Offers', 'Fast Installation'],
+    keywords: ['Product Selection', 'Product Quality', 'Staff Assistance', 'Product Demonstration', 'Buying Experience', 'Installation & Support'],
     sampleCategories: ['Smart TVs & Audio', 'Smartphones & Laptops', 'Air Conditioners & Cooling', 'Kitchen Appliances'],
     sampleItems: [
       {
@@ -456,7 +456,7 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
     coverImage: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1200&h=800&fit=crop',
     logo: '/placeholder.png',
     tagline: 'Compassionate family healthcare, accurate diagnosis & state-of-the-art medical care.',
-    keywords: ['Caring Doctor', 'Clean & Sanitized', 'Accurate Diagnosis', 'Minimal Wait Time', 'Quick Relief'],
+    keywords: ['Doctor Care', 'Cleanliness', 'Diagnosis Quality', 'Staff Professionalism', 'Waiting Time', 'Overall Experience'],
     sampleCategories: ['Doctor Consultation', 'Pathology & Blood Tests', 'Pharmacy & Medicines', 'Health Checkups'],
     sampleItems: [
       {

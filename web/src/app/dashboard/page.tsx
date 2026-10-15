@@ -681,7 +681,7 @@ export default function DashboardHome() {
               },
               { 
                 label: 'AI Auto Replies (Beta)', 
-                sub: 'Beta launch in 7 days · Locked for private testing',
+                sub: 'Beta launch in 14 days · Locked for private testing',
                 href: '/dashboard/auto-reply',
                 external: false,
                 done: false,

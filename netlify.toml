@@ -4,6 +4,12 @@
   command = "npm run build"
   publish = ".next"
 
+[functions]
+  directory = "web/netlify/functions"
+
+[functions."sync-google-reviews"]
+  schedule = "0 */3 * * *"
+
 [build.environment]
   NODE_VERSION = "20"
   SECRETS_SCAN_ENABLED = "false"

@@ -161,6 +161,35 @@
   background-color: #FDFBF7;
 }
 
+/* Pale paper-like shapes used only by the public customer funnel. */
+.funnel-page::before,
+.funnel-page::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 999px;
+  background: rgba(219, 239, 255, 0.58);
+}
+.funnel-page::before {
+  width: 190px;
+  height: 190px;
+  right: -110px;
+  top: 8px;
+}
+.funnel-page::after {
+  width: 150px;
+  height: 150px;
+  left: -112px;
+  top: 220px;
+  background: rgba(232, 247, 255, 0.72);
+}
+.funnel-thank-you {
+  font-family: 'Bradley Hand', 'Comic Sans MS', cursive;
+  line-height: 1.05;
+  transform: rotate(-4deg);
+}
+
 /* Dashboard sidebar active item */
 .sidebar-active {
   background: rgba(255,255,255,0.12);

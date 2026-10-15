@@ -48,6 +48,9 @@ import {
   Star,
   Bot,
   Clock,
+  MapPin,
+  Loader2,
+  MessageCircle,
 } from 'lucide-react';
 import SalesQrActions from '@/components/sales/SalesQrActions';
 import {
@@ -56,6 +59,7 @@ import {
   normalizeBusinessCategory,
   BusinessCategoryConfig,
 } from '@/config/businessCategories';
+import { isAllowedGoogleReviewUrl } from '@/services/salesValidation';
 
 function getCategoryIcon(id: string) {
   switch (id) {
@@ -215,6 +219,13 @@ function DemoBuilderPage() {
   const [businessName, setBusinessName] = useState(initialName || '');
   const [category, setCategory] = useState(initialCat || 'Restaurant & Fine Dining');
   const [reviewDestinationUrl, setReviewDestinationUrl] = useState(initialMapsUrl || '');
+  const [quickMapsUrl, setQuickMapsUrl] = useState(initialMapsUrl || '');
+  const [reviewPlaceId, setReviewPlaceId] = useState('');
+  const [reviewLinkSource, setReviewLinkSource] = useState<string | null>(null);
+  const [branchConfirmed, setBranchConfirmed] = useState(false);
+  const [manualReviewUrl, setManualReviewUrl] = useState('');
+  const [reviewLinkLoading, setReviewLinkLoading] = useState(false);
+  const [reviewLinkError, setReviewLinkError] = useState<string | null>(null);
   const [primaryColor, setPrimaryColor] = useState('#0B3D2E');
   const [secondaryColor, setSecondaryColor] = useState('#D4AF37');
   const [templateSlug, setTemplateSlug] = useState('classic');
@@ -274,6 +285,7 @@ function DemoBuilderPage() {
               if (catConfig.defaultSecondaryColor) setSecondaryColor(catConfig.defaultSecondaryColor);
               if (found.google_maps_url) {
                 setReviewDestinationUrl(found.google_maps_url);
+                setQuickMapsUrl(found.google_maps_url);
               }
             }
           }
@@ -296,8 +308,10 @@ function DemoBuilderPage() {
       if (catConfig.defaultSecondaryColor) setSecondaryColor(catConfig.defaultSecondaryColor);
       if (found.google_maps_url) {
         setReviewDestinationUrl(found.google_maps_url);
+        setQuickMapsUrl(found.google_maps_url);
       } else {
         setReviewDestinationUrl('');
+        setQuickMapsUrl('');
       }
     }
   };
@@ -308,6 +322,119 @@ function DemoBuilderPage() {
     if (catConfig.defaultSecondaryColor) setSecondaryColor(catConfig.defaultSecondaryColor);
     setIsCategoryDropdownOpen(false);
     setShowCategoryModal(false);
+  };
+
+  const getAuthHeaders = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return { Authorization: session ? `Bearer ${session.access_token}` : '' };
+  };
+
+  const handleGenerateReviewLink = async () => {
+    setReviewLinkError(null);
+    setBranchConfirmed(false);
+    if (!quickMapsUrl.trim()) {
+      setReviewLinkError('Paste the exact Google Maps Share link for the business first.');
+      return;
+    }
+    setReviewLinkLoading(true);
+    try {
+      const res = await fetch('/api/sales/review-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
+        body: JSON.stringify({ mapsUrl: quickMapsUrl.trim(), prospectId: selectedProspectId || null }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Could not generate the Google review link.');
+      setReviewDestinationUrl(data.reviewUrl);
+      setReviewPlaceId(data.placeId || '');
+      setReviewLinkSource(data.source || 'productmate');
+    } catch (error) {
+      setReviewLinkError(error instanceof Error ? error.message : 'Could not generate the Google review link.');
+    } finally {
+      setReviewLinkLoading(false);
+    }
+  };
+
+  const handleUseManualReviewUrl = () => {
+    if (!isAllowedGoogleReviewUrl(manualReviewUrl.trim())) {
+      setReviewLinkError('Use a direct Google review-writing URL containing a placeid parameter.');
+      return;
+    }
+    setReviewLinkError(null);
+    setReviewDestinationUrl(manualReviewUrl.trim());
+    setReviewPlaceId('');
+    setReviewLinkSource('manual');
+    setBranchConfirmed(false);
+  };
+
+  const ensureQuickProspect = async () => {
+    if (selectedProspectId) return selectedProspectId;
+    const existing = prospects.find((prospect) =>
+      (prospect.google_maps_url && prospect.google_maps_url === quickMapsUrl.trim())
+      || prospect.business_name.trim().toLowerCase() === businessName.trim().toLowerCase(),
+    );
+    if (existing) {
+      setSelectedProspectId(existing.id);
+      return existing.id;
+    }
+    const res = await fetch('/api/sales/prospects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
+      body: JSON.stringify({
+        businessName: businessName.trim(),
+        category,
+        googleMapsUrl: quickMapsUrl.trim(),
+        leadSource: 'Field Sales',
+        ignoreDuplicateWarning: false,
+      }),
+    });
+    const data = await res.json();
+    if (!data.success && data.existingLead?.id) {
+      setSelectedProspectId(data.existingLead.id);
+      return data.existingLead.id as string;
+    }
+    if (!data.success || !data.prospect?.id) throw new Error(data.error || 'Could not save this prospect.');
+    setProspects((current) => [data.prospect, ...current]);
+    setSelectedProspectId(data.prospect.id);
+    return data.prospect.id as string;
+  };
+
+  const handleCreateQuickDemo = async () => {
+    setErrorMsg(null);
+    if (!quickMapsUrl.trim()) return setErrorMsg('Google Maps Business Link is required.');
+    if (!businessName.trim()) return setErrorMsg('Confirm the business name before creating the demo.');
+    if (!reviewDestinationUrl || !branchConfirmed) return setErrorMsg('Confirm the correct business branch before creating the demo.');
+    setBuilding(true);
+    try {
+      const prospectId = await ensureQuickProspect();
+      const res = await fetch('/api/sales/demos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
+        body: JSON.stringify({
+          prospectId,
+          businessName: businessName.trim(),
+          category,
+          googleMapsUrl: quickMapsUrl.trim(),
+          googlePlaceId: reviewPlaceId || null,
+          googleReviewUrl: reviewDestinationUrl,
+          reviewDestinationUrl,
+          primaryColor,
+          templateSlug,
+          config: {
+            headline: currentCategoryConfig.headline,
+            subheadline: currentCategoryConfig.subheadline,
+            topics: currentCategoryConfig.footerFeatures?.map((f) => f.label) || [],
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Failed to create demo.');
+      setCreatedDemo(data.demo);
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : 'Failed to create demo.');
+    } finally {
+      setBuilding(false);
+    }
   };
 
   const handleCreateDemo = async () => {
@@ -367,6 +494,19 @@ function DemoBuilderPage() {
     }
   };
 
+  const handleMarkDemoShown = async () => {
+    if (!createdDemo) return;
+    try {
+      await fetch('/api/sales/demos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
+        body: JSON.stringify({ id: createdDemo.id, markShared: true }),
+      });
+    } catch {
+      // The demo remains usable even if activity logging is temporarily unavailable.
+    }
+  };
+
   const PRESET_COLORS = ['#0B3D2E', '#2563EB', '#7C3AED', '#DC2626', '#D97706', '#0F172A', '#0891B2', '#059669'];
 
   // Filtered categories for the interactive selector & browser modal
@@ -401,6 +541,84 @@ function DemoBuilderPage() {
           Configure authentic, live Review Funnels matching the exact production customer experience.
         </p>
       </div>
+
+      {/* Fast field-sales path: keep the full builder below for deeper editing. */}
+      <section className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-violet-50 p-4 sm:p-6 shadow-sm">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#5356EC]">Quick Demo</p>
+            <h2 className="mt-1 text-xl font-extrabold tracking-tight text-slate-900">Create a personalized demo in under a minute</h2>
+            <p className="mt-1 text-xs text-slate-500">Start with the exact business link from Google Maps. No Google API key required.</p>
+          </div>
+          {reviewLinkSource && <span className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 sm:mt-0"><CheckCircle2 className="h-3.5 w-3.5" /> Review link ready</span>}
+        </div>
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-[1.3fr_1fr]">
+          <div className="space-y-3">
+            <label className="block text-xs font-bold text-slate-700" htmlFor="quick-maps-url">Google Maps Business Link</label>
+            <input
+              id="quick-maps-url"
+              type="url"
+              inputMode="url"
+              autoComplete="url"
+              placeholder="Paste the business's Google Maps Share link"
+              value={quickMapsUrl}
+              onChange={(event) => { setQuickMapsUrl(event.target.value); setReviewLinkError(null); }}
+              className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-[#5356EC] focus:ring-4 focus:ring-indigo-100"
+            />
+            <p className="text-[11px] text-slate-500">Open the exact business on Google Maps, tap Share, and paste the link here.</p>
+            <button
+              type="button"
+              onClick={handleGenerateReviewLink}
+              disabled={reviewLinkLoading}
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#5356EC] px-4 text-sm font-extrabold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-[#4346DB] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-6"
+            >
+              {reviewLinkLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+              {reviewLinkLoading ? 'Generating review link…' : 'Generate Review Link'}
+            </button>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-800"><ShieldCheck className="h-4 w-4 text-emerald-600" /> Confirm the correct branch</div>
+            {reviewLinkError && <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700">{reviewLinkError}</p>}
+            {reviewDestinationUrl && (reviewLinkSource === 'productmate' || reviewLinkSource === 'cache' || reviewLinkSource === 'saved' || reviewLinkSource === 'manual') ? (
+              <div className="mt-3 space-y-3">
+                {reviewPlaceId && <p className="text-[11px] text-slate-500">Detected Place ID: <span className="font-mono font-bold text-slate-700">{reviewPlaceId}</span></p>}
+                <a href={reviewDestinationUrl} target="_blank" rel="noreferrer" className="block truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-[#5356EC] underline">{reviewDestinationUrl}</a>
+                <label className="flex cursor-pointer items-start gap-2 text-[11px] font-medium text-slate-600">
+                  <input type="checkbox" checked={branchConfirmed} onChange={(event) => setBranchConfirmed(event.target.checked)} className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#5356EC] focus:ring-[#5356EC]" />
+                  I checked the business name and branch before saving this review link.
+                </label>
+              </div>
+            ) : <p className="mt-3 text-[11px] leading-relaxed text-slate-500">The returned link is not verified by Productmate. Open it, confirm the branch, then create the demo.</p>}
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs font-bold text-slate-700" htmlFor="quick-business-name">Business name</label>
+            <input id="quick-business-name" value={businessName} onChange={(event) => setBusinessName(event.target.value)} placeholder="Required if not already saved" className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#5356EC] focus:ring-4 focus:ring-indigo-100" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-bold text-slate-700" htmlFor="manual-review-url">Manual review URL fallback</label>
+            <div className="flex gap-2">
+              <input id="manual-review-url" type="url" value={manualReviewUrl} onChange={(event) => setManualReviewUrl(event.target.value)} placeholder="https://search.google.com/local/writereview?placeid=…" className="min-h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-xs outline-none focus:border-[#5356EC] focus:ring-4 focus:ring-indigo-100" />
+              <button type="button" onClick={handleUseManualReviewUrl} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-50">Use</button>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleCreateQuickDemo}
+          disabled={building || !branchConfirmed}
+          className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 text-sm font-extrabold text-white shadow-lg transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          {building ? 'Creating real demo…' : 'Create Demo'}
+        </button>
+        {errorMsg && <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700">{errorMsg}</p>}
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Form: White Theme Configuration Card */}
@@ -448,6 +666,25 @@ function DemoBuilderPage() {
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Open Customer Funnel</span>
                 </a>
+
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(`Here is your Pixora Funnel demo for ${businessName}: ${funnelPublicUrl}`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3.5 py-2 rounded-xl bg-[#25D366] text-white text-xs font-bold hover:bg-[#1fb857] flex items-center gap-1.5 shadow-2xs"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  Share on WhatsApp
+                </a>
+
+                <button
+                  type="button"
+                  onClick={handleMarkDemoShown}
+                  className="px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 flex items-center gap-1.5 shadow-2xs"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Mark Demo as Shown
+                </button>
 
                 <Link
                   href={`/sales/conversions?demoId=${createdDemo.id}&prospectId=${selectedProspectId}`}

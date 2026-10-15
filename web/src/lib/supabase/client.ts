@@ -12,11 +12,13 @@ export const isSupabaseConfigured = (): boolean => {
   );
 };
 
-// Singleton browser client for client components
+// Singleton client
 let supabaseInstance: any = null;
 
 export const getSupabaseBrowserClient = () => {
   if (supabaseInstance) return supabaseInstance;
+
+  const isBrowser = typeof window !== 'undefined';
 
   if (!isSupabaseConfigured()) {
     // Return a dummy/safe client fallback if env vars are missing during local dev/mock mode
@@ -25,8 +27,9 @@ export const getSupabaseBrowserClient = () => {
       supabaseAnonKey || 'dummy-anon-key',
       {
         auth: {
-          persistSession: true,
-          autoRefreshToken: true,
+          persistSession: isBrowser,
+          autoRefreshToken: isBrowser,
+          detectSessionInUrl: isBrowser,
         },
       }
     );
@@ -35,9 +38,9 @@ export const getSupabaseBrowserClient = () => {
 
   supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
+      persistSession: isBrowser,
+      autoRefreshToken: isBrowser,
+      detectSessionInUrl: isBrowser,
     },
   });
 

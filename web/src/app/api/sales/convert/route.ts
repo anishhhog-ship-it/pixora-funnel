@@ -69,12 +69,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Load prospect
-    const prospect = await db.from('prospects').select('id,business_name,phone,category,city,assigned_to,google_maps_url').eq('id', prospectId).maybeSingle();
+    const prospect = await db.from('prospects').select('id,business_name,phone,category,city,address,assigned_to,google_maps_url').eq('id', prospectId).maybeSingle();
     if (prospect.error) return databaseFailure();
     if (!prospect.data) return NextResponse.json({ success: false, error: 'Prospect not found' }, { status: 404 });
     if (access.session.role === 'salesperson' && prospect.data.assigned_to !== access.session.staffId) {
       return NextResponse.json({ success: false, error: 'Cannot convert an unassigned prospect' }, { status: 403 });
     }
+
+    const targetAddress = boundedText(body.address || body.shippingAddress, 300) || prospect.data.address || null;
+    const targetCity = boundedText(body.city, 100) || prospect.data.city || null;
+    const targetPhone = boundedText(body.customerPhone, 40) || prospect.data.phone || null;
 
     // Determine business tenant & slug:
     // If demo is linked, use the demo's business.
@@ -89,7 +93,7 @@ export async function POST(req: NextRequest) {
       }
       businessId = demo.data.business_id;
       businessSlug = demo.data.slug;
-      // Ensure category and review destination URL are synced to the business record
+      // Ensure category, review destination URL, address, city, and phone are synced to the business record
       const updateData: Record<string, any> = {};
       if (demo.data.category || prospect.data.category) {
         updateData.category = demo.data.category || prospect.data.category;
@@ -98,6 +102,9 @@ export async function POST(req: NextRequest) {
       if (targetReviewUrl) {
         updateData.website = targetReviewUrl;
       }
+      if (targetAddress) updateData.address = targetAddress;
+      if (targetCity) updateData.city = targetCity;
+      if (targetPhone) updateData.phone = targetPhone;
       if (Object.keys(updateData).length > 0) {
         await db.from('businesses').update(updateData).eq('id', businessId);
       }
@@ -109,7 +116,9 @@ export async function POST(req: NextRequest) {
         slug: businessSlug,
         category: prospect.data.category || 'General Business',
         website: prospect.data.google_maps_url || null,
-        phone: boundedText(body.customerPhone, 40) || prospect.data.phone || null,
+        phone: targetPhone,
+        address: targetAddress,
+        city: targetCity,
         email: customerEmail,
         status: 'active',
         plan_status: 'active',
@@ -291,7 +300,19 @@ export async function POST(req: NextRequest) {
       plan_status: 'active',
       trial_expires_at: null,
       updated_at: now.toISOString(),
+      ...(targetAddress ? { address: targetAddress } : {}),
+      ...(targetCity ? { city: targetCity } : {}),
+      ...(targetPhone ? { phone: targetPhone } : {}),
     }).eq('id', businessId);
+
+    // Sync address back to prospects if prospect record was missing it
+    if (targetAddress || targetCity || targetPhone) {
+      await db.from('prospects').update({
+        ...(targetAddress ? { address: targetAddress } : {}),
+        ...(targetCity ? { city: targetCity } : {}),
+        ...(targetPhone ? { phone: targetPhone } : {}),
+      }).eq('id', prospectId);
+    }
 
     await db.from('funnels').update({
       status: 'active',
