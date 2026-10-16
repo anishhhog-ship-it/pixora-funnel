@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { getAdminBusinesses, createActivationKey } from '@/services/adminService';
+import { getAdminActivations, createActivationKey, revokeBusinessAccess } from '@/services/adminService';
+import Link from 'next/link';
 import { Key, Search, Filter, ArrowRight, ShieldCheck, Download, Smartphone, Globe } from 'lucide-react';
 
 export default function AdminActivationsPage() {
@@ -11,6 +12,7 @@ export default function AdminActivationsPage() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [generatedKeyData, setGeneratedKeyData] = useState<{ businessName: string; key: string } | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [actionError, setActionError] = useState('');
 
   const generateActivationKey = async (business: any) => {
     try {
@@ -19,9 +21,10 @@ export default function AdminActivationsPage() {
       if (!session) return;
       const keyData = await createActivationKey(session.access_token, business.id) as any;
       setGeneratedKeyData({ businessName: business.name, key: keyData.key_string });
+      setBusinesses((current) => current.map((item) => item.id === business.id ? { ...item, activationKeys: [...(item.activationKeys || []), keyData] } : item));
     } catch (e) {
       console.error(e);
-      alert('Failed to generate activation key.');
+      setActionError(e instanceof Error ? e.message : 'Failed to generate activation key.');
     } finally {
       setIsGenerating(false);
     }
@@ -32,7 +35,7 @@ export default function AdminActivationsPage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          const data = await getAdminBusinesses(session.access_token);
+          const data = await getAdminActivations(session.access_token);
           setBusinesses(data);
         }
       } catch (err) {
@@ -49,9 +52,30 @@ export default function AdminActivationsPage() {
     b.owner?.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const exportReport = () => {
+    const rows = filtered.map((business) => [business.name, business.owner?.email || '', business.status || '', business.activationKeys?.length || 0, business.qrCodes?.length || 0]);
+    const csv = [['Business', 'Owner Email', 'Access Status', 'Activation Keys', 'QR Codes'], ...rows].map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    link.download = 'activation-report.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const revoke = async (business: any) => {
+    setActionError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Your admin session has expired.');
+      await revokeBusinessAccess(session.access_token, business.id);
+      setBusinesses((current) => current.map((item) => item.id === business.id ? { ...item, status: 'suspended' } : item));
+    } catch (e) { setActionError(e instanceof Error ? e.message : 'Unable to revoke access.'); }
+  };
+
   return (
     <div className="w-full max-w-[1600px] mx-auto space-y-6 pb-12">
-      <div className="flex justify-between items-end">
+       {actionError && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{actionError}</div>}
+       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-[28px] font-bold text-slate-900 tracking-tight flex items-center gap-2">
             Activations & Provisioning
@@ -59,7 +83,7 @@ export default function AdminActivationsPage() {
           <p className="text-[15px] text-slate-500 mt-2">Manage smart dashboard features and device provisioning.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => alert('Exporting activation report...')} className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-sm hover:bg-slate-50 transition-colors">
+           <button onClick={exportReport} className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-sm hover:bg-slate-50 transition-colors">
             <Download className="w-4 h-4 text-slate-500" />
             <span className="text-sm font-semibold text-slate-700">Export Report</span>
           </button>
@@ -78,7 +102,7 @@ export default function AdminActivationsPage() {
               className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700"
             />
           </div>
-          <button onClick={() => alert('Filters triggered')} className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors w-full sm:w-auto justify-center">
+           <button onClick={() => setSearchQuery('')} className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors w-full sm:w-auto justify-center">
             <Filter className="w-4 h-4 text-slate-500" />
             <span className="text-sm font-semibold text-slate-700">Filters</span>
           </button>
@@ -102,7 +126,7 @@ export default function AdminActivationsPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filtered.map((b, i) => {
-                  const isPro = b.trial?.status === 'active' || b.trial?.status === 'expired' ? false : true;
+                  const hasQr = b.qrCodes?.some((qr: any) => qr.status === 'active');
                   return (
                     <tr key={b.id} className="hover:bg-slate-50/50">
                       <td className="px-6 py-4">
@@ -110,12 +134,12 @@ export default function AdminActivationsPage() {
                         <div className="text-xs text-slate-500">{b.owner?.email || '-'}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-[11px] font-bold px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 flex items-center gap-1 w-max">
-                          <Globe className="w-3 h-3" /> Activated
+                         <span className={`text-[11px] font-bold px-2 py-1 rounded-md flex items-center gap-1 w-max ${b.status === 'suspended' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                           <Globe className="w-3 h-3" /> {b.status === 'suspended' ? 'Suspended' : 'Active'}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                         {isPro ? (
+                          {b.status !== 'suspended' ? (
                            <span className="text-[11px] font-bold px-2 py-1 rounded-md bg-blue-50 text-blue-700 flex items-center gap-1 w-max">
                             <Smartphone className="w-3 h-3" /> Provisioned
                            </span>
@@ -126,8 +150,8 @@ export default function AdminActivationsPage() {
                          )}
                       </td>
                       <td className="px-6 py-4">
-                         <span className="text-[11px] font-bold px-2 py-1 rounded-md bg-purple-50 text-purple-700 flex items-center gap-1 w-max">
-                          <ShieldCheck className="w-3 h-3" /> Verified
+                          <span className={`text-[11px] font-bold px-2 py-1 rounded-md flex items-center gap-1 w-max ${hasQr ? 'bg-purple-50 text-purple-700' : 'bg-slate-100 text-slate-500'}`}>
+                           <ShieldCheck className="w-3 h-3" /> {hasQr ? 'Configured' : 'Not configured'}
                          </span>
                       </td>
                       <td className="px-6 py-4 text-blue-600 font-bold text-xs hover:text-blue-800 cursor-pointer relative">
@@ -137,8 +161,8 @@ export default function AdminActivationsPage() {
                         {openMenuId === b.id && (
                           <div className="absolute right-8 top-10 w-48 bg-white border border-slate-200 shadow-xl rounded-xl py-2 z-50 text-left font-medium text-sm flex flex-col">
                             <button onClick={() => { generateActivationKey(b); setOpenMenuId(null); }} disabled={isGenerating} className="block w-full px-4 py-2 text-blue-600 hover:bg-slate-50 text-left disabled:opacity-50">Generate Activation Key</button>
-                            <button onClick={() => { alert('Manage features'); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-slate-700 hover:bg-slate-50 text-left">Manage Features</button>
-                            <button onClick={() => { alert('Revoke access'); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-rose-600 hover:bg-rose-50 text-left">Revoke Access</button>
+                             <Link href="/admin/modules" onClick={() => setOpenMenuId(null)} className="block w-full px-4 py-2 text-slate-700 hover:bg-slate-50">Manage Features</Link>
+                             <button onClick={() => { revoke(b); setOpenMenuId(null); }} disabled={b.status === 'suspended'} className="block w-full px-4 py-2 text-rose-600 hover:bg-rose-50 text-left disabled:text-slate-400">{b.status === 'suspended' ? 'Access Revoked' : 'Revoke Access'}</button>
                           </div>
                         )}
                       </td>

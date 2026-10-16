@@ -132,7 +132,7 @@ export interface CategorySector {
   categoryIds: string[];
 }
 
-export const CATEGORY_SECTORS: CategorySector[] = [
+const CATEGORY_SECTORS: CategorySector[] = [
   {
     id: 'all',
     label: 'All Verticals',
@@ -210,6 +210,8 @@ function DemoBuilderPage() {
   const initialName = searchParams.get('name') || '';
   const initialCat = searchParams.get('cat') || '';
   const initialMapsUrl = searchParams.get('mapsUrl') || '';
+  const initialAddress = searchParams.get('address') || '';
+  const initialPhone = searchParams.get('phone') || '';
 
   const allCategories = getAllCategories();
 
@@ -217,6 +219,8 @@ function DemoBuilderPage() {
   const [selectedProspectId, setSelectedProspectId] = useState(initialProspectId);
 
   const [businessName, setBusinessName] = useState(initialName || '');
+  const [businessAddress, setBusinessAddress] = useState(initialAddress);
+  const [businessPhone, setBusinessPhone] = useState(initialPhone);
   const [category, setCategory] = useState(initialCat || 'Restaurant & Fine Dining');
   const [reviewDestinationUrl, setReviewDestinationUrl] = useState(initialMapsUrl || '');
   const [quickMapsUrl, setQuickMapsUrl] = useState(initialMapsUrl || '');
@@ -287,6 +291,8 @@ function DemoBuilderPage() {
                 setReviewDestinationUrl(found.google_maps_url);
                 setQuickMapsUrl(found.google_maps_url);
               }
+              setBusinessAddress(found.address || '');
+              setBusinessPhone(found.phone || '');
             }
           }
         }
@@ -313,6 +319,8 @@ function DemoBuilderPage() {
         setReviewDestinationUrl('');
         setQuickMapsUrl('');
       }
+      setBusinessAddress(found.address || '');
+      setBusinessPhone(found.phone || '');
     }
   };
 
@@ -382,6 +390,8 @@ function DemoBuilderPage() {
       headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
       body: JSON.stringify({
         businessName: businessName.trim(),
+        address: businessAddress.trim(),
+        phone: businessPhone.trim(),
         category,
         googleMapsUrl: quickMapsUrl.trim(),
         leadSource: 'Field Sales',
@@ -424,6 +434,8 @@ function DemoBuilderPage() {
             headline: currentCategoryConfig.headline,
             subheadline: currentCategoryConfig.subheadline,
             topics: currentCategoryConfig.footerFeatures?.map((f) => f.label) || [],
+            address: businessAddress.trim(),
+            phone: businessPhone.trim(),
           },
         }),
       });
@@ -457,6 +469,8 @@ function DemoBuilderPage() {
         body: JSON.stringify({
           prospectId: selectedProspectId || null,
           businessName,
+          address: businessAddress.trim(),
+          phone: businessPhone.trim(),
           category,
           reviewDestinationUrl,
           primaryColor,
@@ -465,6 +479,8 @@ function DemoBuilderPage() {
             headline: currentCategoryConfig.headline,
             subheadline: currentCategoryConfig.subheadline,
             topics: currentCategoryConfig.footerFeatures?.map((f) => f.label) || [],
+            address: businessAddress.trim(),
+            phone: businessPhone.trim(),
           },
         }),
       });
@@ -594,12 +610,20 @@ function DemoBuilderPage() {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-xs font-bold text-slate-700" htmlFor="quick-business-name">Business name</label>
-            <input id="quick-business-name" value={businessName} onChange={(event) => setBusinessName(event.target.value)} placeholder="Required if not already saved" className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#5356EC] focus:ring-4 focus:ring-indigo-100" />
-          </div>
-          <div>
+         <div className="mt-4 grid gap-3 sm:grid-cols-2">
+           <div>
+             <label className="mb-1 block text-xs font-bold text-slate-700" htmlFor="quick-business-name">Business name</label>
+             <input id="quick-business-name" value={businessName} onChange={(event) => setBusinessName(event.target.value)} placeholder="Required if not already saved" className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#5356EC] focus:ring-4 focus:ring-indigo-100" />
+           </div>
+           <div>
+             <label className="mb-1 block text-xs font-bold text-slate-700" htmlFor="quick-business-phone">Mobile number</label>
+             <input id="quick-business-phone" type="tel" inputMode="tel" value={businessPhone} onChange={(event) => setBusinessPhone(event.target.value)} placeholder="Customer-facing business phone" className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#5356EC] focus:ring-4 focus:ring-indigo-100" />
+           </div>
+           <div className="sm:col-span-2">
+             <label className="mb-1 block text-xs font-bold text-slate-700" htmlFor="quick-business-address">Business address</label>
+             <input id="quick-business-address" value={businessAddress} onChange={(event) => setBusinessAddress(event.target.value)} placeholder="Customer-facing business address" className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#5356EC] focus:ring-4 focus:ring-indigo-100" />
+           </div>
+           <div>
             <label className="mb-1 block text-xs font-bold text-slate-700" htmlFor="manual-review-url">Manual review URL fallback</label>
             <div className="flex gap-2">
               <input id="manual-review-url" type="url" value={manualReviewUrl} onChange={(event) => setManualReviewUrl(event.target.value)} placeholder="https://search.google.com/local/writereview?placeid=…" className="min-h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-xs outline-none focus:border-[#5356EC] focus:ring-4 focus:ring-indigo-100" />
@@ -733,6 +757,17 @@ function DemoBuilderPage() {
                 onChange={(e) => setBusinessName(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-500"
               />
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label className="text-slate-600 text-xs font-semibold" htmlFor="business-phone">Mobile Number</label>
+                <input id="business-phone" type="tel" inputMode="tel" placeholder="Customer-facing business phone" value={businessPhone} onChange={(e) => setBusinessPhone(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-500" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-slate-600 text-xs font-semibold" htmlFor="business-address">Business Address</label>
+                <input id="business-address" placeholder="Customer-facing business address" value={businessAddress} onChange={(e) => setBusinessAddress(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-500" />
+              </div>
             </div>
 
             {/* Comprehensive Category Selection Feature */}

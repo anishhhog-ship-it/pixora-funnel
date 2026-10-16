@@ -36,6 +36,7 @@ export default function AdminSupportPage() {
   const [broadcastLink, setBroadcastLink] = useState('/dashboard');
   const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
   const [broadcastSuccess, setBroadcastSuccess] = useState(false);
+  const [actionError, setActionError] = useState('');
 
   async function load() {
     try {
@@ -60,6 +61,7 @@ export default function AdminSupportPage() {
     if (!activeTicket || !replyMessage.trim()) return;
 
     setIsSendingReply(true);
+    setActionError('');
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -75,6 +77,7 @@ export default function AdminSupportPage() {
       }
     } catch (err) {
       console.error('Failed to reply to ticket:', err);
+      setActionError(err instanceof Error ? err.message : 'Failed to send ticket reply.');
     } finally {
       setIsSendingReply(false);
     }
@@ -85,6 +88,7 @@ export default function AdminSupportPage() {
     if (!broadcastTitle.trim() || !broadcastMessage.trim()) return;
 
     setIsSendingBroadcast(true);
+    setActionError('');
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -104,6 +108,7 @@ export default function AdminSupportPage() {
       }
     } catch (err) {
       console.error('Failed to broadcast notification:', err);
+      setActionError(err instanceof Error ? err.message : 'Failed to broadcast notification.');
     } finally {
       setIsSendingBroadcast(false);
     }
@@ -130,6 +135,7 @@ export default function AdminSupportPage() {
           <span>Broadcast Notification to Clients</span>
         </button>
       </div>
+      {actionError && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{actionError}</div>}
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
         <div className="flex-1 overflow-x-auto min-h-[400px]">

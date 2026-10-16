@@ -1,12 +1,9 @@
-import React from 'react';
+'use client';
 
-export default function PlansPage() {
-  return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold font-serif mb-4">Plans</h1>
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 flex items-center justify-center min-h-[400px]">
-        <p className="text-slate-500">This module is connected to real production data and is currently under active implementation.</p>
-      </div>
-    </div>
-  );
-}
+import { useEffect, useState } from 'react';
+import { CheckCircle2, RefreshCw } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+import { getAdminModules } from '@/services/adminService';
+
+type Plan = { id: string; name: string; slug: string; description: string | null; price_inr: number; billing_interval: string; is_active: boolean; plan_features: { id: string; feature_name: string; feature_value: string; is_enabled: boolean }[] };
+export default function PlansPage() { const [plans, setPlans] = useState<Plan[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const load = async () => { setLoading(true); setError(''); try { const { data: { session } } = await supabase.auth.getSession(); if (!session) throw new Error('Your admin session has expired.'); setPlans(await getAdminModules(session.access_token)); } catch (err) { setError(err instanceof Error ? err.message : 'Unable to load plans.'); } finally { setLoading(false); } }; useEffect(() => { load(); }, []); return <div className="mx-auto w-full max-w-[1400px] space-y-6 pb-12"><div className="flex items-end justify-between gap-4"><div><h1 className="text-[28px] font-bold tracking-tight text-slate-900">Plans</h1><p className="mt-2 text-[15px] text-slate-500">Current plan records and their enabled entitlements.</p></div><button type="button" onClick={load} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"><RefreshCw className={loading ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />Refresh</button></div>{error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}{loading ? <div className="flex min-h-[300px] items-center justify-center"><RefreshCw className="h-7 w-7 animate-spin text-blue-600" /></div> : plans.length === 0 ? <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white text-sm text-slate-500">No plans configured.</div> : <div className="grid gap-5 md:grid-cols-2">{plans.map((plan) => <article key={plan.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-bold text-slate-900">{plan.name}</h2><p className="mt-1 text-xs text-slate-500">{plan.slug} · {plan.billing_interval}</p></div><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${plan.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{plan.is_active ? 'Active' : 'Inactive'}</span></div><div className="mt-4 text-2xl font-bold text-slate-900">₹{Number(plan.price_inr || 0).toLocaleString('en-IN')}</div><p className="mt-2 text-sm text-slate-500">{plan.description || 'No description recorded.'}</p><div className="mt-5 space-y-2 border-t border-slate-100 pt-4">{(plan.plan_features || []).map((feature) => <div key={feature.id} className="flex items-center gap-2 text-sm text-slate-700"><CheckCircle2 className={`h-4 w-4 ${feature.is_enabled ? 'text-emerald-600' : 'text-slate-300'}`} />{feature.feature_name}<span className="ml-auto text-xs text-slate-400">{feature.feature_value}</span></div>)}</div></article>)}</div>}</div>; }

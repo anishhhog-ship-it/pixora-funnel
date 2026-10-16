@@ -30,16 +30,36 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const prospectId = body.prospectId;
-    const demoId = body.demoId; // Demo is now completely optional
+    const rawProspectId = typeof body.prospectId === 'string' ? body.prospectId.trim() : body.prospectId;
+    let prospectId = isUuid(rawProspectId) ? rawProspectId : null;
+    const demoId = typeof body.demoId === 'string' ? body.demoId.trim() : body.demoId; // Demo is now completely optional
+    const businessName = boundedText(body.businessName, 160);
     const customerName = boundedText(body.customerName, 160);
     const customerEmail = boundedText(body.customerEmail, 320)?.toLowerCase().trim();
+    const customerPhone = boundedText(body.customerPhone, 40);
+    const category = boundedText(body.category, 80) || 'General Business';
     const planSlug = boundedText(body.planSlug || 'standard_2year_software', 80);
     const paymentMethod = boundedText(body.paymentMethod || 'UPI', 30);
-    const idempotencyKey = boundedText(body.idempotencyKey, 120);
+    const idempotencyKey = boundedText(body.idempotencyKey, 255) || (prospectId ? `sales-conv:${prospectId.slice(0, 8)}:${demoId ? demoId.slice(0, 8) : 'none'}:${crypto.randomUUID()}` : `sales-conv:${crypto.randomUUID()}`);
 
-    if (!isUuid(prospectId) || !customerName || !customerEmail || !planSlug || !paymentMethod || !idempotencyKey) {
-      return NextResponse.json({ success: false, error: 'Prospect, customer details, plan, and idempotencyKey are required' }, { status: 400 });
+    const effectiveBusinessName = businessName || customerName;
+    if (!effectiveBusinessName) {
+      return NextResponse.json({ success: false, error: 'Business name or customer name is required' }, { status: 400 });
+    }
+    if (!customerName) {
+      return NextResponse.json({ success: false, error: 'Customer name is required' }, { status: 400 });
+    }
+    if (!customerEmail) {
+      return NextResponse.json({ success: false, error: 'Customer email is required' }, { status: 400 });
+    }
+    if (!planSlug) {
+      return NextResponse.json({ success: false, error: 'Commercial plan is required' }, { status: 400 });
+    }
+    if (!paymentMethod) {
+      return NextResponse.json({ success: false, error: 'Payment method is required' }, { status: 400 });
+    }
+    if (!idempotencyKey) {
+      return NextResponse.json({ success: false, error: 'Idempotency key is required' }, { status: 400 });
     }
 
     if (demoId && !isUuid(demoId)) {
@@ -56,7 +76,7 @@ export async function POST(req: NextRequest) {
     const existing = await db.from('sales_orders').select('*').eq('idempotency_key', idempotencyKey).maybeSingle();
     if (existing.error) return databaseFailure();
     if (existing.data) {
-      if (existing.data.prospect_id !== prospectId || existing.data.plan_slug !== planSlug) {
+      if (existing.data.plan_slug !== planSlug) {
         return NextResponse.json({ success: false, error: 'Idempotency key belongs to another checkout' }, { status: 409 });
       }
       return NextResponse.json({
@@ -68,17 +88,49 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Load prospect
-    const prospect = await db.from('prospects').select('id,business_name,phone,category,city,address,assigned_to,google_maps_url').eq('id', prospectId).maybeSingle();
-    if (prospect.error) return databaseFailure();
-    if (!prospect.data) return NextResponse.json({ success: false, error: 'Prospect not found' }, { status: 404 });
-    if (access.session.role === 'salesperson' && prospect.data.assigned_to !== access.session.staffId) {
-      return NextResponse.json({ success: false, error: 'Cannot convert an unassigned prospect' }, { status: 403 });
+    let prospectData: any = null;
+
+    if (prospectId) {
+      // Load existing prospect
+      const prospect = await db.from('prospects').select('id,business_name,phone,category,city,address,assigned_to,google_maps_url').eq('id', prospectId).maybeSingle();
+      if (prospect.error) return databaseFailure();
+      if (!prospect.data) return NextResponse.json({ success: false, error: 'Prospect not found' }, { status: 404 });
+      if (access.session.role === 'salesperson' && prospect.data.assigned_to && prospect.data.assigned_to !== access.session.staffId) {
+        return NextResponse.json({ success: false, error: 'Cannot convert an unassigned prospect' }, { status: 403 });
+      }
+      prospectData = prospect.data;
+    } else {
+      // Auto-generate lead/prospect from details provided by salesperson to make onboarding instant & simple
+      const targetAddress = boundedText(body.address || body.shippingAddress, 300) || null;
+      const targetCity = boundedText(body.city, 100) || null;
+      const newLead = await db.from('prospects').insert({
+        business_name: effectiveBusinessName,
+        contact_name: customerName,
+        phone: customerPhone || null,
+        email: customerEmail,
+        category: category,
+        city: targetCity,
+        address: targetAddress,
+        google_maps_url: boundedText(body.googleMapsUrl || body.website, 500) || null,
+        lead_source: 'Field Sales',
+        assigned_to: access.session.staffId || null,
+        stage: 'Activated',
+        is_converted: true,
+        notes: 'Auto-generated lead from direct client onboarding',
+      }).select('id,business_name,phone,category,city,address,assigned_to,google_maps_url').single();
+
+      if (newLead.error || !newLead.data) {
+        console.error('Failed to auto-generate lead:', newLead.error);
+        return databaseFailure('Failed to auto-generate lead for client onboarding');
+      }
+
+      prospectId = newLead.data.id;
+      prospectData = newLead.data;
     }
 
-    const targetAddress = boundedText(body.address || body.shippingAddress, 300) || prospect.data.address || null;
-    const targetCity = boundedText(body.city, 100) || prospect.data.city || null;
-    const targetPhone = boundedText(body.customerPhone, 40) || prospect.data.phone || null;
+    const targetAddress = boundedText(body.address || body.shippingAddress, 300) || prospectData.address || null;
+    const targetCity = boundedText(body.city, 100) || prospectData.city || null;
+    const targetPhone = boundedText(body.customerPhone, 40) || prospectData.phone || null;
 
     // Determine business tenant & slug:
     // If demo is linked, use the demo's business.
@@ -87,18 +139,24 @@ export async function POST(req: NextRequest) {
     let businessSlug: string;
 
     if (demoId) {
-      const demo = await db.from('sales_demos').select('id,slug,business_id,business_name,category,created_by,status,review_destination_url').eq('id', demoId).eq('prospect_id', prospectId).maybeSingle();
+      const demo = await db.from('sales_demos').select('id,slug,business_id,business_name,category,created_by,status,review_destination_url,prospect_id').eq('id', demoId).maybeSingle();
       if (demo.error || !demo.data?.business_id) {
         return NextResponse.json({ success: false, error: 'Associated demo could not be found' }, { status: 404 });
       }
       businessId = demo.data.business_id;
       businessSlug = demo.data.slug;
+
+      // Link prospect to demo if it wasn't linked
+      if (!demo.data.prospect_id && prospectId) {
+        await db.from('sales_demos').update({ prospect_id: prospectId }).eq('id', demoId);
+      }
+
       // Ensure category, review destination URL, address, city, and phone are synced to the business record
       const updateData: Record<string, any> = {};
-      if (demo.data.category || prospect.data.category) {
-        updateData.category = demo.data.category || prospect.data.category;
+      if (demo.data.category || prospectData.category) {
+        updateData.category = demo.data.category || prospectData.category;
       }
-      const targetReviewUrl = demo.data.review_destination_url || prospect.data.google_maps_url;
+      const targetReviewUrl = demo.data.review_destination_url || prospectData.google_maps_url;
       if (targetReviewUrl) {
         updateData.website = targetReviewUrl;
       }
@@ -110,12 +168,12 @@ export async function POST(req: NextRequest) {
       }
     } else {
       // Direct onboarding without a prior demo
-      businessSlug = await generateSlug(db, prospect.data.business_name);
+      businessSlug = await generateSlug(db, prospectData.business_name);
       const bizRes = await db.from('businesses').insert({
-        name: prospect.data.business_name,
+        name: prospectData.business_name,
         slug: businessSlug,
-        category: prospect.data.category || 'General Business',
-        website: prospect.data.google_maps_url || null,
+        category: prospectData.category || 'General Business',
+        website: prospectData.google_maps_url || null,
         phone: targetPhone,
         address: targetAddress,
         city: targetCity,
@@ -148,7 +206,7 @@ export async function POST(req: NextRequest) {
         await db.from('qr_codes').insert({
           business_id: businessId,
           funnel_id: funnelRes.data.id,
-          name: `${prospect.data.business_name} QR`,
+          name: `${prospectData.business_name} QR`,
           short_code: `px-${crypto.randomUUID().slice(0, 8)}`,
           destination_url: `${APP_URL}/f/${businessSlug}`,
           status: 'active',
@@ -169,9 +227,9 @@ export async function POST(req: NextRequest) {
       includesNfc: plan.data.includes_nfc,
       customerName,
       customerEmail,
-      customerPhone: boundedText(body.customerPhone, 40) || prospect.data.phone || null,
+      customerPhone: boundedText(body.customerPhone, 40) || prospectData.phone || null,
       shippingAddress: boundedText(body.shippingAddress, 500),
-      shippingCity: boundedText(body.city, 120) || prospect.data.city || null,
+      shippingCity: boundedText(body.city, 120) || prospectData.city || null,
       shippingState: boundedText(body.state, 120),
       shippingPincode: boundedText(body.pincode, 20),
     };
@@ -356,7 +414,7 @@ export async function POST(req: NextRequest) {
       await db.from('sales_activities').insert({
         prospect_id: prospectId,
         staff_id: access.session.staffId,
-        type: 'deal_converted',
+        type: 'converted',
         title: 'Client Plan Directly Activated',
         description: `Plan ${plan.data.name} activated directly. Order ${orderNo}.`,
       });
@@ -371,7 +429,7 @@ export async function POST(req: NextRequest) {
     } catch {}
 
     const handover: CustomerHandoverPackage = {
-      businessName: prospect.data.business_name,
+      businessName: prospectData.business_name,
       customerName,
       customerEmail,
       customerPhone: snapshot.customerPhone,
@@ -385,7 +443,7 @@ export async function POST(req: NextRequest) {
       nfcOrdered: false,
       nfcAssetType: plan.data.includes_nfc ? 'Card + Stand' : undefined,
       initialPassword: customerPassword,
-      whatsappMessageTemplate: `Hello ${customerName}! Welcome to Pixora Funnel.\nYour account for ${prospect.data.business_name} has been activated!\n\nSign in to your Dashboard:\n🔗 ${APP_URL}/login\n📧 Email: ${customerEmail}\n🔑 Password: ${customerPassword}\n\nLive Customer Review Funnel:\n🔗 ${APP_URL}/f/${businessSlug}\n\nYou can change your password anytime in your Profile & Security section!`,
+      whatsappMessageTemplate: `Hello ${customerName}! Welcome to Pixora Funnel.\nYour account for ${prospectData.business_name} has been activated!\n\nSign in to your Dashboard:\n🔗 ${APP_URL}/login\n📧 Email: ${customerEmail}\n🔑 Password: ${customerPassword}\n\nLive Customer Review Funnel:\n🔗 ${APP_URL}/f/${businessSlug}\n\nYou can change your password anytime in your Profile & Security section!`,
       activationStatus: 'active',
       paymentStatus: 'VERIFIED',
       orderNo,

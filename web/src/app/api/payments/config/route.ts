@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdminClient } from '@/lib/supabase/server';
+import { verifyAdminAccess } from '@/services/adminService';
 
 export interface UpiAccount {
   id: string;
@@ -89,7 +90,14 @@ function syncPrimaryConfig() {
   }
 }
 
-export async function GET() {
+async function requireAdmin(req: NextRequest) {
+  const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  const access = await verifyAdminAccess(token);
+  return access.isAdmin;
+}
+
+export async function GET(req: NextRequest) {
+  if (!(await requireAdmin(req))) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   initializeMemoryStore();
 
   // Best-effort check with Supabase platform_upi_accounts table
@@ -128,6 +136,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await requireAdmin(req))) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   initializeMemoryStore();
 
   try {

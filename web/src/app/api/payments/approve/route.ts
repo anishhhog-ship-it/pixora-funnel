@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdminClient } from '@/lib/supabase/server';
+import { verifyAdminAccess } from '@/services/adminService';
 
 export async function POST(req: NextRequest) {
   try {
+    const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+    const access = await verifyAdminAccess(token);
+    if (!access.isAdmin) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     const body = await req.json();
     const { orderId, businessId } = body;
 
@@ -14,20 +18,8 @@ export async function POST(req: NextRequest) {
       global.__pixoraOrders = new Map();
     }
 
-    let order = global.__pixoraOrders.get(orderId);
-    if (!order) {
-      order = {
-        id: orderId,
-        businessId: businessId || 'active',
-        businessName: body.businessName || 'Client Business',
-        planId: 'plan_2year_software',
-        planName: 'Standard 2-Year Plan',
-        amount: 2599,
-        currency: 'INR',
-        createdAt: new Date().toISOString(),
-      };
-      global.__pixoraOrders.set(orderId, order);
-    }
+    const order = global.__pixoraOrders.get(orderId);
+    if (!order) return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
 
     order.status = 'PAID';
     order.paidAt = new Date().toISOString();

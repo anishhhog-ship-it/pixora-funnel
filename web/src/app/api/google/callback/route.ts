@@ -25,6 +25,16 @@ export async function GET(req: NextRequest) {
 
   const redirectTarget = new URL(returnUrl, req.nextUrl.origin);
 
+  // Google Business Profile OAuth is intentionally paused while the client
+  // portal feature is in beta. Do not exchange or persist tokens from stale
+  // or externally initiated authorization callbacks.
+  redirectTarget.searchParams.set('google_status', 'beta_feature');
+  redirectTarget.searchParams.set(
+    'google_message',
+    'Thank you — we are working on Google Business Profile connection. We will launch it soon in the client dashboard.'
+  );
+  return NextResponse.redirect(redirectTarget.toString());
+
   // 2. Handle Google-side OAuth errors (e.g. user cancelled)
   if (googleError) {
     redirectTarget.searchParams.set('google_status', 'cancelled');
@@ -59,7 +69,7 @@ export async function GET(req: NextRequest) {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
-        code,
+        code: code || '',
         client_id: clientId,
         client_secret: clientSecret,
         redirect_uri: redirectUri,

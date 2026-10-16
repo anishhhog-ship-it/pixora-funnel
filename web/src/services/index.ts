@@ -150,6 +150,7 @@ export const businessService = {
             ownerName: 'Business Owner',
             phone: b.phone || '',
             email: b.email || '',
+            menuEnabled: b.menu_enabled ?? true,
             planStatus: (b.status === 'active' ? 'active' : 'trial') as 'trial' | 'active' | 'expired',
             trialExpiresAt: b.trial_expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
             qrScans: 0,
@@ -260,7 +261,7 @@ export const businessService = {
       slug: cleanSlug,
       name: formattedName || 'Your Business',
       category: 'Restaurant & Fine Dining',
-      city: 'Jaipur',
+      city: '',
       logo: preset.logo,
       coverImage: preset.coverImage,
       planStatus: 'trial',
@@ -313,6 +314,7 @@ export const businessService = {
             ownerName: 'Business Owner',
             phone: b.phone || '',
             email: b.email || '',
+            menuEnabled: b.menu_enabled ?? true,
             planStatus: (b.status === 'active' ? 'active' : 'trial') as 'trial' | 'active' | 'expired',
             trialExpiresAt: b.trial_expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
             qrScans: 0,
@@ -400,6 +402,7 @@ export const businessService = {
             ownerName: 'Business Owner',
             phone: b.phone || '',
             email: b.email || targetEmail || '',
+            menuEnabled: b.menu_enabled ?? true,
             planStatus: 'active' as const,
             trialExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
             qrScans: 0,
@@ -706,7 +709,7 @@ export const businessService = {
             name: params.name.trim(),
             slug: uniqueSlug,
             category: params.category || 'Local Business',
-            city: params.city || 'Jaipur',
+            city: params.city || '',
             address: params.address || null,
             website: params.website || null,
             description: params.description || null,
@@ -810,7 +813,7 @@ export const businessService = {
       category: params.category || 'Local Business',
       categoryConfidence: getCategoryConfidence(params.category),
       visualThemeId: catConfig.id,
-      city: params.city || 'Your City',
+      city: params.city || '',
       address: params.address || '',
       website: params.website || '',
       description: params.description || '',
@@ -826,6 +829,7 @@ export const businessService = {
       ownerName: params.ownerName || currentUser?.name || 'Business Owner',
       phone: params.phone || currentUser?.phone || '',
       email: ownerEmail,
+      menuEnabled: true,
       planStatus: 'trial',
       trialExpiresAt,
       qrScans: 0,
@@ -908,6 +912,7 @@ export const businessService = {
           description: params.description || existing.description,
           phone: params.phone || existing.phone,
           email: params.email || existing.email || currentUser?.email,
+          menuEnabled: params.menuEnabled ?? existing.menuEnabled ?? existing.theme.menuEnabled,
           googlePlaceId: params.googlePlaceId || existing.googlePlaceId,
            googleReviewUrl: params.googleReviewUrl || existing.googleReviewUrl,
            googleMapsUrl: params.googleMapsUrl || existing.googleMapsUrl,
@@ -965,7 +970,7 @@ export const businessService = {
       userId: ownerId,
       ownerId: ownerId,
       category: params.category,
-      city: params.city || 'Jaipur',
+      city: params.city || '',
       address: params.address,
       website: params.website,
       description: params.description,
@@ -1105,6 +1110,26 @@ export const businessService = {
     const stored = getStoredBusinesses();
     stored[slug] = biz;
     saveStoredBusinesses(stored);
+
+    // Keep the existing tenant-scoped Supabase setting authoritative for the
+    // public funnel. The local/runtime copies above still support demo mode.
+    if (isSupabaseConfigured() && biz.businessId && !biz.businessId.startsWith('biz_')) {
+      try {
+        const { error } = await supabase
+          .from('businesses')
+          .update({
+            category: biz.category,
+            menu_enabled: biz.theme.menuEnabled,
+            services_enabled: biz.theme.servicesEnabled ?? false,
+          })
+          .eq('id', biz.businessId);
+        if (error) {
+          console.warn('Could not persist funnel visibility settings to Supabase:', error);
+        }
+      } catch (err) {
+        console.warn('Could not persist funnel visibility settings to Supabase:', err);
+      }
+    }
 
     return biz;
   },
@@ -1311,6 +1336,10 @@ export const reviewService = {
   },
 
   submitPrivateFeedback: async (feedback: Omit<PrivateFeedback, 'feedbackId' | 'createdAt' | 'status'>): Promise<PrivateFeedback> => {
+    if (!Number.isInteger(feedback.rating) || feedback.rating < 1 || feedback.rating > 3) {
+      throw new Error('Private feedback is only available for 1–3 star ratings.');
+    }
+
     const record: PrivateFeedback = {
       ...feedback,
       feedbackId: `fb_${Date.now()}`,
@@ -1320,18 +1349,21 @@ export const reviewService = {
 
     if (isSupabaseConfigured() && feedback.businessId && !feedback.businessId.startsWith('biz_')) {
       try {
-        await supabase.from('customer_events').insert({
+        const { error } = await supabase.from('private_feedbacks').insert({
           business_id: feedback.businessId,
-          event_type: 'private_feedback',
-          metadata: {
-            rating: feedback.rating,
-            message: feedback.message,
-            tags: feedback.tags,
-            customerName: feedback.customerName,
-            customerPhone: feedback.customerPhone,
-          },
+          business_slug: feedback.businessSlug,
+          rating: feedback.rating,
+          issue_types: feedback.tags,
+          message: feedback.message,
+          customer_name: feedback.customerName,
+          customer_phone: feedback.customerPhone,
+          status: 'pending',
         });
-      } catch (err) {}
+        if (error) throw error;
+      } catch (err) {
+        console.error('Could not persist private feedback:', err);
+        throw new Error('Private feedback could not be delivered. Please try again.');
+      }
     }
 
     if (isBrowser) {

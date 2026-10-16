@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Star, ShieldCheck, HeartHandshake, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { businessService, reviewService, analyticsService } from '@/services';
 import { Business } from '@/types';
+import { isPrivateFeedbackRating } from '@/services/ratingRouting';
 
 const ISSUE_TAGS = [
   'Slow Service',
@@ -44,7 +45,12 @@ export default function PrivateFeedbackPage() {
       const storedRating = urlRating || sessionStorage.getItem('temp_rating');
       if (storedRating) {
         const parsed = parseInt(storedRating, 10);
-        if (!isNaN(parsed) && parsed > 0 && parsed <= 5) {
+        if (!isNaN(parsed) && parsed >= 1 && parsed <= 5 && !isPrivateFeedbackRating(parsed)) {
+          sessionStorage.removeItem('temp_rating');
+          router.replace(`/f/${businessSlug}`);
+          return;
+        }
+        if (!isNaN(parsed) && parsed > 0 && parsed <= 3) {
           setRating(parsed);
           sessionStorage.setItem('temp_rating', parsed.toString());
         }
@@ -54,7 +60,7 @@ export default function PrivateFeedbackPage() {
     });
     businessService.getBusinessBySlug(businessSlug).then(setBusiness);
     analyticsService.trackEvent('negative_feedback_intercepted', { slug: businessSlug });
-  }, [businessSlug]);
+  }, [businessSlug, router]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev => 
@@ -64,6 +70,10 @@ export default function PrivateFeedbackPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isPrivateFeedbackRating(rating)) {
+      setSubmitError('Private feedback is available for 1–3 star ratings.');
+      return;
+    }
     if (!message.trim() && selectedTags.length === 0) return;
 
     setIsSubmitting(true);

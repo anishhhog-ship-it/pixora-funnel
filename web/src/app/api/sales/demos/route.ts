@@ -100,6 +100,18 @@ export async function POST(req: NextRequest) {
     }
 
     const config = body.config && typeof body.config === 'object' ? body.config : {};
+    // Keep the salesperson-entered contact details in the public-safe demo
+    // config as well as the canonical businesses row. Trial demo businesses
+    // may not be visible through anonymous RLS until activation.
+    const demoAddress = boundedText(body.address || prospectData?.address || config.address, 300);
+    const demoCity = boundedText(body.city || prospectData?.city || config.city, 100);
+    const demoPhone = boundedText(body.phone || prospectData?.phone || config.phone, 40);
+    const publicConfig = {
+      ...config,
+      ...(demoAddress ? { address: demoAddress } : {}),
+      ...(demoCity ? { city: demoCity } : {}),
+      ...(demoPhone ? { phone: demoPhone } : {}),
+    };
     const color = /^#[0-9a-f]{6}$/i.test(body.primaryColor || '') ? body.primaryColor : defaults.color;
     const now = new Date();
     const expires = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
@@ -139,9 +151,6 @@ export async function POST(req: NextRequest) {
           subheadline: config.subheadline || null,
           updated_at: now.toISOString(),
         };
-        const demoAddress = boundedText(body.address || prospectData?.address, 300);
-        const demoCity = boundedText(body.city || prospectData?.city, 100);
-        const demoPhone = boundedText(body.phone || prospectData?.phone, 40);
         if (demoAddress) businessUpdate.address = demoAddress;
         if (demoCity) businessUpdate.city = demoCity;
         if (demoPhone) businessUpdate.phone = demoPhone;
@@ -165,7 +174,7 @@ export async function POST(req: NextRequest) {
         logo_url: boundedText(body.logoUrl, 2000),
         cover_url: boundedText(body.coverUrl, 2000),
         template_slug: boundedText(body.templateSlug, 80) || 'classic',
-        config,
+        config: publicConfig,
         status: 'active',
         expires_at: expires,
         updated_at: now.toISOString(),
@@ -203,9 +212,9 @@ export async function POST(req: NextRequest) {
     // tenant that the activation RPC later upgrades; no paid entitlement here.
     const businessResult = await db.from('businesses').insert({
       name: businessName, slug, category: defaults.category, website: reviewUrl,
-      address: boundedText(body.address || prospectData?.address, 300) || null,
-      city: boundedText(body.city || prospectData?.city, 100) || null,
-      phone: boundedText(body.phone || prospectData?.phone, 40) || null,
+       address: demoAddress || null,
+       city: demoCity || null,
+       phone: demoPhone || null,
       primary_color: color, secondary_color: '#D4AF37', status: 'trial', plan_status: 'trial', trial_expires_at: expires,
       headline: config.headline || defaults.headline, subheadline: config.subheadline || null,
       menu_enabled: true, products_enabled: true,
@@ -220,7 +229,7 @@ export async function POST(req: NextRequest) {
       slug, business_id: businessId, prospect_id: prospectId, created_by: access.session.staffId,
       business_name: businessName, category: defaults.category, review_destination_url: reviewUrl,
       primary_color: color, logo_url: boundedText(body.logoUrl, 2000), cover_url: boundedText(body.coverUrl, 2000),
-      template_slug: boundedText(body.templateSlug, 80) || 'classic', config, config_version: 1,
+       template_slug: boundedText(body.templateSlug, 80) || 'classic', config: publicConfig, config_version: 1,
       status: 'active', expires_at: expires,
     }).select().single();
     if (demoResult.error || !demoResult.data) throw new Error('Unable to persist demo');

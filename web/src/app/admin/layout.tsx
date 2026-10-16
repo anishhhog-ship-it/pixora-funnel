@@ -18,6 +18,7 @@ const ADMIN_NAV_ITEMS = [
   { href: '/admin/businesses', label: 'Businesses', icon: Building2 },
   { href: '/admin/activations', label: 'Activations', icon: Key },
   { href: '/admin/trials', label: 'Trials & Plans', icon: Clock },
+  { href: '/admin/plans', label: 'Plans', icon: Crown },
   { href: '/admin/modules', label: 'Modules & Features', icon: Layout },
   { href: '/admin/google-integrations', label: 'Google Integrations', icon: Star },
   { href: '/admin/reviews', label: 'Reviews Monitoring', icon: Star },
@@ -39,25 +40,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isAdmin, setIsAdmin] = useState(false);
   const [showMobileNav, setShowMobileNav] = useState(false);
   const [adminIdentity, setAdminIdentity] = useState({ email: 'Admin', role: 'Super Administrator' });
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          router.push('/admin-login');
+          return;
+        }
+        const access = await verifyAdminAccess(session.access_token);
+        if (!access.isAdmin) {
+          router.push('/dashboard');
+          return;
+        }
+        setAdminIdentity({
+          email: access.email || 'Admin',
+          role: access.role === 'super_admin' ? 'Super Administrator' : access.role === 'support_agent' ? 'Support Agent' : 'Administrator',
+        });
+        setIsAdmin(true);
+      } catch (error) {
+        console.error('Admin authentication check failed', error);
         router.push('/admin-login');
-        return;
+      } finally {
+        setLoading(false);
       }
-       const access = await verifyAdminAccess(session.access_token);
-       if (!access.isAdmin) {
-         router.push('/dashboard');
-         return;
-       }
-       setAdminIdentity({
-         email: access.email || 'Admin',
-         role: access.role === 'super_admin' ? 'Super Administrator' : access.role === 'support_agent' ? 'Support Agent' : 'Administrator',
-       });
-       setIsAdmin(true);
-       setLoading(false);
     }
     checkAuth();
   }, [router]);
@@ -140,8 +148,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"/>
                 <input
                   type="text"
-                  placeholder="Search customers, businesses, orders..."
-                  aria-label="Search admin workspace"
+                   placeholder="Search customers, businesses, orders..."
+                   value={searchTerm}
+                   onChange={(event) => setSearchTerm(event.target.value)}
+                   onKeyDown={(event) => {
+                     if (event.key !== 'Enter' || !searchTerm.trim()) return;
+                     const value = searchTerm.trim();
+                     const target = /order|pxo/i.test(value) ? '/admin/orders' : /business|store|company/i.test(value) ? '/admin/businesses' : '/admin/customers';
+                     router.push(`${target}?search=${encodeURIComponent(value)}`);
+                   }}
+                   aria-label="Search admin workspace"
                  className="w-full pl-10 pr-12 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700"
                />
                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">

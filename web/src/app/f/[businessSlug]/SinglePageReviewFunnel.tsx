@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { 
@@ -25,12 +25,13 @@ import {
   Heart,
   Shirt,
   Store,
+  BookOpen,
   Clock,
-  MessageSquare
 } from 'lucide-react';
 import { businessService, analyticsService, reviewEngine } from '@/services';
-import { getFunnelBackground, getReviewTopics, normalizeBusinessCategory } from '@/config/businessCategories';
+import { getCatalogTerminology, getFunnelBackground, getReviewTopics, normalizeBusinessCategory } from '@/config/businessCategories';
 import { Business } from '@/types';
+import { getPublicRatingRoute } from '@/services/ratingRouting';
 
 // Official Google 'G' 4-color SVG
 function GoogleGLogo({ className = "w-6 h-6" }: { className?: string }) {
@@ -103,6 +104,7 @@ export default function SinglePageReviewFunnel({
   businessSlug: propBusinessSlug,
 }: SinglePageReviewFunnelProps = {}) {
   const routeParams = useParams();
+  const router = useRouter();
   const businessSlug = propBusinessSlug || (routeParams?.businessSlug as string) || 'your-business';
 
   // Core state - initialized immediately from server data when available!
@@ -248,8 +250,18 @@ export default function SinglePageReviewFunnel({
   // 5. Rating selection
   const handleRate = (star: number) => {
     setRating(star);
-    analyticsService.trackEvent('rating_selected', { rating: star, slug: businessSlug });
+    analyticsService.trackEvent('rating_selected', {
+      rating: star,
+      slug: businessSlug,
+      businessId: business?.id || business?.businessId,
+    });
     sessionStorage.setItem('temp_rating', star.toString());
+
+    // Keep low ratings in the private resolution flow. Do this at selection
+    // time so a 1–3 star customer never sees or submits the Google CTA.
+    if (getPublicRatingRoute(star) === 'feedback') {
+      router.push(`/f/${businessSlug}/feedback?rating=${star}`);
+    }
   };
 
   // 6. Robust clipboard utility with textarea fallback for all mobile browsers & webviews
@@ -341,6 +353,12 @@ export default function SinglePageReviewFunnel({
 
   // 8. Primary CTA action: Copy Review & Open Google
   const handleCopyAndOpenGoogle = async () => {
+    if (getPublicRatingRoute(rating) !== 'google') {
+      if (getPublicRatingRoute(rating) === 'feedback') router.push(`/f/${businessSlug}/feedback?rating=${rating}`);
+      else setValidationError('Please choose a 4 or 5 star rating to continue to Google.');
+      return;
+    }
+
     const textToSubmit = reviewText.trim();
     if (!textToSubmit) {
       setValidationError('Please write or select your review before proceeding.');
@@ -370,7 +388,8 @@ export default function SinglePageReviewFunnel({
     // Step C: Track analytics
     analyticsService.trackEvent('google_clicked', {
       slug: businessSlug,
-      rating: rating || 5,
+      businessId: business?.id || business?.businessId,
+      rating,
       googleUrl: targetGoogleUrl,
       copied: copyOk,
     });
@@ -455,7 +474,9 @@ export default function SinglePageReviewFunnel({
   }
 
   const categoryConfig = normalizeBusinessCategory(business.category);
+  const catalogTerminology = getCatalogTerminology(business.category);
   const funnelBackground = getFunnelBackground(business);
+  const showPublicMenu = business.menuEnabled !== false && business.theme.menuEnabled !== false;
   const combinedAddress = [business.address, business.city]
     .filter((value): value is string => Boolean(value))
     .map((value) => value.trim())
@@ -507,6 +528,17 @@ export default function SinglePageReviewFunnel({
                 {business.phone}
               </a>
             </div>
+          )}
+
+          {showPublicMenu && (
+            <Link
+              href={`/f/${businessSlug}/menu`}
+              className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 ring-1 ring-inset ring-emerald-200 transition hover:bg-emerald-100"
+            >
+              <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>View {catalogTerminology.publicPageHeading}</span>
+              <ArrowRight className="h-3 w-3" aria-hidden="true" />
+            </Link>
           )}
 
           {business.website && business.website.trim().length > 0 && (
@@ -803,17 +835,10 @@ export default function SinglePageReviewFunnel({
             </div>
           )}
 
-          {/* Notice for private feedback if user gave <= 3 stars */}
-          {rating > 0 && rating <= 3 && (
-            <div className="pt-2 text-center">
-              <Link 
-                href={`/f/${businessSlug}/feedback?rating=${rating}`}
-                className="text-xs text-slate-500 hover:text-slate-900 underline font-medium inline-flex items-center gap-1"
-              >
-                <MessageSquare className="w-3 h-3" />
-                <span>Prefer to send private feedback directly to the owner?</span>
-              </Link>
-            </div>
+          {getPublicRatingRoute(rating) === 'feedback' && (
+            <p className="pt-2 text-center text-xs font-semibold text-slate-500">
+              Opening a private feedback form so the business team can help.
+            </p>
           )}
         </div>
 

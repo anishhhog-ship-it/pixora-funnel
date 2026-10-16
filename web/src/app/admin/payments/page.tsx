@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { decodeQrFromImageFile, constructUpiUri } from '@/lib/qrDecoder';
 import { paymentGatewayService, PaymentGatewayConfig, PaymentOrder } from '@/services/paymentGatewayService';
+import { supabase } from '@/lib/supabase/client';
 
 export interface UpiAccount {
   id: string;
@@ -101,6 +102,12 @@ export default function AdminPaymentsPage() {
   const [copiedWebhook, setCopiedWebhook] = useState(false);
   const [copiedSecret, setCopiedSecret] = useState(false);
 
+  const adminHeaders = async (): Promise<Record<string, string>> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Your admin session has expired.');
+    return { Authorization: `Bearer ${session.access_token}` };
+  };
+
   useEffect(() => {
     // Load config and accounts from API
     loadConfig();
@@ -111,8 +118,8 @@ export default function AdminPaymentsPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const loadConfig = () => {
-    fetch('/api/payments/config')
+  const loadConfig = async () => {
+    fetch('/api/payments/config', { headers: await adminHeaders() })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
@@ -120,11 +127,11 @@ export default function AdminPaymentsPage() {
           if (Array.isArray(data.accounts)) setUpiAccounts(data.accounts);
         }
       })
-      .catch(() => null);
+    .catch(() => null);
   };
 
-  const loadOrders = () => {
-    fetch('/api/payments/transactions')
+  const loadOrders = async () => {
+    fetch('/api/payments/transactions', { headers: await adminHeaders() })
       .then((res) => res.json())
       .then((data) => {
         const localList = paymentGatewayService.getAllOrders();
@@ -165,7 +172,7 @@ export default function AdminPaymentsPage() {
     try {
       const res = await fetch('/api/payments/config', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...(await adminHeaders()), 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'switch', id }),
       });
       const data = await res.json();
@@ -193,7 +200,7 @@ export default function AdminPaymentsPage() {
     try {
       const res = await fetch('/api/payments/config', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...(await adminHeaders()), 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'toggle_active', id }),
       });
       const data = await res.json();
@@ -226,7 +233,7 @@ export default function AdminPaymentsPage() {
     try {
       const res = await fetch('/api/payments/config', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...(await adminHeaders()), 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'add', account: newUpiData }),
       });
       const data = await res.json();
@@ -257,7 +264,7 @@ export default function AdminPaymentsPage() {
     try {
       const res = await fetch('/api/payments/config', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...(await adminHeaders()), 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'delete', id }),
       });
       const data = await res.json();
@@ -292,7 +299,7 @@ export default function AdminPaymentsPage() {
       // 1. Call API endpoint
       const res = await fetch('/api/payments/approve', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...(await adminHeaders()), 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId, businessId, businessName }),
       });
       const data = await res.json();
@@ -303,10 +310,7 @@ export default function AdminPaymentsPage() {
       loadOrders();
       showNotice('success', `✓ Order ${orderId} approved! ${businessName} dashboard activated for 2 Years.`);
     } catch (err: any) {
-      // Local fallback
-      await paymentGatewayService.approveOrder(orderId);
-      loadOrders();
-      showNotice('success', `✓ Order ${orderId} approved locally! 2-Year license activated.`);
+      showNotice('error', err.message || 'Unable to approve order.');
     } finally {
       setIsSubmittingAction(false);
     }
@@ -323,7 +327,7 @@ export default function AdminPaymentsPage() {
       // 1. Call API endpoint
       await fetch('/api/payments/reject', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...(await adminHeaders()), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId: rejectingOrder.id,
           reason: finalReason,
@@ -340,11 +344,7 @@ export default function AdminPaymentsPage() {
       setRejectingOrder(null);
       setCustomReason('');
     } catch (err: any) {
-      await paymentGatewayService.rejectOrder(rejectingOrder.id, finalReason);
-      loadOrders();
-      showNotice('error', `Order ${rejectingOrder.id} marked as rejected.`);
-      setRejectingOrder(null);
-      setCustomReason('');
+      showNotice('error', err.message || 'Unable to reject order.');
     } finally {
       setIsSubmittingAction(false);
     }
@@ -405,7 +405,7 @@ export default function AdminPaymentsPage() {
     try {
       const res = await fetch('/api/payments/config', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...(await adminHeaders()), 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
       });
       const data = await res.json();
@@ -415,9 +415,7 @@ export default function AdminPaymentsPage() {
       setSaveSuccess('✓ Payment Gateway settings and scanner saved successfully!');
       setTimeout(() => setSaveSuccess(null), 3500);
     } catch (err: any) {
-      paymentGatewayService.updateConfig(config);
-      setSaveSuccess('✓ Settings saved locally and applied to customer gateway!');
-      setTimeout(() => setSaveSuccess(null), 3500);
+      setSaveError(err.message || 'Unable to save payment settings.');
     } finally {
       setIsSavingConfig(false);
     }

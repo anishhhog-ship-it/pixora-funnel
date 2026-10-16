@@ -39,7 +39,9 @@ export async function GET(
       .then(() => {})
       .catch(() => {});
 
-    // Return strictly public-safe information
+    // Return strictly public-safe information. Contact details are copied from
+    // the salesperson's bounded demo config; never expose the full prospect.
+    const publicConfig = demo.config && typeof demo.config === 'object' ? demo.config as Record<string, unknown> : {};
     return NextResponse.json({
       success: true,
       demo: {
@@ -48,10 +50,13 @@ export async function GET(
         category: demo.category,
         reviewDestinationUrl: demo.review_destination_url,
         primaryColor: demo.primary_color || '#2563EB',
-        logoUrl: demo.logo_url,
-        coverUrl: demo.cover_url,
-        templateSlug: demo.template_slug || 'classic',
-        config: demo.config || {},
+         logoUrl: demo.logo_url,
+         coverUrl: demo.cover_url,
+         address: typeof publicConfig.address === 'string' ? publicConfig.address : null,
+         city: typeof publicConfig.city === 'string' ? publicConfig.city : null,
+         phone: typeof publicConfig.phone === 'string' ? publicConfig.phone : null,
+         templateSlug: demo.template_slug || 'classic',
+         config: publicConfig,
       },
     });
   } catch (err: any) {

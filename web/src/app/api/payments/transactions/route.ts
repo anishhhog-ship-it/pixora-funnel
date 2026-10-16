@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdminClient } from '@/lib/supabase/server';
+import { verifyAdminAccess } from '@/services/adminService';
 
-export async function GET() {
+async function requireAdmin(req: NextRequest) {
+  const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  const access = await verifyAdminAccess(token);
+  return access.isAdmin;
+}
+
+export async function GET(req: NextRequest) {
+  if (!(await requireAdmin(req))) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   const inMemoryOrders = Array.from(global.__pixoraOrders?.values() || []).sort(
     (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
@@ -14,6 +22,7 @@ export async function GET() {
 
 // Manual Approve & Activate by Admin
 export async function POST(req: NextRequest) {
+  if (!(await requireAdmin(req))) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   try {
     const { orderId, businessId } = await req.json();
 

@@ -528,6 +528,7 @@ export default function SettingsPage() {
         website,
         address,
         description,
+        menuEnabled,
         theme: {
           ...activeBiz.theme,
           tagline,
@@ -567,6 +568,18 @@ export default function SettingsPage() {
     setGoogleOAuthStatusBanner({
       type: 'info',
       message: 'Thank you, but we are working on this feature! We will launch it soon — this is a beta version of the client dashboard.',
+    });
+  };
+
+  // Keep the client portal connection entry point honest while the automated
+  // Google Business Profile connection is still in beta. Manual review-link
+  // routing remains available through the separate manual-link action.
+  const handleConnectGoogleProfile = () => {
+    setShowGoogleLinkModal(false);
+    setShowGoogleOAuthBetaModal(true);
+    setGoogleOAuthStatusBanner({
+      type: 'info',
+      message: 'Thank you — we are working on Google Business Profile connection. We will launch it soon in the client dashboard.',
     });
   };
 
@@ -1836,6 +1849,23 @@ export default function SettingsPage() {
                   <PinIcon />
                 </div>
               </div>
+
+              <label className="mt-4 flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5">
+                <span>
+                  <span className="block text-xs font-semibold text-emerald-950">
+                    Show {isFood ? 'menu' : 'catalogue'} on customer funnel
+                  </span>
+                  <span className="mt-0.5 block text-[11px] leading-relaxed text-emerald-900/75">
+                    Add a link to the live {isFood ? 'menu' : 'catalogue'} below your business details. Save changes to publish this choice.
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={menuEnabled}
+                  onChange={(event) => setMenuEnabled(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded text-emerald-800 focus:ring-emerald-700"
+                />
+              </label>
             </div>
 
             {/* Social Media */}
@@ -2058,7 +2088,7 @@ export default function SettingsPage() {
                     )}
                   </div>
                   <p className="text-xs text-stone-500 mt-0.5">
-                    Routes 5-star customer ratings from your NFC stands and review funnel directly to Google Maps.
+                    Routes 4- and 5-star customer ratings from your NFC stands and review funnel directly to Google review pages.
                   </p>
                 </div>
               </div>
@@ -2093,7 +2123,7 @@ export default function SettingsPage() {
                 ) : (
                   <button
                     type="button"
-                    onClick={handleOpenGoogleLinkModal}
+                    onClick={handleConnectGoogleProfile}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-white text-xs font-semibold transition cursor-pointer shadow-xs"
                   >
                     <span>Connect Google Profile</span>
@@ -2136,7 +2166,7 @@ export default function SettingsPage() {
                 <div className="space-y-1">
                   <p className="font-semibold">Review routing is currently inactive.</p>
                   <p className="text-amber-800 text-[11px] leading-relaxed">
-                    When customers give 5-star ratings in your funnel, they must be redirected to your live Google review form. Click &ldquo;Connect Google Profile&rdquo; above to link your Google Maps review link.
+                    When customers give 4- or 5-star ratings in your funnel, they are redirected to your live Google review form. Click &ldquo;Connect Google Profile&rdquo; above to link your Google Maps review link.
                   </p>
                 </div>
               </div>

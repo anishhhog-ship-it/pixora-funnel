@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { getAdminIntegrations } from '@/services/adminService';
+import { getAdminIntegrations, verifyAdminIntegration } from '@/services/adminService';
 import { RefreshCw, Search, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 
 export default function AdminGoogleIntegrationsPage() {
@@ -29,12 +29,18 @@ export default function AdminGoogleIntegrationsPage() {
     loadData();
   }, []);
 
-  const handleResync = async (id: string) => {
+  const handleResync = async (id: string, businessId: string) => {
     setIsResyncing(id);
-    setTimeout(() => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Your admin session has expired.');
+      const updated = await verifyAdminIntegration(session.access_token, businessId);
+      setIntegrations((current) => current.map((integration) => integration.business_id === businessId ? { ...integration, status: updated.status, last_synced_at: updated.last_synced_at } : integration));
+    } catch (err) {
+      console.error('Unable to verify Google integration', err);
+    } finally {
       setIsResyncing(null);
-      loadData();
-    }, 1000);
+    }
   };
 
   const filtered = integrations.filter((i) => {
@@ -131,7 +137,7 @@ export default function AdminGoogleIntegrationsPage() {
                       <td className="px-6 py-4 text-right">
                         <button
                           type="button"
-                          onClick={() => handleResync(i.id)}
+                           onClick={() => handleResync(i.id, i.business_id)}
                           disabled={isResyncing === i.id}
                           className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-800 hover:text-emerald-950 transition cursor-pointer"
                         >

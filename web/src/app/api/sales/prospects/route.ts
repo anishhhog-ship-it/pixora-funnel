@@ -172,7 +172,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, stage, notes, nextFollowupDate, contactName, phone, city, assignedTo, activityNote } = body;
+    const { id, stage, notes, nextFollowupDate, contactName, phone, city, address, assignedTo, activityNote } = body;
 
     if (!id) {
       return NextResponse.json({ success: false, error: 'Prospect ID is required' }, { status: 400 });
@@ -206,6 +206,7 @@ export async function PATCH(req: NextRequest) {
     if (contactName !== undefined) updatePayload.contact_name = contactName;
     if (phone !== undefined) updatePayload.phone = phone;
     if (city !== undefined) updatePayload.city = city;
+    if (address !== undefined) updatePayload.address = address;
     if (assignedTo && (session.role === 'admin' || session.role === 'sales_manager')) {
       updatePayload.assigned_to = assignedTo;
     }

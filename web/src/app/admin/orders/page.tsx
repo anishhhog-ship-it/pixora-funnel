@@ -1,12 +1,15 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { getAdminOrders } from '@/services/adminService';
 import { Search, Filter, Download, Package } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 export default function AdminOrdersPage() {
+  const searchParams = useSearchParams();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState(() => searchParams.get('search') || '');
 
   useEffect(() => {
     async function load() {
@@ -25,6 +28,12 @@ export default function AdminOrdersPage() {
     load();
   }, []);
 
+  const filteredOrders = useMemo(() => orders.filter((order) => `${order.order_no} ${order.customer_name} ${order.businesses?.name} ${order.status}`.toLowerCase().includes(search.toLowerCase())), [orders, search]);
+  const exportOrders = () => {
+    const csv = [['Order', 'Customer', 'Business', 'Products', 'Amount', 'Status', 'Date'], ...filteredOrders.map((order) => [order.order_no, order.customer_name || '', order.businesses?.name || '', order.products || '', order.amount, order.status, order.created_at])].map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); link.download = 'orders.csv'; link.click(); URL.revokeObjectURL(link.href);
+  };
+
   return (
     <div className="w-full max-w-[1600px] mx-auto space-y-6 pb-12">
       <div className="flex justify-between items-end">
@@ -34,9 +43,11 @@ export default function AdminOrdersPage() {
           </h1>
           <p className="text-[15px] text-slate-500 mt-2">Manage NFC/QR product orders and dispatches.</p>
         </div>
+        <button type="button" onClick={exportOrders} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"><Download className="h-4 w-4" />Export</button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+         <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/50 p-4 sm:flex-row sm:items-center sm:justify-between"><div className="relative w-full sm:max-w-md"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search order, customer, business, status" className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-blue-100" /></div><button type="button" onClick={() => setSearch('')} className="inline-flex items-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"><Filter className="h-4 w-4" />Clear</button></div>
         <div className="flex-1 overflow-x-auto min-h-[400px]">
           {loading ? (
             <div className="flex h-64 items-center justify-center">
@@ -56,7 +67,7 @@ export default function AdminOrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {orders.map((o) => (
+                 {filteredOrders.map((o) => (
                   <tr key={o.id} className="hover:bg-slate-50/50">
                     <td className="px-6 py-4 font-bold text-slate-900">{o.order_no}</td>
                     <td className="px-6 py-4 font-medium text-slate-700">{o.customer_name || '-'}</td>
@@ -70,7 +81,8 @@ export default function AdminOrdersPage() {
                     </td>
                     <td className="px-6 py-4 text-slate-500">{new Date(o.created_at).toLocaleDateString()}</td>
                   </tr>
-                ))}
+                 ))}
+                 {!loading && filteredOrders.length === 0 && <tr><td colSpan={7} className="px-6 py-12 text-center text-slate-500">No orders found.</td></tr>}
               </tbody>
             </table>
           )}

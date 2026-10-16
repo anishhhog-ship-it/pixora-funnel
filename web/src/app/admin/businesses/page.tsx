@@ -1,32 +1,51 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { getAdminBusinesses } from '@/services/adminService';
+import { createAdminBusiness, getAdminBusinesses, updateDashboardStatus } from '@/services/adminService';
 import { Building2, Search, MoreHorizontal, Store, Plus, Filter, Download } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 export default function AdminBusinessesPage() {
+  const searchParams = useSearchParams();
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [selectedBusiness, setSelectedBusiness] = useState<any>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newBiz, setNewBiz] = useState({ name: '', slug: '', category: '' });
+  const [actionError, setActionError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleAddBusiness = async () => {
-    // In a real app, this would call adminService to provision a business and potentially create a user.
-    // For now, we simulate success and add to UI.
-    const created = { 
-      id: Math.random().toString(), 
-      name: newBiz.name, 
-      category: newBiz.category, 
-      slug: newBiz.slug,
-      createdAt: new Date().toISOString(),
-      owner: { full_name: 'Pending Assignment', email: '-' } 
-    };
-    setBusinesses([created, ...businesses]);
-    setIsAddModalOpen(false);
-    setNewBiz({ name: '', slug: '', category: '' });
+    setActionError('');
+    setIsSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Your admin session has expired.');
+      const created = await createAdminBusiness(session.access_token, newBiz);
+      setBusinesses((current) => [created, ...current]);
+      setIsAddModalOpen(false);
+      setNewBiz({ name: '', slug: '', category: '' });
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to provision business.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const suspendBusiness = async (business: any) => {
+    setActionError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Your admin session has expired.');
+      await updateDashboardStatus(session.access_token, business.id, 'suspended', 'Suspended by administrator');
+      setBusinesses((current) => current.map((item) => item.id === business.id ? { ...item, status: 'suspended' } : item));
+      setSelectedBusiness(null);
+      setOpenMenuId(null);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to suspend business.');
+    }
   };
 
   const filteredBusinesses = businesses.filter(b => 
@@ -67,6 +86,7 @@ export default function AdminBusinessesPage() {
 
   return (
     <div className="w-full max-w-[1600px] mx-auto space-y-6 pb-12">
+      {actionError && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{actionError}</div>}
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-[28px] font-bold text-slate-900 tracking-tight flex items-center gap-2">
@@ -98,9 +118,9 @@ export default function AdminBusinessesPage() {
               className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-700"
             />
           </div>
-          <button onClick={() => alert('Filters triggered')} className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors w-full sm:w-auto justify-center">
+           <button onClick={() => setSearchQuery('')} className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors w-full sm:w-auto justify-center">
             <Filter className="w-4 h-4 text-slate-500" />
-            <span className="text-sm font-semibold text-slate-700">Filters</span>
+             <span className="text-sm font-semibold text-slate-700">Clear search</span>
           </button>
         </div>
 
@@ -125,15 +145,17 @@ export default function AdminBusinessesPage() {
               <tbody className="divide-y divide-slate-100">
                 {filteredBusinesses.map((b, i) => {
                   const trial = b.trial;
-                  let status = 'Active';
-                  let statusColor = 'bg-emerald-50 text-emerald-700';
+                   let status = b.status === 'suspended' ? 'Suspended' : 'Active';
+                   let statusColor = 'bg-emerald-50 text-emerald-700';
+
+                   if (b.status === 'suspended') statusColor = 'bg-rose-50 text-rose-700';
                   
-                  if (trial?.status === 'active') {
+                   if (b.status !== 'suspended' && trial?.status === 'active') {
                     status = 'Trial';
                     statusColor = 'bg-blue-50 text-blue-700';
                     const daysLeft = trial.expires_at ? Math.ceil((new Date(trial.expires_at).getTime() - new Date().getTime()) / (1000 * 3600 * 24)) : 0;
                     if (daysLeft < 0) { status = 'Expired'; statusColor = 'bg-rose-50 text-rose-700'; }
-                  } else if (trial?.status === 'expired') {
+                   } else if (b.status !== 'suspended' && trial?.status === 'expired') {
                     status = 'Expired';
                     statusColor = 'bg-rose-50 text-rose-700';
                   }
@@ -182,9 +204,8 @@ export default function AdminBusinessesPage() {
                         </div>
                         {openMenuId === b.id && (
                           <div className="absolute right-8 top-10 w-48 bg-white border border-slate-200 shadow-xl rounded-xl py-2 z-50 text-left flex flex-col">
-                            <button onClick={() => { setSelectedBusiness(b); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left">View Details</button>
-                            <button onClick={() => { alert('Suspend business'); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left">Suspend Business</button>
-                            <button onClick={() => { alert('Delete business'); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 text-left">Delete Business</button>
+                             <button onClick={() => suspendBusiness(b)} disabled={b.status === 'suspended'} className="block w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left disabled:cursor-not-allowed disabled:text-slate-400">{b.status === 'suspended' ? 'Business Suspended' : 'Suspend Business'}</button>
+                             <button onClick={() => { setSelectedBusiness(b); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 text-left">View Details</button>
                           </div>
                         )}
                       </td>
@@ -234,7 +255,7 @@ export default function AdminBusinessesPage() {
             </div>
             <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
               <button onClick={() => setIsAddModalOpen(false)} className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Cancel</button>
-              <button onClick={handleAddBusiness} className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm">Provision Business</button>
+               <button onClick={handleAddBusiness} disabled={isSaving || !newBiz.name.trim() || !newBiz.slug.trim()} className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm disabled:cursor-not-allowed disabled:opacity-50">{isSaving ? 'Provisioning…' : 'Provision Business'}</button>
             </div>
           </div>
         </div>
@@ -276,8 +297,8 @@ export default function AdminBusinessesPage() {
               <div>
                 <h4 className="font-semibold text-slate-800 mb-3">Quick Actions</h4>
                 <div className="flex gap-3">
-                  <button onClick={() => { alert('Password reset email sent to owner.'); setSelectedBusiness(null); }} className="flex-1 px-4 py-2 bg-blue-50 text-blue-700 font-semibold rounded-lg hover:bg-blue-100 transition-colors text-sm text-center">Reset Password</button>
-                  <button onClick={() => { alert('Business suspended successfully.'); setSelectedBusiness(null); }} className="flex-1 px-4 py-2 bg-rose-50 text-rose-700 font-semibold rounded-lg hover:bg-rose-100 transition-colors text-sm text-center">Suspend</button>
+                   <span className="flex-1 rounded-lg bg-slate-50 px-4 py-2 text-center text-xs font-medium text-slate-500">Owner actions require a linked account.</span>
+                   <button onClick={() => suspendBusiness(selectedBusiness)} disabled={selectedBusiness.status === 'suspended'} className="flex-1 rounded-lg bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50">{selectedBusiness.status === 'suspended' ? 'Suspended' : 'Suspend'}</button>
                 </div>
               </div>
             </div>

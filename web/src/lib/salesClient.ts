@@ -3,14 +3,24 @@ export function getPublicFunnelUrl(slug: string): string {
   return new URL(`/f/${encodeURIComponent(slug)}`, window.location.origin).toString();
 }
 
-export function createSalesIdempotencyKey(prospectId: string, demoId?: string | null): string {
-  const storageKey = `sales-conversion:${prospectId}:${demoId || 'none'}`;
-  if (typeof window === 'undefined') return `${storageKey}:${Date.now()}`;
+export function createSalesIdempotencyKey(prospectId?: string | null, demoId?: string | null): string {
+  const pKey = prospectId || 'direct';
+  const storageKey = `sales-conv:${pKey}:${demoId || 'none'}`;
+  if (typeof window === 'undefined') return `sales-conv:${pKey.slice(0, 8)}:${Date.now()}`;
   const existing = window.sessionStorage.getItem(storageKey);
   if (existing) return existing;
-  const value = `${storageKey}:${crypto.randomUUID()}`;
+  const value = `sales-conv:${pKey.slice(0, 8)}:${demoId ? demoId.slice(0, 8) : 'none'}:${crypto.randomUUID()}`;
   window.sessionStorage.setItem(storageKey, value);
   return value;
+}
+
+export function clearSalesIdempotencyKey(prospectId?: string | null, demoId?: string | null): void {
+  if (typeof window === 'undefined') return;
+  const pKey = prospectId || 'direct';
+  const storageKey = `sales-conv:${pKey}:${demoId || 'none'}`;
+  const legacyStorageKey = `sales-conversion:${pKey}:${demoId || 'none'}`;
+  window.sessionStorage.removeItem(storageKey);
+  window.sessionStorage.removeItem(legacyStorageKey);
 }
 
 export function isWebNfcAvailable(): boolean {

@@ -121,7 +121,7 @@ export async function getAdminBusinesses(token: string) {
   const { data, error } = await supabase
     .from('businesses')
     .select(`
-      id, name, slug, category, created_at,
+      id, name, slug, category, status, created_at,
       profiles ( id, full_name, email ),
       trials ( status, expires_at )
     `)
@@ -134,6 +134,7 @@ export async function getAdminBusinesses(token: string) {
     name: biz.name,
     slug: biz.slug,
     category: biz.category,
+    status: biz.status,
     createdAt: biz.created_at,
     owner: biz.profiles, // an object or null
     trial: biz.trials?.[0] || null,
@@ -153,8 +154,8 @@ export async function getAdminCustomers(token: string) {
   const { data, error } = await supabase
     .from('profiles')
     .select(`
-      id, full_name, email, phone, created_at,
-      businesses ( id, name, slug, category )
+       id, full_name, email, phone, created_at,
+       businesses ( id, name, slug, category, status )
     `)
     .order('created_at', { ascending: false })
     .limit(100);
@@ -168,6 +169,7 @@ export async function getAdminCustomers(token: string) {
     phone: profile.phone,
     signupDate: profile.created_at,
     business: profile.businesses?.[0] || null,
+    dashboardStatus: profile.businesses?.[0]?.status || 'pending',
   }));
 }
 
@@ -180,19 +182,233 @@ export async function updateDashboardStatus(token: string, businessId: string, s
 
   const supabase = getSupabaseAdminClient();
   // Update the business status in DB
-  await (supabase as any).from('businesses').update({ status }).eq('id', businessId);
+  const { error } = await (supabase as any).from('businesses').update({ status }).eq('id', businessId);
+  if (error) throw error;
   
   await logAdminAction(token, 'Update Dashboard Status', 'business', businessId, `Changed status to ${status}. Reason: ${reason}`);
   return true;
+}
+
+// --------------------------------------------------------
+// Admin operational pages
+// --------------------------------------------------------
+export async function createAdminBusiness(token: string, params: { name: string; slug: string; category: string }) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+
+  const name = params.name.trim();
+  const slug = params.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  if (!name || !slug) throw new Error('Business name and slug are required');
+
+  const supabase = getSupabaseAdminClient();
+  const { data: business, error } = await (supabase as any)
+    .from('businesses')
+    .insert({ name, slug, category: params.category.trim() || 'Local Business', city: 'Unassigned', status: 'pending' })
+    .select('id, name, slug, category, status, created_at')
+    .single();
+  if (error) throw error;
+
+  // Provision only the records that are part of the existing business model. Each
+  // insert is best-effort so an older production schema still gets the business.
+  const funnelResult = await (supabase as any).from('funnels').insert({
+    business_id: business.id,
+    slug,
+    status: 'active',
+    review_enabled: true,
+    smart_review_enabled: true,
+    menu_enabled: true,
+  }).select('id').maybeSingle();
+  await (supabase as any).from('qr_codes').insert({
+    business_id: business.id,
+    funnel_id: funnelResult.data?.id || null,
+    name: 'Main Stand / Storefront',
+    location_name: 'Main Entrance & Counter',
+    short_code: `${slug}-main`,
+    destination_url: `/f/${slug}`,
+    status: 'active',
+  });
+  await logAdminAction(token, 'Create Business', 'business', business.id, `Provisioned ${name}`);
+  return { ...business, owner: null, trial: null };
+}
+
+export async function getAdminActivations(token: string) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+  const supabase = getSupabaseAdminClient();
+  const { data: businesses, error } = await (supabase as any)
+    .from('businesses')
+    .select('id, name, slug, status, profiles(full_name, email), activation_keys(id, key_string, is_used, used_at, created_at), qr_codes(id, status)')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (businesses || []).map((business: any) => ({
+    ...business,
+    owner: Array.isArray(business.profiles) ? business.profiles[0] : business.profiles,
+    activationKeys: business.activation_keys || [],
+    qrCodes: business.qr_codes || [],
+  }));
+}
+
+export async function revokeBusinessAccess(token: string, businessId: string) {
+  return updateDashboardStatus(token, businessId, 'suspended', 'Access revoked by administrator');
+}
+
+export async function verifyAdminIntegration(token: string, businessId: string) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+  const supabase = getSupabaseAdminClient();
+  const now = new Date().toISOString();
+  const { data: business, error: businessError } = await (supabase as any)
+    .from('businesses').select('id, google_place_id').eq('id', businessId).single();
+  if (businessError) throw businessError;
+  const hasPlace = typeof business.google_place_id === 'string' &&
+    (business.google_place_id.startsWith('ChI') || business.google_place_id.startsWith('places/'));
+  const { data, error } = await (supabase as any)
+    .from('google_integrations')
+    .upsert({ business_id: businessId, status: hasPlace ? 'Connected' : 'Disconnected', last_synced_at: now }, { onConflict: 'business_id' })
+    .select('*').single();
+  if (error) throw error;
+  await logAdminAction(token, 'Verify Google Integration', 'business', businessId, data.status);
+  return data;
+}
+
+export async function getAdminModules(token: string) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await (supabase as any)
+    .from('plans').select('id, name, slug, description, price_inr, billing_interval, is_active, created_at, plan_features(id, feature_key, feature_name, feature_value, is_enabled)')
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function updateAdminFeature(token: string, featureId: string, isEnabled: boolean) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await (supabase as any).from('plan_features').update({ is_enabled: isEnabled }).eq('id', featureId).select('*').single();
+  if (error) throw error;
+  await logAdminAction(token, 'Update Plan Feature', 'plan_feature', featureId, `Enabled: ${isEnabled}`);
+  return data;
+}
+
+export async function getAdminQrCodes(token: string) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await (supabase as any)
+    .from('qr_codes').select('id, business_id, name, location_name, table_name, short_code, destination_url, status, created_at, businesses(name, slug)')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getAdminAnalytics(token: string, days = 30) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+  const supabase = getSupabaseAdminClient();
+  const start = new Date(Date.now() - Math.max(1, days) * 24 * 60 * 60 * 1000).toISOString();
+  const readRows = async (table: string, columns = 'created_at') => {
+    const { data, error } = await (supabase as any).from(table).select(columns).gte('created_at', start);
+    return error ? [] : (data || []);
+  };
+  const [businesses, qrEvents, reviews, menuViews, menuSaves, feedbacks] = await Promise.all([
+    readRows('businesses'), readRows('qr_events'), readRows('google_reviews'),
+    readRows('menu_views'), readRows('menu_saves'), readRows('private_feedbacks'),
+  ]);
+  const count = async (table: string) => {
+    const { count: value, error } = await (supabase as any).from(table).select('id', { count: 'exact', head: true });
+    return error ? 0 : (value || 0);
+  };
+  const [businessCount, eventCount, reviewCount, customerCount] = await Promise.all([
+    count('businesses'), count('qr_events'), count('google_reviews'), count('customers'),
+  ]);
+  const dates = Array.from({ length: Math.min(Math.max(1, days), 90) }, (_, index) => {
+    const date = new Date(Date.now() - (Math.min(Math.max(1, days), 90) - 1 - index) * 86400000);
+    const key = date.toISOString().slice(0, 10);
+    const inDay = (row: { created_at?: string }) => row.created_at?.startsWith(key);
+    return { date: key, businesses: businesses.filter(inDay).length, qrScans: qrEvents.filter(inDay).length, reviews: reviews.filter(inDay).length, menuViews: menuViews.filter(inDay).length, menuSaves: menuSaves.filter(inDay).length, feedbacks: feedbacks.filter(inDay).length };
+  });
+  return { days: dates, totals: { businesses: businessCount, qrScans: eventCount, reviews: reviewCount, customers: customerCount, menuViews: menuViews.length, menuSaves: menuSaves.length, feedbacks: feedbacks.length } };
+}
+
+export async function getAdminSystemHealth(token: string) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+  const supabase = getSupabaseAdminClient();
+  const tables = ['profiles', 'businesses', 'funnels', 'qr_codes', 'qr_events', 'google_reviews', 'support_tickets', 'orders', 'admin_audit_logs'];
+  const checks = await Promise.all(tables.map(async (table) => {
+    const { count, error } = await (supabase as any).from(table).select('id', { count: 'exact', head: true });
+    return { table, status: error ? 'error' : 'ok', count: count || 0, error: error?.message || null };
+  }));
+  const { data: logs } = await (supabase as any).from('system_logs').select('id, level, source, message, created_at').order('created_at', { ascending: false }).limit(20);
+  return { checks, logs: logs || [], checkedAt: new Date().toISOString() };
+}
+
+export async function getAdminAuditLogs(token: string) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await (supabase as any).from('admin_audit_logs').select('*').order('created_at', { ascending: false }).limit(200);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getAdminSettings(token: string) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await (supabase as any).from('platform_admins').select('id, auth_user_id, email, full_name, role, is_active, created_at, updated_at').order('created_at', { ascending: true });
+  if (error) throw error;
+  return { current: session, admins: data || [] };
+}
+
+export async function updateAdminProfile(token: string, fullName: string) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin || !session.adminId) throw new Error('Unauthorized');
+  const name = fullName.trim();
+  if (!name) throw new Error('Name is required');
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await (supabase as any).from('platform_admins').update({ full_name: name, updated_at: new Date().toISOString() }).eq('id', session.adminId).select('*').single();
+  if (error) throw error;
+  await logAdminAction(token, 'Update Admin Profile', 'platform_admin', session.adminId, `Updated name to ${name}`);
+  return data;
+}
+
+export async function getAdminCategoryVisuals(token: string) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await (supabase as any).from('category_visuals').select('*').order('category_name', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function updateAdminCategoryVisual(token: string, id: string, isActive: boolean) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await (supabase as any).from('category_visuals').update({ is_active: isActive, updated_at: new Date().toISOString() }).eq('id', id).select('*').single();
+  if (error) throw error;
+  await logAdminAction(token, 'Update Category Visual', 'category_visual', id, `Active: ${isActive}`);
+  return data;
 }
 
 export async function getAdminOrders(token: string) {
   const session = await verifyAdminAccess(token);
   if (!session.isAdmin) throw new Error('Unauthorized');
   const supabase = getSupabaseAdminClient();
-  const { data, error } = await (supabase as any).from('orders').select('*, businesses(name)').order('created_at', { ascending: false });
+  const { data, error } = await (supabase as any).from('orders').select('*, businesses(name), order_items(product_name, quantity)').order('created_at', { ascending: false });
   if (error) throw error;
-  return data;
+  return (data || []).map((order: any) => ({
+    ...order,
+    // The two historical order migrations use different names. Normalize at
+    // the service boundary so the admin route remains readable in either DB.
+    order_no: order.order_no || order.order_number || order.id,
+    amount: order.amount ?? order.total_amount_inr ?? 0,
+    products: order.products || (order.order_items || []).map((item: any) => `${item.product_name} × ${item.quantity}`).join(', '),
+    status: typeof order.status === 'string' ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Pending',
+  }));
 }
 
 export async function getAdminIntegrations(token: string) {
@@ -252,21 +468,21 @@ export async function replyToSupportTicket(token: string, ticketId: string, repl
       updated_at: new Date().toISOString()
     })
     .eq('id', ticketId)
-    .select('*, businesses(id, name)')
+    .select('*, businesses(id, name, owner_id)')
     .single();
 
   if (updateError) throw updateError;
 
   // Insert a notification for the business so client dashboard gets live alert
-  if (ticket?.business_id) {
+  if (ticket?.business_id && ticket.businesses?.owner_id) {
     try {
       await (supabase as any).from('notifications').insert({
         business_id: ticket.business_id,
+        user_id: ticket.businesses.owner_id,
         title: `💬 Support Ticket #${ticket.id.slice(0, 8)} Updated`,
         message: replyMessage.length > 120 ? `${replyMessage.slice(0, 120)}...` : replyMessage,
         type: 'ticket_reply',
         read: false,
-        link: '/dashboard/support'
       });
     } catch (e) {
       console.warn('Could not insert notification into Supabase:', e);
@@ -287,14 +503,22 @@ export async function broadcastAdminNotification(token: string, payload: {
   if (!session.isAdmin) throw new Error('Unauthorized');
   const supabase = getSupabaseAdminClient();
 
-  const { data, error } = await (supabase as any).from('notifications').insert({
-    business_id: payload.businessId || null,
-    title: payload.title,
-    message: payload.message,
-    type: payload.type || 'admin_broadcast',
-    link: payload.link || '/dashboard',
-    read: false,
-  }).select().single();
+  const businessesQuery = (supabase as any).from('businesses').select('id, owner_id');
+  if (payload.businessId) businessesQuery.eq('id', payload.businessId);
+  const { data: recipients, error: recipientsError } = await businessesQuery;
+  if (recipientsError) throw recipientsError;
+  const rows = (recipients || [])
+    .filter((business: any) => business.owner_id)
+    .map((business: any) => ({
+      business_id: business.id,
+      user_id: business.owner_id,
+      title: payload.title,
+      message: payload.message,
+      type: payload.type || 'admin_broadcast',
+      read: false,
+    }));
+  if (rows.length === 0) return [];
+  const { data, error } = await (supabase as any).from('notifications').insert(rows).select();
 
   if (error) throw error;
   return data;
@@ -433,6 +657,8 @@ export async function getAdminDashboardData(token: string, days: number = 10) {
 
     return {
       initials: p.full_name ? p.full_name.substring(0,2).toUpperCase() : 'US',
+       customerId: p.id,
+       businessId: biz?.id || null,
       bg: bgColors[i % bgColors.length],
       name: p.full_name || 'Unknown',
       email: p.email || '',

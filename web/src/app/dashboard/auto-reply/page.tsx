@@ -33,8 +33,9 @@ import { GoogleConnectionBadge, GoogleBadgeStatus } from '@/components/GoogleCon
 import { Review, Business } from '@/types';
 import { PortalErrorState, PortalLoadingState } from '@/components/client-portal/PortalUI';
 
-// 14-Day Beta Launch Countdown: October 29, 2026, 12:00:00 IST (14 days from Oct 15)
-const AUTO_REPLY_BETA_LAUNCH_DATE = new Date('2026-10-29T12:00:00+05:30').getTime();
+// Fixed 14-day beta launch window from the current release date. Keep this
+// absolute so a browser refresh cannot reset or extend the countdown.
+const AUTO_REPLY_BETA_LAUNCH_DATE = new Date('2026-10-30T12:00:00+05:30').getTime();
 
 const TABS = ['Settings', 'Reply Templates', 'Review Categories', 'Smart Customisation', 'Activity Log'];
 const TONES = ['Warm & Friendly', 'Professional', 'Short & Simple', 'Traditional'];

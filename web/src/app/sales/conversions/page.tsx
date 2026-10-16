@@ -14,7 +14,7 @@ import {
   MessageSquare,
   AlertCircle,
 } from 'lucide-react';
-import { createSalesIdempotencyKey, getPublicFunnelUrl } from '@/lib/salesClient';
+import { createSalesIdempotencyKey, clearSalesIdempotencyKey, getPublicFunnelUrl } from '@/lib/salesClient';
 
 type PaymentMethod = 'UPI' | 'Bank Transfer' | 'Cash';
 
@@ -103,6 +103,8 @@ function ConversionsPage() {
   const [selectedDemoId, setSelectedDemoId] = useState(initialDemoId);
   const [selectedPlanSlug, setSelectedPlanSlug] = useState('lifetime_launch_100');
 
+  const [businessName, setBusinessName] = useState('');
+  const [category, setCategory] = useState('General Business');
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPassword, setCustomerPassword] = useState('Client@1234');
@@ -163,6 +165,8 @@ function ConversionsPage() {
       if (selectedProspectId) {
         const p = prospects.find((item) => item.id === selectedProspectId);
         if (p) {
+          if (!businessName) setBusinessName(p.business_name || '');
+          if (p.category && (!category || category === 'General Business')) setCategory(p.category);
           if (!customerName) setCustomerName(p.contact_name || p.business_name);
           if (!customerPhone && p.phone) setCustomerPhone(p.phone);
           if (p.address && !businessAddress) setBusinessAddress(p.address);
@@ -172,7 +176,7 @@ function ConversionsPage() {
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [selectedProspectId, prospects, customerName, customerPhone, businessAddress, city]);
+  }, [selectedProspectId, prospects, customerName, customerPhone, businessAddress, city, businessName, category]);
 
   const selectedPlan = plans.find((p) => p.slug === selectedPlanSlug);
   const includesNfc = selectedPlan?.includes_nfc ?? false;
@@ -181,8 +185,9 @@ function ConversionsPage() {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!selectedProspectId) {
-      setErrorMessage('Please select a prospect.');
+    const effectiveBizName = businessName.trim() || customerName.trim();
+    if (!effectiveBizName) {
+      setErrorMessage('Please provide a business name or customer name.');
       return;
     }
     if (!selectedPlan) {
@@ -206,7 +211,7 @@ function ConversionsPage() {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const idempotencyKey = createSalesIdempotencyKey(selectedProspectId, selectedDemoId || null);
+      const idempotencyKey = createSalesIdempotencyKey(selectedProspectId || null, selectedDemoId || null);
 
       const res = await fetch('/api/sales/convert', {
         method: 'POST',
@@ -215,11 +220,13 @@ function ConversionsPage() {
           Authorization: session ? `Bearer ${session.access_token}` : '',
         },
         body: JSON.stringify({
-          prospectId: selectedProspectId,
+          prospectId: selectedProspectId || null,
+          businessName: businessName.trim() || null,
+          category: category.trim() || 'General Business',
           demoId: selectedDemoId || null,
           planSlug: selectedPlanSlug,
-          customerName,
-          customerEmail,
+          customerName: customerName.trim(),
+          customerEmail: customerEmail.trim(),
           customerPassword: customerPassword.trim() || 'Client@1234',
           customerPhone: customerPhone.trim() || null,
           address: businessAddress.trim() || null,
@@ -237,7 +244,8 @@ function ConversionsPage() {
       if (!data.success) {
         setErrorMessage(data.error || 'Conversion failed');
       } else {
-       setHandoverPackage(data.handover || { ...data.order, activationStatus: 'pending_payment' });
+        clearSalesIdempotencyKey(selectedProspectId || null, selectedDemoId || null);
+        setHandoverPackage(data.handover || { ...data.order, activationStatus: 'pending_payment' });
       }
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Conversion failed');
@@ -368,6 +376,8 @@ function ConversionsPage() {
                 setHandoverPackage(null);
                 setSelectedProspectId('');
                 setSelectedDemoId('');
+                setBusinessName('');
+                setCategory('General Business');
                 setCustomerName('');
                 setCustomerEmail('');
                 setTransactionReference('');
@@ -390,20 +400,41 @@ function ConversionsPage() {
 
           {/* 1. Select Prospect & Demo */}
           <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xs">
-            <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
-              1. Prospect &amp; Demo Linkage
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+              <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
+                1. Prospect &amp; Demo Linkage (Optional)
+              </h3>
+              <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 inline-flex items-center gap-1 w-fit">
+                <span>⚡ Fast Onboarding: Lead auto-generated if none selected</span>
+              </span>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="space-y-1">
-                <label className="text-slate-700 font-semibold">Select Prospect *</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-slate-700 font-semibold">Existing Lead / Prospect</label>
+                  <span className="text-[10px] text-slate-400 font-medium">Optional</span>
+                </div>
                 <select
-                  required
                   value={selectedProspectId}
-                  onChange={(e) => setSelectedProspectId(e.target.value)}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    setSelectedProspectId(id);
+                    if (id) {
+                      const p = prospects.find((item) => item.id === id);
+                      if (p) {
+                        setBusinessName(p.business_name || '');
+                        if (p.category) setCategory(p.category);
+                        if (p.contact_name) setCustomerName(p.contact_name);
+                        if (p.phone) setCustomerPhone(p.phone);
+                        if (p.address) setBusinessAddress(p.address);
+                        if (p.city) setCity(p.city);
+                      }
+                    }
+                  }}
                   className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#5356EC] focus:border-[#5356EC]"
                 >
-                  <option value="">-- Choose Prospect --</option>
+                  <option value="">-- Direct Onboarding (Auto-Generate New Lead) --</option>
                   {prospects.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.business_name} ({p.stage})
@@ -499,12 +530,51 @@ function ConversionsPage() {
           {/* 3. Customer & Payment Details */}
           <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xs">
             <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
-              3. Customer &amp; Payment Information
+              3. Business, Customer &amp; Payment Information
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            {/* Business / Brand Name & Category */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="space-y-1">
-                <label className="text-slate-700 font-semibold">Customer Full Name *</label>
+                <label className="text-slate-700 font-semibold flex items-center justify-between">
+                  <span>Business / Brand / Store Name *</span>
+                  <span className="text-[10px] text-emerald-600 font-medium">Becomes Client Funnel Name</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Ramesh Sweets & Cafe / Apex Clinic"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#5356EC] focus:border-[#5356EC]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-700 font-semibold">Business Category</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#5356EC] focus:border-[#5356EC]"
+                >
+                  <option value="General Business">General Business</option>
+                  <option value="Restaurant & Cafe">Restaurant &amp; Cafe</option>
+                  <option value="Healthcare & Clinics">Healthcare &amp; Clinics</option>
+                  <option value="Retail & Shopping">Retail &amp; Shopping</option>
+                  <option value="Salon & Spa">Salon &amp; Spa</option>
+                  <option value="Gym & Fitness">Gym &amp; Fitness</option>
+                  <option value="Hotels & Hospitality">Hotels &amp; Hospitality</option>
+                  <option value="Automobile & Services">Automobile &amp; Services</option>
+                  <option value="Education & Coaching">Education &amp; Coaching</option>
+                  <option value="Real Estate">Real Estate</option>
+                  <option value="Professional Services">Professional Services</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs pt-1">
+              <div className="space-y-1">
+                <label className="text-slate-700 font-semibold">Customer / Owner Name *</label>
                 <input
                   type="text"
                   required

@@ -304,15 +304,6 @@ export const googleBusinessProfileService = {
     error?: string;
     errorType?: 'oauth_cancelled' | 'no_locations' | 'api_error';
   }> => {
-    if (businessId && typeof window !== 'undefined') {
-      googleBusinessProfileService.initiateOAuth(businessId, returnUrl);
-      return {
-        success: true,
-        status: 'connecting',
-        locations: [],
-      };
-    }
-
     return {
       success: false,
       status: 'not_connected',

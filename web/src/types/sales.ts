@@ -63,6 +63,9 @@ export interface Prospect {
 export interface SalesDemoConfig {
   headline?: string;
   subheadline?: string;
+  address?: string;
+  city?: string;
+  phone?: string;
   minStarRatingForGoogle?: number;
   enableTopics?: boolean;
   topics?: string[];

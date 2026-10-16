@@ -4,12 +4,15 @@ import { supabase } from '@/lib/supabase/client';
 import { getAdminCustomers, updateDashboardStatus } from '@/services/adminService';
 import { Search, Filter, MoreHorizontal, User, ShieldCheck, Mail, Phone, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 export default function CustomersPage() {
+  const searchParams = useSearchParams();
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sessionToken, setSessionToken] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   
   const filtered = customers.filter(c => 
@@ -50,7 +53,7 @@ export default function CustomersPage() {
       await updateDashboardStatus(sessionToken, bizId, newStatus, 'Manual admin override');
       setCustomers(customers.map(c => {
         if (c.business && c.business.id === bizId) {
-           return { ...c, business: { ...c.business, dashboard_status: newStatus } };
+            return { ...c, business: { ...c.business, status: newStatus }, dashboardStatus: newStatus };
         }
         return c;
       }));
@@ -71,9 +74,9 @@ export default function CustomersPage() {
            <button onClick={exportData} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50">
              Export CSV
            </button>
-           <button onClick={() => alert('Filter module triggered')} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50">
-             <Filter className="w-4 h-4" /> Filters
-           </button>
+           <button onClick={() => setSearchQuery('')} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50">
+              <Filter className="w-4 h-4" /> Clear search
+            </button>
         </div>
       </div>
 
@@ -139,8 +142,8 @@ export default function CustomersPage() {
                     <td className="px-6 py-4">
                       {c.business ? (
                         <select 
-                          className={`text-xs font-bold px-2 py-1 rounded-md border-0 outline-none cursor-pointer ${c.business.dashboard_status === 'active' ? 'bg-emerald-50 text-emerald-700' : c.business.dashboard_status === 'suspended' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}
-                          value={c.business.dashboard_status || 'pending'}
+                           className={`text-xs font-bold px-2 py-1 rounded-md border-0 outline-none cursor-pointer ${c.business.status === 'active' ? 'bg-emerald-50 text-emerald-700' : c.business.status === 'suspended' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}
+                           value={c.business.status || 'pending'}
                           onChange={(e) => handleStatusUpdate(c.business.id, e.target.value)}
                         >
                           <option value="pending">Pending Setup</option>
@@ -161,9 +164,8 @@ export default function CustomersPage() {
                       </button>
                       {openMenuId === (c.customerId || i) && (
                         <div className="absolute right-8 top-10 w-48 bg-white border border-slate-200 shadow-xl rounded-xl py-2 z-50 text-left flex flex-col">
-                           <button onClick={() => { alert('View profile clicked'); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left">View Profile</button>
-                           <button onClick={() => { alert('Reset password triggered'); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left">Reset Password</button>
-                           <button onClick={() => { alert('Delete account triggered'); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 text-left">Delete Account</button>
+                            {c.business ? <Link href="/admin/businesses" onClick={() => setOpenMenuId(null)} className="block w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">View Business</Link> : <span className="block px-4 py-2 text-sm text-slate-400">No business linked</span>}
+                            {c.email ? <a href={`mailto:${c.email}`} onClick={() => setOpenMenuId(null)} className="block w-full px-4 py-2 text-sm text-blue-600 hover:bg-blue-50">Email Customer</a> : <span className="block px-4 py-2 text-sm text-slate-400">No email available</span>}
                         </div>
                       )}
                     </td>

@@ -41,6 +41,7 @@ export default function CustomerMenuPage() {
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [isMenuEnabled, setIsMenuEnabled] = useState(true);
 
   // Homescreen Install State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -97,12 +98,16 @@ export default function CustomerMenuPage() {
     businessService.getBusinessBySlug(businessSlug)
       .then(async (biz) => {
         if (!biz) return;
+        const menuEnabled = biz.menuEnabled !== false && biz.theme?.menuEnabled !== false;
+        setBusiness(biz);
+        setIsMenuEnabled(menuEnabled);
+        if (!menuEnabled) return;
+
         const [cats, itms] = await Promise.all([
           menuService.getCategories(biz.businessId),
           menuService.getItems(biz.businessId)
         ]);
         if (!isActive) return;
-        setBusiness(biz);
         setCategories(cats);
         setItems(itms);
         const isSaved = localStorage.getItem(`menu_saved_${businessSlug}`);
@@ -197,6 +202,21 @@ export default function CustomerMenuPage() {
           <h2 className="font-serif text-2xl font-bold text-slate-900">Catalogue unavailable</h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">We could not load this public catalogue right now. Please return to the review page and try again.</p>
           <Button type="button" onClick={() => router.back()} className="mt-5 w-full rounded-xl">Return to review page</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isMenuEnabled) {
+    return (
+      <div className="-mt-8 flex min-h-[60vh] w-full items-center justify-center rounded-t-3xl bg-[#FDFBF7] px-5 py-12">
+        <div className="mx-auto max-w-sm rounded-3xl border border-slate-200 bg-white p-7 text-center shadow-lg" role="status">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+            <UtensilsCrossed className="h-6 w-6" aria-hidden="true" />
+          </div>
+          <h2 className="font-serif text-2xl font-bold text-slate-900">{terminology.isFood ? 'Menu' : 'Catalogue'} not available</h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">This business has not enabled its public {terminology.isFood ? 'menu' : 'catalogue'}.</p>
+          <Button type="button" onClick={() => router.push(`/f/${businessSlug}`)} className="mt-5 w-full rounded-xl">Return to review page</Button>
         </div>
       </div>
     );
