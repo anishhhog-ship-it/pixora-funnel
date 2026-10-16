@@ -1,4 +1,4 @@
-import { generateCombinatorialReviews } from './reviewCombinator';
+import { generateCombinatorialReviews, rankReviewsByKeyword } from './reviewCombinator';
 import { supabase } from '@/lib/supabase/client';
 
 export interface QuickReview {
@@ -47,13 +47,14 @@ export async function generateSmartReviewsAsync(
         .from('review_category_templates')
         .select('content, category')
         .or(`category.ilike.%${rawCategory}%,category.ilike.%${rootWord}%`)
-        .limit(10);
+        .limit(20);
 
       if (customTemplates && customTemplates.length > 0) {
         const customized = (customTemplates as Array<{ content: string }>).map((t) => t.content.replace(/{biz}/g, businessName));
-        // Prepend custom template to results
-        const blended = [...customized, ...baseReviews];
-        return Array.from(new Set(blended)).slice(0, count);
+        // Dynamically rank all templates by customer topic keyword (e.g. Crockery, Gifts, Essentials, etc.)
+        const allCandidates = Array.from(new Set([...customized, ...baseReviews]));
+        const ranked = rankReviewsByKeyword(allCandidates, customerInput);
+        return ranked.slice(0, count);
       }
     }
 

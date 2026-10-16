@@ -330,6 +330,77 @@ export function generateCategoryReviewPool(category: 'sports' | 'kitchen', limit
 }
 
 /**
+ * Ranks review texts based on semantic relevance to a selected topic or keyword.
+ * Ensures clicking 'Crockery' gives crockery reviews, 'Gifts' gives gift reviews, etc.
+ */
+export function rankReviewsByKeyword(reviews: string[], keyword?: string): string[] {
+  if (!reviews || reviews.length === 0) return [];
+  if (!keyword || !keyword.trim()) {
+    return [...reviews].sort(() => 0.5 - Math.random());
+  }
+
+  const clean = keyword.toLowerCase().trim();
+  const stopWords = new Set(['and', '&', 'the', 'for', 'with', 'our', 'all', 'a', 'in', 'of']);
+  const rawTerms = clean
+    .split(/[\s,&/]+/)
+    .map(w => w.trim())
+    .filter(w => w.length > 2 && !stopWords.has(w));
+
+  const synonyms: Record<string, string[]> = {
+    crockery: ['crockery', 'dinner', 'dinnerware', 'glassware', 'bone china', 'plate', 'bowl', 'mug', 'cup', 'serving', 'opalware', 'melamine', 'ceramic'],
+    dinnerware: ['dinner', 'crockery', 'dinnerware', 'bone china', 'plate', 'bowl', 'serving', 'opalware'],
+    gift: ['gift', 'gifts', 'hamper', 'hampers', 'wedding', 'return gift', 'housewarming', 'brass', 'thali', 'festive', 'present', 'packaging'],
+    hampers: ['hamper', 'hampers', 'gift', 'gifts', 'wedding', 'return gift', 'housewarming', 'packaging'],
+    household: ['household', 'storage', 'dabba', 'container', 'containers', 'jars', 'organizer', 'rack', 'flask', 'bottle', 'utility', 'pantry', 'mop'],
+    essentials: ['essential', 'essentials', 'household', 'storage', 'dabba', 'container', 'jars', 'organizer', 'rack', 'utility', 'pantry'],
+    kitchenware: ['cookware', 'kitchenware', 'pan', 'kadhai', 'tri-ply', 'pressure cooker', 'stove', 'gas', 'pot', 'knife', 'knives', 'cutlery', 'utensil', 'non-stick'],
+    cookware: ['cookware', 'pan', 'pans', 'kadhai', 'tri-ply', 'pressure cooker', 'pot', 'pots', 'non-stick', 'granite', 'induction'],
+    knives: ['knife', 'knives', 'chef knife', 'chopping', 'board', 'cutlery', 'shears', 'blade'],
+    stoves: ['stove', 'gas', 'chimney', 'mixer', 'grinder', 'hob', 'appliance', 'appliances'],
+    pricing: ['price', 'pricing', 'rate', 'rates', 'discount', 'budget', 'exchange', 'warranty', 'transparent', 'value', 'rupee', 'affordable'],
+    value: ['value', 'price', 'pricing', 'rate', 'discount', 'warranty', 'worth'],
+    variety: ['variety', 'selection', 'range', 'collection', 'options', 'brands', 'aisles', 'stock'],
+    experience: ['experience', 'staff', 'service', 'shopping', 'visit', 'recommend', 'helpful', 'guidance', 'delivery', 'owner', 'courteous'],
+    guidance: ['guidance', 'staff', 'owner', 'advice', 'help', 'patient', 'assisted', 'explained'],
+    bat: ['bat', 'cricket', 'willow', 'ping', 'balance', 'stroke', 'knocking', 'sweet spot'],
+    racket: ['racket', 'tennis', 'badminton', 'string', 'tension', 'yonex', 'grip', 'stringing'],
+    ball: ['ball', 'balls', 'leather', 'seam', 'bounce', 'tennis ball', 'football', 'pressure'],
+    gear: ['gear', 'protective', 'pads', 'gloves', 'kit', 'accessories', 'equipment', 'guards'],
+    durability: ['durable', 'durability', 'stitching', 'leather', 'long-lasting', 'quality', 'hold', 'gauge'],
+  };
+
+  const expandedTerms = new Set<string>(rawTerms);
+  for (const term of rawTerms) {
+    if (synonyms[term]) {
+      synonyms[term].forEach(s => expandedTerms.add(s));
+    }
+  }
+
+  const scored = reviews.map(text => {
+    const lower = text.toLowerCase();
+    let score = 0;
+
+    // Full phrase exact match
+    if (lower.includes(clean)) {
+      score += 15;
+    }
+
+    // Individual term and synonym matches
+    for (const term of expandedTerms) {
+      if (lower.includes(term)) {
+        score += term.length >= 6 ? 4 : 2;
+      }
+    }
+
+    const tieBreaker = Math.random();
+    return { text, score: score + tieBreaker };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.map(s => s.text);
+}
+
+/**
  * Generates dynamic, category-tailored, and combinatorially unique reviews.
  * Seamlessly integrates the massive industry library (clothes, perfumes, offices, sports, kitchen, etc.)
  * with 10K+ combinator synthesis for infinite variations!
@@ -351,14 +422,10 @@ export function generateCombinatorialReviews(count: number, businessName: string
   // 1. First check if we have tailored reviews from our massive category library
   const categoryReviews = getReviewsForCategory(category || '', businessName);
   if (categoryReviews.length > 0) {
-    // Shuffle and pick
-    const shuffled = [...categoryReviews].sort(() => 0.5 - Math.random());
-    for (let i = 0; i < Math.min(count, shuffled.length); i++) {
-      let rText = shuffled[i];
-      if (highlight && highlight.trim().length > 0 && i === 0) {
-        rText += ` Especially loved: ${highlight.trim()}.`;
-      }
-      result.push(rText);
+    // Rank by keyword relevance so clicking a topic returns the exact corresponding review!
+    const ranked = rankReviewsByKeyword(categoryReviews, highlight);
+    for (let i = 0; i < Math.min(count, ranked.length); i++) {
+      result.push(ranked[i]);
     }
   }
 
