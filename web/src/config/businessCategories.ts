@@ -1185,6 +1185,44 @@ export const BUSINESS_CATEGORIES: Record<string, BusinessCategoryConfig> = {
     icon: 'Gift',
   },
 
+  perfumes: {
+    id: 'perfumes',
+    name: 'Perfume, Fragrance & Attar Boutique',
+    aliases: [
+      'perfume', 'perfumes', 'fragrance', 'fragrances', 'attar', 'oud', 'scent',
+      'cologne', 'aroma', 'parfum', 'eau de parfum', 'dehn al oud', 'musk',
+      'perfume store', 'perfume shop', 'fragrance store', 'attar shop', 'bakhoor'
+    ],
+    description: 'Artisanal attars, French designer fragrances, pure Dehn Al Oud, luxury perfume oils & discovery sets',
+    theme: 'Mystical, Luxurious & Sensual Scent',
+    backgroundImage: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=1200&h=800&fit=crop',
+    mobileBackgroundImage: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=1080&h=1920&fit=crop',
+    imageOptions: [
+      { id: 'perf_01', url: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=1200&h=800&fit=crop', label: 'Luxury Perfume & Attar Showcase', qualityScore: 10, isDefault: true },
+    ],
+    overlay: {
+      type: 'gradient',
+      opacity: 0.68,
+      gradient: 'linear-gradient(180deg, rgba(26,16,47,0.4) 0%, rgba(10,5,20,0.85) 100%)',
+    },
+    defaultPrimaryColor: '#1A102F',
+    defaultSecondaryColor: '#D4AF37',
+    defaultFontStyle: 'modern',
+    menuEnabled: false,
+    servicesEnabled: false,
+    productsEnabled: true,
+    suggestedCTA: 'Review Your Fragrance Experience',
+    postCompletionCTA: 'Explore Fragrance & Attar Collection',
+    headline: 'How was your fragrance experience?',
+    subheadline: 'From artisanal oud & pure attars to French designer perfumes! Share your thoughts on longevity, sillage & notes.',
+    footerFeatures: [
+      { label: 'Long-Lasting Projection', icon: 'Sparkles' },
+      { label: 'Pure Artisanal Oils', icon: 'ShieldCheck' },
+      { label: 'Luxury Packaging', icon: 'Award' },
+    ],
+    icon: 'Sparkles',
+  },
+
   other: {
     id: 'other',
     name: 'Local Business & Services',
@@ -1260,6 +1298,7 @@ export const CATEGORY_REVIEW_TOPICS: Record<string, string[]> = {
   paint: ['Colour Selection', 'Finish Quality', 'Product Variety', 'Colour Advice', 'Pricing & Value', 'Overall Experience'],
   sports: ['Bat & Racket Quality', 'Ball & Gear Durability', 'Brand Variety', 'Pricing & Value', 'Staff Guidance', 'Overall Experience'],
   kitchen: ['Kitchenware Quality', 'Crockery & Dinnerware', 'Gift Items & Hampers', 'Household Essentials', 'Pricing & Variety', 'Overall Experience'],
+  perfumes: ['Longevity & Sillage', 'Oud & Attar Purity', 'French & Designer Blends', 'Packaging & Atomizer', 'Staff Guidance & Notes', 'Overall Experience'],
   other: ['Service Quality', 'Staff Professionalism', 'Communication', 'Timely Delivery', 'Pricing & Value', 'Overall Experience'],
 };
 
@@ -1314,8 +1353,8 @@ export function normalizeBusinessCategory(rawCategory?: string): BusinessCategor
     { keywords: ['clinic', 'doctor', 'hospital', 'health', 'physician', 'physio', 'ayurved', 'homeopath'], categoryId: 'clinic' },
     { keywords: ['gym', 'fitness', 'crossfit', 'workout', 'yoga', 'pilates', 'trainer', 'exercise'], categoryId: 'gym' },
     { keywords: ['jewel', 'gold', 'diamond', 'silver', 'gem', 'ornament'], categoryId: 'jewellery' },
+    { keywords: ['perfume', 'perfumes', 'fragrance', 'fragrances', 'attar', 'oud', 'scent', 'cologne', 'aroma', 'parfum', 'eau de parfum', 'dehn al oud', 'musk', 'bakhoor'], categoryId: 'perfumes' },
     { keywords: ['fashion', 'apparel', 'cloth', 'clothes', 'garments', 'saree', 'tailor', 'boutique', 'wear', 'couture'], categoryId: 'fashion' },
-    { keywords: ['perfume', 'fragrance', 'attar', 'oud', 'scent', 'cologne', 'aroma'], categoryId: 'fashion' },
     { keywords: ['retail', 'store', 'shop', 'mart', 'supermarket', 'grocery', 'produce'], categoryId: 'retail' },
     { keywords: ['auto', 'car', 'motor', 'bike', 'mechanic', 'garage', 'tyre', 'tire', 'service center'], categoryId: 'automotive' },
     { keywords: ['estate', 'property', 'builder', 'realtor', 'architect', 'interior', 'construction', 'real estate'], categoryId: 'real-estate' },
@@ -1414,7 +1453,7 @@ export function getAllCategories(): BusinessCategoryConfig[] {
 export function isFoodAndDiningBusiness(rawCategory?: string): boolean {
   if (!rawCategory) return true; // Default fallback is restaurant
   const config = normalizeBusinessCategory(rawCategory);
-  if (config.id === 'kitchen' || config.id === 'sports') return false;
+  if (config.id === 'kitchen' || config.id === 'sports' || config.id === 'perfumes') return false;
 
   const clean = rawCategory.toLowerCase().trim();
   if (
@@ -1425,7 +1464,11 @@ export function isFoodAndDiningBusiness(rawCategory?: string): boolean {
     clean.includes('crockery') ||
     clean.includes('sports') ||
     clean.includes('bat') ||
-    clean.includes('tennis')
+    clean.includes('tennis') ||
+    clean.includes('perfume') ||
+    clean.includes('attar') ||
+    clean.includes('fragrance') ||
+    clean.includes('oud')
   ) {
     return false;
   }

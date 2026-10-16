@@ -52,6 +52,14 @@ const TEMPLATES = [
     description: 'Showcase for kitchenware, luxury bone china crockery, daily household items & gift hampers.',
     features: ['Cookware & Crockery Topics', 'Gift Items Sentiment', 'AI Review Generator'],
   },
+  {
+    slug: 'perfumes',
+    name: 'Luxury Perfume & Attar Boutique',
+    category: 'Perfume, Fragrance & Attar Boutique',
+    color: '#D4AF37',
+    description: 'High-end fragrance aesthetic for artisanal Dehn Al Oud, French extraits, pure attars & gift discovery boxes.',
+    features: ['Longevity & Sillage Topics', 'Oud & Extrait Sentiment', '88,000+ AI Review Combinations'],
+  },
 ];
 
 export default function DemoTemplatesPage() {

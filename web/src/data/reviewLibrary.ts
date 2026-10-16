@@ -45,10 +45,13 @@ export async function generateSmartReviewsAsync(
 
     // Attempt to fetch custom templates for this category
     if (rawCategory && typeof window !== 'undefined') {
-      const rootWord = rawCategory.toLowerCase().includes('kitchen')
+      const lower = rawCategory.toLowerCase();
+      const rootWord = lower.includes('kitchen')
         ? 'kitchen'
-        : rawCategory.toLowerCase().includes('sport')
+        : lower.includes('sport')
         ? 'sport'
+        : lower.includes('perfume') || lower.includes('fragrance') || lower.includes('attar') || lower.includes('oud')
+        ? 'perfume'
         : rawCategory.split(/[,&]/)[0].trim();
 
       const { data: customTemplates } = await supabase

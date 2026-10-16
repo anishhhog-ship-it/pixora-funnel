@@ -572,6 +572,55 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
       base2: 'Top-quality kitchenware, household storage, and crockery sets at {biz}. Staff took time to explain induction compatibility and wrapped our gift hampers with perfection. 5 stars!',
       base3: 'Best home and kitchen store in the city! Heavy gauge stainless steel, elegant dinner sets, decorative gift items, and authentic brand warranties. Highly recommended!'
     }
+  },
+
+  'Perfume, Fragrance & Attar Boutique': {
+    category: 'Perfume, Fragrance & Attar Boutique',
+    coverImage: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=1200&h=800&fit=crop',
+    logo: '/placeholder.png',
+    tagline: 'Artisanal Dehn Al Oud, French designer extraits, pure non-alcoholic attars & luxury gift sets.',
+    keywords: ['Longevity & Sillage', 'Oud & Attar Purity', 'French & Designer Blends', 'Packaging & Atomizer', 'Staff Guidance & Notes', 'Overall Experience'],
+    sampleCategories: ['Artisanal Attars & Dehn Al Oud', 'French & Designer Extraits', 'Pure White Musk & Floral Oils', 'Bakhoor & Luxury Samplers'],
+    sampleItems: [
+      {
+        name: 'Aged Dehn Al Oud Cambodi (3ml Tola)',
+        description: 'Grade-A vintage agarwood oil distilled in copper stills. Deep woody, balsamic, leathery dry down with 24-hour skin longevity.',
+        price: 4200,
+        image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      },
+      {
+        name: 'Baccarat Amber Floral Extrait (50ml)',
+        description: '35% concentration Extrait de Parfum with saffron, Egyptian jasmine, cedarwood, and rich ambergris notes. Beastly sillage and room-filling trail.',
+        price: 3499,
+        image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      },
+      {
+        name: 'Royal White Musk Tahara (6ml Roll-on)',
+        description: 'Thick creamy non-alcoholic pure white musk with powdery lily and soft cotton undertones. Clean, soothing, and stain-free on fabrics.',
+        price: 1250,
+        image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      },
+      {
+        name: 'Imperial Oud & French Perfume Discovery Box (6 x 10ml)',
+        description: 'Velvet presentation gift box featuring 6 signature perfumes & attars with precision micro-mist atomizers and magnetic caps.',
+        price: 2850,
+        image: 'https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      }
+    ],
+    reviewKeywords: ['Dehn Al Oud Purity & Longevity', 'French Extrait & Sillage', 'Luxury Bottle Packaging & Atomizer'],
+    aiReviewTemplates: {
+      base1: 'Breathtaking fragrance boutique at {biz}! Their aged Dehn Al Oud Cambodi and Baccarat Amber Extrait have incredible 14+ hour longevity and projection. Pure artisanal craft.',
+      base2: 'The finest perfume and attar store in the city! Staff guided us through top, heart, and base notes without rush. The luxury magnetic cap bottle and micro-mist atomizer are elite at {biz}.',
+      base3: 'Exceptional purity and royal collection at {biz}! Got their Royal White Musk Tahara and discovery gift set. Authentic ingredients, zero synthetic harshness, and beastly projection. 5 stars!'
+    }
   }
 };
 

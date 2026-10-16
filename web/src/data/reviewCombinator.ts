@@ -332,6 +332,151 @@ export const CATEGORY_COMBINATOR_FRAGMENTS: Record<string, { openings: string[];
       "Our daily cooking has become so much more enjoyable thanks to {biz}.",
       "Best utensil shopping experience by a mile."
     ]
+  },
+
+  perfumes: {
+    openings: [
+      "Outstanding luxury perfume shopping experience at {biz}!",
+      "Visiting {biz} was an absolute olfactory masterclass from the moment I stepped inside.",
+      "If you're looking for beast-mode longevity, artisanal attars, or niche designer perfumes, {biz} is the place.",
+      "I am genuinely blown away by the richness of the fragrance collection at {biz}.",
+      "Such an enchanting and sophisticated fragrance boutique discovery at {biz}.",
+      "I was searching for a long-lasting signature scent and found the perfect blend at {biz}.",
+      "Every perfume collector and fragrance lover needs to experience the collection at {biz}.",
+      "From the moment we walked into {biz}, the perfume consultants gave us an extraordinary sensory consultation.",
+      "What a fantastic fragrance boutique {biz} turned out to be!",
+      "I rarely leave reviews, but {biz} sets an unmatched standard for luxury perfumes and pure attars.",
+      "We bought both French designer perfumes and pure Arabic attars from {biz} and couldn't be happier.",
+      "High-end artisanal fragrance boutique with honest pricing and genuine 35% oil concentration at {biz}.",
+      "Such an elegant, welcoming, and beautifully scented showroom at {biz}.",
+      "I had heard wonderful things about their oud and extrait perfumes at {biz}, and every expectation was exceeded.",
+      "There is simply no better perfume boutique in the entire region than {biz}.",
+      "A massive shoutout to the passionate fragrance team at {biz} for helping me curate my scent wardrobe.",
+      "Everything about {biz} screams royal luxury, pure ingredients, and timeless elegance.",
+      "Just wrapped up an incredible fragrance haul at {biz} for my wedding festivities.",
+      "I am completely captivated by the longevity and dry-down of the perfumes from {biz}.",
+      "Top-notch niche perfumes, pure alcohol-free attars, and luxury packaging at {biz}.",
+      "If you care about projection, sillage, and compliments, {biz} is the fragrance showroom to trust.",
+      "What a remarkably pleasant scent discovery experience at {biz}!",
+      "We found every fragrance note on our wishlist — from fresh citrus to smoky oud — under one roof at {biz}.",
+      "The best decision I made for my everyday grooming and special occasions was visiting {biz}.",
+      "Effortlessly smooth and sensory shopping experience from scent strips to luxury packaging at {biz}.",
+      "Best perfume and attar store in the city! {biz} has scents that easily outshine high-end duty-free shops.",
+      "My fragrance journey at {biz} was pure perfection.",
+      "If you want authentic Dehn Al Oud and compliments wherever you go, head straight to {biz}.",
+      "We completely upgraded our family perfume collection at {biz} and the compliments keep coming.",
+      "The collection of extrait perfumes and oriental attars at {biz} is truly world-class.",
+      "I was blown away by the projection and longevity of the perfumes crafted by {biz}.",
+      "Visiting {biz} was an absolute treat for the senses.",
+      "Found my holy-grail signature fragrance at {biz} after searching for years.",
+      "Hands down the finest niche perfume house in the city: {biz}.",
+      "Every bride and groom should check out the wedding fragrance sets at {biz}.",
+      "Such a relaxing and generous fragrance testing experience at {biz}.",
+      "From fresh summer aquatics to warm winter gourmands, {biz} has an unbelievable selection.",
+      "We just restocked our favorite perfume oils and home bakhoor at {biz}.",
+      "Incredible projection, authentic natural ingredients, and courteous staff at {biz}.",
+      "A five-star haven for true perfume connoisseurs at {biz}."
+    ],
+    bodies: [
+      "The Dehn Al Oud Cambodi attar is 100% pure, resinous, and leaves a regal woody scent trail that lasts over 24 hours.",
+      "Their Baccarat Amber Floral Extrait de Parfum has beast-mode sillage — two sprays filled the entire room and stayed on my jacket for 3 days.",
+      "The Aventus Birch & Pineapple Bergamot Eau de Parfum opens with sparkling freshness and settles into a masculine smoky oakmoss dry-down.",
+      "Their Royal White Musk Tahara roll-on is thick, creamy, and creates an intoxicating clean powdery aura that stays intimate on skin.",
+      "The Ombre Nomade Oud Rose blend is pure royalty, balancing rich agarwood with velvety raspberry and Turkish rose.",
+      "Their Vanilla Tobacco & Tonka Bean gourmand fragrance is cozy, rich, and gave me compliments throughout an entire winter evening.",
+      "The Silver Mountain Water and green tea accord feels crisp, airy, and delivers invigorating freshness in hot weather.",
+      "Their Saffron & Tuscan Leather Eau de Parfum has an opulent suede presence that feels commanding and ultra-luxurious.",
+      "Staff demonstrated the dry-down stages patiently on scent strips, explaining the top, heart, and base notes without rushing.",
+      "The atomizers on their 100ml bottles produce a wide, ultra-fine pressurized mist that distributes the fragrance evenly on fabric.",
+      "Their bottles feature heavy glass bases, engraved metallic plaques, and satisfying magnetic caps that feel like high-end European niche houses.",
+      "The Aqua Marine Breeze scent combines salty sea notes, Italian mandarin, and crisp ambergris for the ultimate summer companion.",
+      "We bought the 5-piece Fragrance Discovery Sampler Set, and each 10ml travel spray gives over 150 sprays of pure luxury.",
+      "Their Rose Taif Concentrated Attar has no synthetic alcohol sting, just the distilled essence of morning dew and blooming Taif petals.",
+      "The Santal 33 Cardamom & Violet accord has a dry papery sandalwood vibe that projects effortlessly for 12+ hours.",
+      "Their Black Phantom dark gourmand blend of roasted coffee, dark chocolate, and Caribbean rum is deliciously addictive.",
+      "They have an exquisite collection of Bakhoor incense wood chips and crystal burners that perfume the entire house for days.",
+      "The non-alcoholic roll-on attars are concentrated to 40% oil, making them safe for sensitive skin and daily prayers.",
+      "Every fragrance is verified for skin safety, IFRA compliance, and 100% authenticity with zero headache-inducing synthetics.",
+      "The staff accurately analyzed my skin chemistry and recommended a fragrance that projects with great sillage throughout my work day.",
+      "The Bleu Cedarwood, Grapefruit & Mint Eau de Parfum is versatile, mass-pleasing, and performs reliably in air-conditioned offices.",
+      "Their Ambergris Noir and smoky labdanum accord has an enigmatic, dark sillage that turns heads at every formal event.",
+      "We bought 25 customized attar gift sets in velvet pouches for wedding return gifts, and all our guests were delighted.",
+      "The longevity on natural fabrics like cotton, linen, and wool is unmatched — I can still smell the heart notes after laundry.",
+      "Their Sauvage Ambroxan & Sichuan Pepper blend cuts through humidity and heat with intense freshness and projecting sillage.",
+      "The Sweet Caramel, Praline & Vanilla Extrait smells edible and warm, earning me non-stop compliments from morning to night.",
+      "They gave us mini tester decants to wear test at home for 24 hours before we finalized our signature 100ml purchase.",
+      "The Mysore Sandalwood and floral attar is velvety smooth, grounding, and brings immense calmness with just a single drop.",
+      "Their pricing is exceptionally reasonable for 30%+ perfume concentrations compared to overpriced retail designer counters.",
+      "The showroom ambiance is spotless with fresh coffee beans at every counter to reset your nose between testing sessions.",
+      "The owner shared fascinating insights about maceration, natural vs synthetic molecules, and how to maximize scent longevity.",
+      "Their Solid Perfume Balms are pocket-friendly, moisturize pulse points, and make re-applying on flights completely effortless.",
+      "The packaging with gold-embossed magnetic presentation boxes makes their perfumes look twice as expensive as they cost.",
+      "The Citrus Neroli & Bergamot Eau de Cologne is wonderfully uplifting and gives a crisp, energized start to every morning.",
+      "Their Musk Al Ghazal and dark amber attar is warm, intimate, and projects with profound oriental elegance.",
+      "The Mukhallat Supreme combines saffron, amber, rose, and Hindi oud in an olfactory symphony worthy of royalty.",
+      "We received attentive, personalized fragrance layering advice that created a custom scent combination unique to my personality.",
+      "The longevity easily surpasses 14 hours on skin and stays on leather watch straps and collars for weeks.",
+      "Their Vetiver & Haitian Cedarwood scent is earthy, woody, and gives off an air of understated elegance and authority.",
+      "The Sweet Tobacco & Cherry smoke blend is seductive, rich, and projects an irresistible scent trail in evening parties.",
+      "The alcohol-free roll-on oils come in beautiful crystal tolas with glass dip-sticks that apply smoothly on pulse points.",
+      "Their Patchouli & Indonesian Pepper blend is dark, mysterious, and commands attention without being overpowering.",
+      "The Lavender, Mint & Cardamom fougère blend is fresh, barbershop clean, and ideal for daily office and boardroom meetings.",
+      "They stock rare vintage macerated oud oils that develop richer, deeper resinous notes as they age on skin.",
+      "The atomizers have a leak-proof lock mechanism that makes carrying these bottles in luggage completely worry-free.",
+      "Their Iris & Powdery Cacao blend has a silky, sophisticated lipstick-smooth dry-down reminiscent of French haute perfumery.",
+      "We loved the transparent batch labeling with distillation dates and purity certificates for their artisanal attars.",
+      "The Fig, Coconut & Green Leaf Eau de Parfum is uniquely refreshing and transports you to a Mediterranean coastal breeze.",
+      "The sillage creates a 6-foot scent bubble that leaves an unforgettable signature trail everywhere you walk.",
+      "Their Leather & Raspberry accord is daring, luxurious, and performs with extraordinary tenacity on winter evenings.",
+      "The White Amber & Crystal Musk combination smells like the cleanest, freshest luxury hotel lobby in the world.",
+      "The staff demonstrated genuine enthusiasm for perfumery, letting us smell individual raw absolutes and essential oils.",
+      "The Cinnamon Bark, Nutmeg & Cognac winter extrait is rich, boozy, and wraps you in an ultra-luxurious aromatic blanket.",
+      "The pricing is remarkably competitive with generous discounts when purchasing full gift sets and multiple 50ml bottles.",
+      "The customer service, complimentary gift wrapping, and personalized note cards made our anniversary gift unforgettable.",
+      "Their Dehn Al Oud Seufi has an initial animalic punch that transitions into the smoothest, most divine balsamic wood."
+    ],
+    closings: [
+      "I will definitely be returning to {biz} for all my signature perfumes and seasonal scents!",
+      "Highly recommended to every perfume enthusiast, attar lover, and luxury shopper.",
+      "A solid 5-star rating for beastly longevity, authentic notes, and incredible sillage.",
+      "I have never received this many compliments on a fragrance before visiting {biz}.",
+      "You have earned a loyal fragrance customer for life.",
+      "Do yourself a favor and experience their artisanal attars and extrait perfumes.",
+      "A big thumbs up for exceptional fragrance quality, projection, and hospitality.",
+      "Easily the best perfume and attar purchase I have made in years.",
+      "Keep up the phenomenal standards and olfactory artistry!",
+      "Thank you {biz} for helping me find my signature scent.",
+      "I have already recommended {biz} to all my friends and colleagues.",
+      "Top marks for longevity, sillage, bottle aesthetics, and customer guidance.",
+      "Looking forward to exploring their new seasonal extrait releases soon.",
+      "An easy 10/10 recommendation for anyone who wants to smell luxurious.",
+      "Every rupee spent here was completely worth it for this level of longevity.",
+      "They truly understand the science and art of high-end perfumery.",
+      "An absolute must-visit boutique for anyone who loves smelling divine.",
+      "The premier fragrance destination in the city without a doubt.",
+      "Thank you for the patient scent consultation and wonderful perfume!",
+      "We left with big smiles, divine aromas, and beautiful bottles in hand.",
+      "I will never buy designer perfumes from generic department stores again.",
+      "Can't wait to wear this fragrance to my upcoming celebrations!",
+      "The projection and scent trail speak for themselves.",
+      "My fragrance collection finally feels complete thanks to {biz}.",
+      "Best perfume boutique experience by a mile.",
+      "Pure olfactory magic in every single drop.",
+      "A five-star masterpiece for longevity, purity, and presentation.",
+      "Hands down the most authentic oud and attar house in town.",
+      "The compliments I get at work every day are proof of their quality.",
+      "Unmatched projection that lasts from morning until the next day.",
+      "Thank you {biz} for making luxury fragrances so accessible and authentic.",
+      "The finest scent wardrobe investment I have ever made.",
+      "I'm hooked on their extrait perfumes and will be back for holiday gifts.",
+      "Truly royalty in a bottle from {biz}.",
+      "Worth every single penny for genuine 14+ hour longevity.",
+      "A magical scent discovery that I will treasure for years.",
+      "Top-tier perfumery that rivals Paris and Dubai boutiques.",
+      "My new permanent destination for all things fragrance, attar, and oud.",
+      "Thank you for the warm hospitality and intoxicating perfumes!",
+      "Flawless from top note to dry-down: {biz} is in a league of its own."
+    ]
   }
 };
 
@@ -341,7 +486,7 @@ import { getReviewsForCategory } from './categoryReviews';
  * Generates an exact deterministic or randomized pool of up to N reviews for a given category.
  * Mathematically produces 50,000+ unique, non-repeating reviews for Sports or Kitchen House.
  */
-export function generateCategoryReviewPool(category: 'sports' | 'kitchen', limit: number = 10000, businessName: string = '{biz}'): string[] {
+export function generateCategoryReviewPool(category: 'sports' | 'kitchen' | 'perfumes', limit: number = 10000, businessName: string = '{biz}'): string[] {
   const lib = CATEGORY_COMBINATOR_FRAGMENTS[category] || CATEGORY_COMBINATOR_FRAGMENTS.sports;
   const pool = new Set<string>();
 
@@ -383,6 +528,7 @@ export function rankReviewsByKeyword(reviews: string[], keyword?: string, exclud
     .filter(w => w.length > 2 && !stopWords.has(w));
 
   const synonyms: Record<string, string[]> = {
+    // Crockery & Kitchen House synonyms
     crockery: ['crockery', 'dinner', 'dinnerware', 'glassware', 'bone china', 'plate', 'bowl', 'mug', 'cup', 'serving', 'opalware', 'melamine', 'ceramic'],
     dinnerware: ['dinner', 'crockery', 'dinnerware', 'bone china', 'plate', 'bowl', 'serving', 'opalware'],
     gift: ['gift', 'gifts', 'hamper', 'hampers', 'wedding', 'return gift', 'housewarming', 'brass', 'thali', 'festive', 'present', 'packaging'],
@@ -399,12 +545,33 @@ export function rankReviewsByKeyword(reviews: string[], keyword?: string, exclud
     value: ['value', 'price', 'pricing', 'rate', 'discount', 'warranty', 'worth'],
     variety: ['variety', 'selection', 'range', 'collection', 'options', 'brands', 'aisles', 'stock'],
     experience: ['experience', 'staff', 'service', 'shopping', 'visit', 'recommend', 'helpful', 'guidance', 'delivery', 'owner', 'courteous'],
-    guidance: ['guidance', 'staff', 'owner', 'advice', 'help', 'patient', 'assisted', 'explained'],
+    guidance: ['guidance', 'staff', 'owner', 'advice', 'help', 'patient', 'assisted', 'explained', 'notes', 'scent'],
+
+    // Sports synonyms
     bat: ['bat', 'cricket', 'willow', 'ping', 'balance', 'stroke', 'knocking', 'sweet spot'],
     racket: ['racket', 'tennis', 'badminton', 'string', 'tension', 'yonex', 'grip', 'stringing'],
     ball: ['ball', 'balls', 'leather', 'seam', 'bounce', 'tennis ball', 'football', 'pressure'],
     gear: ['gear', 'protective', 'pads', 'gloves', 'kit', 'accessories', 'equipment', 'guards'],
     durability: ['durable', 'durability', 'stitching', 'leather', 'long-lasting', 'quality', 'hold', 'gauge'],
+
+    // Perfume & Fragrance synonyms
+    perfume: ['perfume', 'perfumes', 'fragrance', 'scent', 'cologne', 'parfum', 'extrait', 'edp', 'notes', 'sillage', 'projection'],
+    perfumes: ['perfume', 'perfumes', 'fragrance', 'scent', 'cologne', 'parfum', 'extrait', 'edp', 'notes', 'sillage', 'projection'],
+    fragrance: ['perfume', 'fragrance', 'scent', 'cologne', 'parfum', 'extrait', 'notes', 'sillage', 'projection', 'attar'],
+    oud: ['oud', 'dehn', 'dehn al oud', 'cambodi', 'kalakassi', 'agarwood', 'woody', 'smoky', 'arabic', 'oriental'],
+    attar: ['attar', 'ittar', 'oil', 'pure oil', 'concentrated', 'tola', 'roll-on', 'non-alcoholic', 'traditional', 'rooh'],
+    musk: ['musk', 'white musk', 'tahara', 'kasturi', 'black musk', 'powdery', 'clean', 'fresh'],
+    longevity: ['longevity', 'lasting', 'long-lasting', 'sillage', 'projection', 'hours', 'beast', 'beastly', 'trail', 'skin'],
+    sillage: ['sillage', 'projection', 'trail', 'longevity', 'distance', 'presence', 'radius', 'room-filling'],
+    designer: ['designer', 'french', 'baccarat', 'aventus', 'sauvage', 'santal', 'extrait', 'edp', 'niche', 'dupe', 'clone', 'impression'],
+    french: ['french', 'designer', 'baccarat', 'aventus', 'parfum', 'paris', 'bergamot', 'citrus', 'floral'],
+    packaging: ['packaging', 'bottle', 'box', 'atomizer', 'sprayer', 'cap', 'magnetic', 'unboxing', 'luxury', 'presentation', 'gold'],
+    atomizer: ['atomizer', 'sprayer', 'mist', 'spray', 'bottle', 'cap', 'magnetic'],
+    notes: ['notes', 'top notes', 'heart', 'base', 'dry down', 'bergamot', 'amber', 'vanilla', 'saffron', 'rose', 'leather', 'woody'],
+    amber: ['amber', 'vanilla', 'warm', 'spicy', 'sweet', 'resinous', 'rich', 'baccarat'],
+    bakhoor: ['bakhoor', 'bukhoor', 'incense', 'burner', 'coal', 'smoky', 'home fragrance', 'agarwood'],
+    discovery: ['discovery', 'sample', 'sampler', 'tester', 'miniature', 'set', 'box', 'travel', 'decant'],
+    sampler: ['sample', 'sampler', 'discovery', 'tester', 'miniature', 'decant', 'set']
   };
 
   const expandedTerms = new Set<string>(rawTerms);
@@ -462,11 +629,14 @@ export function generateCombinatorialReviews(
   // Determine category-specific fragments
   const isSports = normCat.includes('sport') || normCat.includes('bat') || normCat.includes('tennis') || normCat.includes('cricket') || normCat.includes('racket');
   const isKitchen = normCat.includes('kitchen') || normCat.includes('cookware') || normCat.includes('utensil') || normCat.includes('crockery') || normCat.includes('homeware');
+  const isPerfumes = normCat.includes('perfume') || normCat.includes('fragrance') || normCat.includes('attar') || normCat.includes('oud') || normCat.includes('scent') || normCat.includes('cologne') || normCat.includes('parfum');
 
   const fragments = isSports
     ? CATEGORY_COMBINATOR_FRAGMENTS.sports
     : isKitchen
     ? CATEGORY_COMBINATOR_FRAGMENTS.kitchen
+    : isPerfumes
+    ? CATEGORY_COMBINATOR_FRAGMENTS.perfumes
     : REVIEW_FRAGMENTS;
 
   // 1. Get verified category library reviews

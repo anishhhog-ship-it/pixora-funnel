@@ -54,7 +54,7 @@ function getTopicIcon(topic: string) {
   if (t.includes('ethnic') || t.includes('cloth') || t.includes('wear') || t.includes('fashion') || t.includes('dress') || t.includes('kurta') || t.includes('shirt')) {
     return <Shirt className="w-4 h-4 text-emerald-600 shrink-0" />;
   }
-  if (t.includes('wedding') || t.includes('ring') || t.includes('jewel') || t.includes('gold')) {
+  if (t.includes('wedding') || t.includes('ring') || t.includes('jewel') || t.includes('gold') || t.includes('perfume') || t.includes('fragrance') || t.includes('oud') || t.includes('attar') || t.includes('scent') || t.includes('sillage') || t.includes('longevity')) {
     return <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />;
   }
   if (t.includes('hair') || t.includes('salon') || t.includes('facial') || t.includes('spa')) {
