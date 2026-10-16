@@ -46,11 +46,11 @@ const TEMPLATES = [
   },
   {
     slug: 'kitchen',
-    name: 'Kitchen House & Cookware',
-    category: 'Kitchenware & Home Essentials',
+    name: 'Kitchen House, Crockery & Gifts',
+    category: 'Kitchen House, Crockery & Household',
     color: '#EA580C',
-    description: 'Modern cookware showcase designed for kitchen house stores, utensils, dinnerware & home appliances.',
-    features: ['Cookware & Steel Topics', 'Quality & Durability Rating', 'AI Review Generator'],
+    description: 'Showcase for kitchenware, luxury bone china crockery, daily household items & gift hampers.',
+    features: ['Cookware & Crockery Topics', 'Gift Items Sentiment', 'AI Review Generator'],
   },
 ];
 

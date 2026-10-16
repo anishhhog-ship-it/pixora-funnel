@@ -1149,18 +1149,18 @@ export const BUSINESS_CATEGORIES: Record<string, BusinessCategoryConfig> = {
 
   kitchen: {
     id: 'kitchen',
-    name: 'Kitchen House, Cookware & Utensils',
+    name: 'Kitchen House, Crockery & Household',
     aliases: [
-      'kitchen', 'kitchen house', 'kitchenware', 'cookware', 'utensils',
-      'crockery', 'homeware', 'cutlery', 'dinner set', 'pots and pans',
-      'pressure cooker', 'stainless steel', 'kitchen appliances', 'home and kitchen'
+      'kitchen', 'kitchen house', 'kitchenware', 'household', 'crockery', 'gift items', 'gifts',
+      'cookware', 'utensils', 'dinner set', 'glassware', 'pots and pans', 'pressure cooker',
+      'stainless steel', 'kitchen appliances', 'home and kitchen', 'gift hamper'
     ],
-    description: 'Tri-ply cookware, non-stick pans, dinnerware sets, kitchen house essentials & utensils',
+    description: 'Cookware, dinnerware, luxury crockery sets, household utility & festive gift items',
     theme: 'Warm, Modern & Culinary Craft',
     backgroundImage: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1200&h=800&fit=crop',
     mobileBackgroundImage: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1080&h=1920&fit=crop',
     imageOptions: [
-      { id: 'kitch_01', url: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1200&h=800&fit=crop', label: 'Modern Kitchenware Showcase', qualityScore: 10, isDefault: true },
+      { id: 'kitch_01', url: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1200&h=800&fit=crop', label: 'Kitchen House, Crockery & Gifts Showcase', qualityScore: 10, isDefault: true },
     ],
     overlay: {
       type: 'gradient',
@@ -1173,16 +1173,16 @@ export const BUSINESS_CATEGORIES: Record<string, BusinessCategoryConfig> = {
     menuEnabled: false,
     servicesEnabled: false,
     productsEnabled: true,
-    suggestedCTA: 'Review Your Kitchenware Purchase',
-    postCompletionCTA: 'View Cookware & Kitchen Collection',
-    headline: 'How was your kitchenware shopping experience?',
-    subheadline: 'Crafting the heart of every home! Tell other home chefs about our cookware, utensils & quality.',
+    suggestedCTA: 'Review Your Kitchen & Gift Experience',
+    postCompletionCTA: 'View Crockery & Kitchen Collection',
+    headline: 'How was your kitchen & shopping experience?',
+    subheadline: 'From daily household essentials to festive crockery, cookware & gift items! Share your thoughts.',
     footerFeatures: [
-      { label: 'Food-Grade Steel', icon: 'ShieldCheck' },
-      { label: 'Long-Lasting Cookware', icon: 'Flame' },
-      { label: 'Top Kitchen Brands', icon: 'Sparkles' },
+      { label: 'Premium Crockery', icon: 'Sparkles' },
+      { label: 'Quality Household & Gifts', icon: 'Gift' },
+      { label: 'Food-Grade Kitchenware', icon: 'ShieldCheck' },
     ],
-    icon: 'CookingPot',
+    icon: 'Gift',
   },
 
   other: {
@@ -1259,7 +1259,7 @@ export const CATEGORY_REVIEW_TOPICS: Record<string, string[]> = {
   electrical: ['Product Quality', 'Product Variety', 'Brand Selection', 'Staff Guidance', 'Pricing & Value', 'Buying Experience'],
   paint: ['Colour Selection', 'Finish Quality', 'Product Variety', 'Colour Advice', 'Pricing & Value', 'Overall Experience'],
   sports: ['Bat & Racket Quality', 'Ball & Gear Durability', 'Brand Variety', 'Pricing & Value', 'Staff Guidance', 'Overall Experience'],
-  kitchen: ['Cookware Quality', 'Utensil Variety', 'Material Durability', 'Pricing & Value', 'Staff Assistance', 'Overall Experience'],
+  kitchen: ['Kitchenware Quality', 'Crockery & Dinnerware', 'Gift Items & Hampers', 'Household Essentials', 'Pricing & Variety', 'Overall Experience'],
   other: ['Service Quality', 'Staff Professionalism', 'Communication', 'Timely Delivery', 'Pricing & Value', 'Overall Experience'],
 };
 
@@ -1303,7 +1303,7 @@ export function normalizeBusinessCategory(rawCategory?: string): BusinessCategor
   // 4. Substring / Stem / Keyword match
   const keywordMappings: { keywords: string[]; categoryId: string }[] = [
     { keywords: ['sports', 'sporting', 'bat', 'cricket', 'tennis', 'racket', 'badminton', 'football', 'athletic gear', 'sporting goods', 'shuttlecock'], categoryId: 'sports' },
-    { keywords: ['kitchen house', 'kitchenware', 'cookware', 'utensil', 'crockery', 'homeware', 'cutlery', 'dinner set', 'pots and pans', 'pressure cooker', 'stainless steel utensil'], categoryId: 'kitchen' },
+    { keywords: ['kitchen house', 'kitchenware', 'household', 'crockery', 'gift items', 'gifts', 'gift hamper', 'cookware', 'utensil', 'homeware', 'cutlery', 'dinner set', 'pots and pans', 'pressure cooker', 'stainless steel utensil'], categoryId: 'kitchen' },
     { keywords: ['restaurant', 'dining', 'food', 'biryani', 'pizza', 'burger', 'dhaba', 'thali', 'mess', 'diner', 'eatery', 'cloud kitchen'], categoryId: 'restaurant' },
     { keywords: ['cafe', 'coffee', 'espresso', 'roaster', 'chai', 'tea', 'boba'], categoryId: 'cafe' },
     { keywords: ['bakery', 'baker', 'cake', 'pastry', 'croissant', 'sourdough', 'patisserie', 'confection'], categoryId: 'bakery' },

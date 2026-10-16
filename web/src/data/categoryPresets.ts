@@ -525,13 +525,13 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
     }
   },
 
-  'Kitchen House & Cookware Store': {
-    category: 'Kitchen House & Cookware Store',
+  'Kitchen House, Crockery & Household': {
+    category: 'Kitchen House, Crockery & Household',
     coverImage: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1200&h=800&fit=crop',
     logo: '/placeholder.png',
-    tagline: 'Tri-ply stainless steel cookware, non-stick granite pans, dinnerware & modern kitchen house essentials.',
-    keywords: ['Cookware Quality', 'Utensil Variety', 'Material Durability', 'Pricing & Value', 'Staff Assistance', 'Overall Experience'],
-    sampleCategories: ['Tri-ply Cookware & Pans', 'Dinnerware & Crockery Sets', 'Pressure Cookers & Handis', 'Kitchen Appliances & Storage'],
+    tagline: 'Tri-ply cookware, luxury bone china crockery, household essentials & festive gift sets.',
+    keywords: ['Cookware Quality', 'Crockery & Dinnerware', 'Gift Items & Hampers', 'Household Essentials', 'Pricing & Variety', 'Overall Experience'],
+    sampleCategories: ['Cookware & Kadhais', 'Crockery & Dinner Sets', 'Household & Organizers', 'Gift Items & Hampers'],
     sampleItems: [
       {
         name: 'Tri-Ply Stainless Steel Kadhai with Lid (2.5L)',
@@ -542,35 +542,35 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
         isVegetarian: true,
       },
       {
-        name: 'Granite Non-Stick Frying Pan & Dosa Tawa Set',
-        description: '5-layer scratch-resistant German mineral coating requiring 80% less oil. 100% PFOA free.',
-        price: 1890,
+        name: '32-Piece Luxury Bone China Dinner Set',
+        description: 'Chip-resistant gold accented plates, bowls, platters, and spoons for festive dining and hosting.',
+        price: 4999,
+        image: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      },
+      {
+        name: 'Insulated Thermosteel Flask & Food Jar Set',
+        description: 'Double-walled vacuum insulated flask with leakproof lid, keeps beverages hot/cold for 24 hours.',
+        price: 1290,
+        image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&h=400&fit=crop',
+        isBestseller: false,
+        isVegetarian: true,
+      },
+      {
+        name: 'Royal Brass Pooja Thali & Festive Gift Hamper Box',
+        description: 'Handcrafted ceremonial brass thali set in velvet gifting box, ideal for housewarming & wedding return gifts.',
+        price: 1850,
         image: 'https://images.unsplash.com/photo-1583778176476-4a8b02a64c01?w=600&h=400&fit=crop',
         isBestseller: true,
         isVegetarian: true,
-      },
-      {
-        name: 'Hard Anodized Inner Lid Pressure Cooker (5L)',
-        description: 'Corrosion resistant hard-anodized body with food grade gasket release safety system.',
-        price: 2100,
-        image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&h=400&fit=crop',
-        isBestseller: true,
-        isVegetarian: true,
-      },
-      {
-        name: '32-Piece Luxury Bone China Dinner Set',
-        description: 'Chip-resistant gold accented plates, bowls, platters, and spoons for festive dining.',
-        price: 4999,
-        image: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?w=600&h=400&fit=crop',
-        isBestseller: false,
-        isVegetarian: true,
       }
     ],
-    reviewKeywords: ['Tri-Ply Cookware & Durability', 'Dinner Sets & Utensil Variety', 'Kitchen Essentials & Great Pricing'],
+    reviewKeywords: ['Tri-Ply Cookware & Durability', 'Bone China Crockery & Glassware', 'Gift Hampers & Household Items'],
     aiReviewTemplates: {
-      base1: 'The ultimate kitchen house destination at {biz}! Incredible variety of tri-ply cookware, durable utensils, and dinnerware sets. Beautiful store and fair prices.',
-      base2: 'Top-quality cookware and kitchen appliances at {biz}. Staff took time to explain induction compatibility and safety features. Will definitely shop here again!',
-      base3: 'Best kitchenware store in the city! Heavy gauge stainless steel, elegant dinner sets, and authentic brand warranties. 5/5 stars for {biz}!'
+      base1: 'The ultimate kitchen house and gift showroom at {biz}! Phenomenal selection of tri-ply cookware, luxury bone china crockery, and wedding gift hampers. Beautiful store and fair prices.',
+      base2: 'Top-quality kitchenware, household storage, and crockery sets at {biz}. Staff took time to explain induction compatibility and wrapped our gift hampers with perfection. 5 stars!',
+      base3: 'Best home and kitchen store in the city! Heavy gauge stainless steel, elegant dinner sets, decorative gift items, and authentic brand warranties. Highly recommended!'
     }
   }
 };

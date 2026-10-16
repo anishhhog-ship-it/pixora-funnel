@@ -269,29 +269,32 @@ export const MASSIVE_CATEGORY_REVIEWS: Record<string, CategoryReviewItem> = {
   },
 
   kitchen: {
-    category: 'Kitchen House & Cookware',
-    subcategories: ['kitchen', 'kitchen house', 'kitchenware', 'cookware', 'utensils', 'crockery', 'appliances', 'home & kitchen', 'homeware', 'pots', 'pans', 'chimney', 'cutlery', 'steel', 'kitchen appliances', 'dinner set', 'pressure cooker', 'gas stove', 'mixer grinder'],
+    category: 'Kitchen House, Crockery & Household',
+    subcategories: ['kitchen', 'kitchen house', 'kitchenware', 'household', 'crockery', 'gifts', 'gift items', 'cookware', 'utensils', 'dinner set', 'glassware', 'appliances', 'home & kitchen', 'homeware', 'cutlery', 'steel', 'pressure cooker', 'gift hamper', 'housewarming'],
     reviews: [
-      "Incredible collection of kitchenware at {biz}! Bought a complete tri-ply stainless steel cookware set — heats evenly, doesn't burn food, and looks stunning.",
-      "The best kitchen house store in the city! Found durable non-stick granite frying pans and dosa tawas that require minimal oil and clean like a dream.",
-      "Purchased a 32-piece luxury dinner set and bone china crockery from {biz}. Exquisite designs, chip-resistant finish, and received so many compliments from dinner guests.",
-      "Heavy-gauge 304 food-grade stainless steel utensils, storage containers, and dabbas. The finishing and thickness at {biz} are built to last for generations.",
-      "Got an induction-friendly hard anodized pressure cooker and saucepan at {biz}. Whistle mechanism is safe, smooth, and cooks lentils in record time.",
-      "The kitchen appliance section at {biz} is loaded with top brands like Prestige, Hawkins, Vinod, Milton, and Borosil. Honest pricing and full manufacturer warranties.",
-      "Outstanding customer service! The sales team at {biz} demonstrated how the sandwich bottom and tri-ply layers work before we made our purchase.",
-      "Bought our kitchen chimney and 3-burner glass top gas stove from {biz}. Prompt same-day delivery and hassle-free professional installation.",
-      "Super sharp chef knives, wooden cutting boards, and forged stainless steel cutlery sets. Makes daily cooking prep an absolute pleasure.",
-      "I love how neatly every kitchen section is arranged at {biz}. From spice containers and oil dispensers to heavy kadhais, everything is easy to browse.",
-      "Their traditional brass, bronze, and copper-bottom vessel collection is breathtaking. Pure heirloom-grade kitchenware that is hard to find elsewhere.",
-      "Bought complete kitchen housewarming gift hampers from {biz}. Beautiful presentation, gift-ready packaging, and very accommodating staff.",
-      "Heavy-duty mixer grinder and cold press juicer purchased here perform like beasts. Silent motor, sharp blades, and smooth batter consistency.",
-      "Great exchange policy for old aluminium and brass utensils. They weighed everything transparently and gave us an amazing discount on new steel sets.",
-      "The non-stick coating on the cookware from {biz} is completely PFOA-free and scratch-resistant. We have used it daily for months with zero flaking.",
-      "Found airtight borosilicate glass containers for pantry organization. Microwavable, freezer-safe, and completely leakproof.",
-      "Multi-tier stainless steel idli steamers and momo makers with thick bases. Cooks evenly and cleans without stubborn residue.",
-      "Huge variety of insulated hot-pots, thermosteel flasks, and bento lunch boxes. Keeps meals piping hot for hours during office commutes.",
-      "Friendly owner who genuinely understands kitchen ergonomics and guided us to pick the right kadhai size for our family.",
-      "A five-star shopping experience from start to finish at {biz}. Pristine store ambiance, authentic branded cookware, and unbeatable value!"
+      "The ultimate one-stop shop at {biz} for kitchenware, crockery, and household essentials! We bought a tri-ply stainless steel cookware set and an exquisite bone china dinner set — top quality at reasonable rates.",
+      "Incredible collection of gift items and wedding return gifts at {biz}! The staff helped us choose and beautifully wrap 40 gift hampers for a housewarming function. All our guests were delighted.",
+      "Purchased a stunning 32-piece luxury dinner set, crystal glassware, and ceramic serving platters from {biz}. The crockery designs are royalty-grade and chip-resistant.",
+      "Best kitchen house store in the city! Found durable non-stick granite frying pans and heavy-gauge 304 food-grade stainless steel storage dabbas built to last for generations.",
+      "Outstanding variety of household utility items and pantry organizers at {biz}. From airtight borosilicate glass jars to stainless steel dish racks and insulated hot-pots, they have everything.",
+      "Got an induction-friendly hard anodized pressure cooker and tri-ply kadhai at {biz}. Whistle mechanism is safe, heat distribution is even, and food cooks in record time.",
+      "The gift section at {biz} is loaded with thoughtful items — brass pooja thalis, copper water dispensers, decorative fruit bowls, and premium tea cup sets. Perfect for festive gifting!",
+      "Their crockery collection rivals high-end luxury lifestyle boutiques! Beautiful opalware, bone china, microwave-safe bowls, and vibrant ceramic mugs with rich finishing.",
+      "Bought our kitchen chimney, 3-burner toughened glass gas stove, and heavy-duty 750W mixer grinder from {biz}. Prompt same-day delivery and flawless installation.",
+      "Heavy-duty insulated thermosteel flasks, water bottles, and bento lunch boxes purchased at {biz} keep meals piping hot for hours. Great household essentials!",
+      "Super sharp chef knives, wooden chopping boards, and forged stainless steel cutlery sets with a luxury mirror shine. Makes daily meal prep an absolute pleasure.",
+      "We love how neatly {biz} is organized into dedicated aisles for cookware, crockery, household plastics, giftware, and small home appliances. Hassle-free shopping experience!",
+      "Traditional brass, bronze, and copper-bottom cookware collection alongside modern non-stick cookware sets. Authentic heirloom craftsmanship at {biz}.",
+      "The sales staff at {biz} is exceptionally courteous and patient. They unpacked multiple dinner sets and glassware designs to help us find the perfect pattern for our dining table.",
+      "Great exchange policy for old aluminium and brass utensils. They weighed our scrap transparently and gave us an instant discount on brand-new tri-ply cookware and crockery.",
+      "The non-stick coating on their granite cookware is 100% PFOA-free and scratch-resistant. We use it daily with zero peeling or sticking.",
+      "Found multi-tier stainless steel idli steamers, momo makers, and modak moulds that cook evenly with thick heavy bases.",
+      "If you are setting up a new home or looking for festive Diwali and wedding gifts, {biz} is hands down the best place to visit in town.",
+      "Transparent billing with manufacturer warranties on Prestige, Hawkins, Vinod, Milton, Borosil, and Cello. Zero counterfeit items.",
+      "Their customer care and return gift packaging service are phenomenal. Beautiful velvet boxes and ribbon wrapping made our gifting effortless.",
+      "Huge selection of melamine dinner sets, pudding bowls, and unbreakable daily-use household crockery that stays shiny even after repeated dishwashing.",
+      "Bought ergonomic bathroom accessories, laundry organizers, and mop sets at {biz}. Outstanding quality for everyday household chores.",
+      "Friendly owner who gave us genuine advice on induction compatibility and gift options within our budget. A five-star shopping experience at {biz}!"
     ]
   }
 };
@@ -327,7 +330,7 @@ export const SALES_CATEGORY_OPTIONS: SalesCategoryOption[] = [
   { id: 'sports', name: 'Sports Goods & Fitness Equipment', group: 'Sports & Recreation', icon: 'Trophy', description: '20+ verified bats, match balls, tennis rackets & sports gear reviews' },
 
   { id: 'electronics', name: 'Electronics & Mobile Stores', group: 'Retail & Commerce', icon: 'Smartphone', description: 'Smartphones, warranty, gadgets, repairs & appliances' },
-  { id: 'kitchen', name: 'Kitchen House & Cookware Store', group: 'Retail & Commerce', icon: 'CookingPot', description: '20+ verified tri-ply cookware, utensils, dinner sets & kitchen house reviews' },
+  { id: 'kitchen', name: 'Kitchen House, Crockery & Gifts', group: 'Retail & Commerce', icon: 'Gift', description: '24+ verified cookware, crockery, household & gift items reviews' },
   { id: 'retail', name: 'Supermarkets & Grocery Retail', group: 'Retail & Commerce', icon: 'Store', description: 'Fresh groceries, aisle organization & quick billing' },
 
   { id: 'automotive', name: 'Automotive, Showrooms & Garages', group: 'Automotive & Services', icon: 'Car', description: 'Car servicing, mechanics, transparent billing & spares' },
