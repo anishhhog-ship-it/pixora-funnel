@@ -37,11 +37,17 @@ export async function generateSmartReviewsAsync(
 
     // Attempt to fetch custom templates for this category
     if (rawCategory && typeof window !== 'undefined') {
+      const rootWord = rawCategory.toLowerCase().includes('kitchen')
+        ? 'kitchen'
+        : rawCategory.toLowerCase().includes('sport')
+        ? 'sport'
+        : rawCategory.split(/[,&]/)[0].trim();
+
       const { data: customTemplates } = await supabase
         .from('review_category_templates')
         .select('content, category')
-        .ilike('category', `%${rawCategory}%`)
-        .limit(5);
+        .or(`category.ilike.%${rawCategory}%,category.ilike.%${rootWord}%`)
+        .limit(10);
 
       if (customTemplates && customTemplates.length > 0) {
         const customized = (customTemplates as Array<{ content: string }>).map((t) => t.content.replace(/{biz}/g, businessName));
