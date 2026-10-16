@@ -1109,6 +1109,82 @@ export const BUSINESS_CATEGORIES: Record<string, BusinessCategoryConfig> = {
     icon: 'Palette',
   },
 
+  sports: {
+    id: 'sports',
+    name: 'Sports Goods, Gear & Equipment',
+    aliases: [
+      'sports', 'sports shop', 'sporting goods', 'bat', 'ball', 'tennis',
+      'cricket', 'badminton', 'racket', 'football', 'cricket bat', 'table tennis',
+      'sports equipment', 'athletic store', 'fitness equipment', 'sports store'
+    ],
+    description: 'Cricket bats, tennis rackets, match balls, sports gear & athletic equipment',
+    theme: 'Dynamic, High-Performance & Athletic',
+    backgroundImage: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=1200&h=800&fit=crop',
+    mobileBackgroundImage: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=1080&h=1920&fit=crop',
+    imageOptions: [
+      { id: 'sports_01', url: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=1200&h=800&fit=crop', label: 'Sports Arena & Gear', qualityScore: 10, isDefault: true },
+    ],
+    overlay: {
+      type: 'gradient',
+      opacity: 0.68,
+      gradient: 'linear-gradient(180deg, rgba(15,23,42,0.4) 0%, rgba(2,6,23,0.85) 100%)',
+    },
+    defaultPrimaryColor: '#0F172A',
+    defaultSecondaryColor: '#38BDF8',
+    defaultFontStyle: 'bold',
+    menuEnabled: false,
+    servicesEnabled: true,
+    productsEnabled: true,
+    suggestedCTA: 'Review Your Sports Gear',
+    postCompletionCTA: 'Explore Sports Equipment',
+    headline: 'How was your sports equipment experience?',
+    subheadline: 'From amateur athletes to seasoned champions! Tell players about our gear quality, bats, balls & service.',
+    footerFeatures: [
+      { label: '100% Genuine Gear', icon: 'ShieldCheck' },
+      { label: 'Pro Equipment', icon: 'Trophy' },
+      { label: 'Expert Guidance', icon: 'Award' },
+    ],
+    icon: 'Trophy',
+  },
+
+  kitchen: {
+    id: 'kitchen',
+    name: 'Kitchen House, Cookware & Utensils',
+    aliases: [
+      'kitchen', 'kitchen house', 'kitchenware', 'cookware', 'utensils',
+      'crockery', 'homeware', 'cutlery', 'dinner set', 'pots and pans',
+      'pressure cooker', 'stainless steel', 'kitchen appliances', 'home and kitchen'
+    ],
+    description: 'Tri-ply cookware, non-stick pans, dinnerware sets, kitchen house essentials & utensils',
+    theme: 'Warm, Modern & Culinary Craft',
+    backgroundImage: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1200&h=800&fit=crop',
+    mobileBackgroundImage: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1080&h=1920&fit=crop',
+    imageOptions: [
+      { id: 'kitch_01', url: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1200&h=800&fit=crop', label: 'Modern Kitchenware Showcase', qualityScore: 10, isDefault: true },
+    ],
+    overlay: {
+      type: 'gradient',
+      opacity: 0.65,
+      gradient: 'linear-gradient(180deg, rgba(30,41,59,0.35) 0%, rgba(15,23,42,0.82) 100%)',
+    },
+    defaultPrimaryColor: '#1E293B',
+    defaultSecondaryColor: '#F59E0B',
+    defaultFontStyle: 'modern',
+    menuEnabled: false,
+    servicesEnabled: false,
+    productsEnabled: true,
+    suggestedCTA: 'Review Your Kitchenware Purchase',
+    postCompletionCTA: 'View Cookware & Kitchen Collection',
+    headline: 'How was your kitchenware shopping experience?',
+    subheadline: 'Crafting the heart of every home! Tell other home chefs about our cookware, utensils & quality.',
+    footerFeatures: [
+      { label: 'Food-Grade Steel', icon: 'ShieldCheck' },
+      { label: 'Long-Lasting Cookware', icon: 'Flame' },
+      { label: 'Top Kitchen Brands', icon: 'Sparkles' },
+    ],
+    icon: 'CookingPot',
+  },
+
   other: {
     id: 'other',
     name: 'Local Business & Services',
@@ -1182,6 +1258,8 @@ export const CATEGORY_REVIEW_TOPICS: Record<string, string[]> = {
   'pvc-plumbing': ['Product Quality', 'Product Variety', 'Size Availability', 'Pricing & Value', 'Loading & Delivery', 'Staff Expertise'],
   electrical: ['Product Quality', 'Product Variety', 'Brand Selection', 'Staff Guidance', 'Pricing & Value', 'Buying Experience'],
   paint: ['Colour Selection', 'Finish Quality', 'Product Variety', 'Colour Advice', 'Pricing & Value', 'Overall Experience'],
+  sports: ['Bat & Racket Quality', 'Ball & Gear Durability', 'Brand Variety', 'Pricing & Value', 'Staff Guidance', 'Overall Experience'],
+  kitchen: ['Cookware Quality', 'Utensil Variety', 'Material Durability', 'Pricing & Value', 'Staff Assistance', 'Overall Experience'],
   other: ['Service Quality', 'Staff Professionalism', 'Communication', 'Timely Delivery', 'Pricing & Value', 'Overall Experience'],
 };
 
@@ -1224,7 +1302,9 @@ export function normalizeBusinessCategory(rawCategory?: string): BusinessCategor
 
   // 4. Substring / Stem / Keyword match
   const keywordMappings: { keywords: string[]; categoryId: string }[] = [
-    { keywords: ['restaurant', 'dining', 'food', 'biryani', 'pizza', 'burger', 'dhaba', 'thali', 'mess', 'diner', 'kitchen', 'eatery'], categoryId: 'restaurant' },
+    { keywords: ['sports', 'sporting', 'bat', 'cricket', 'tennis', 'racket', 'badminton', 'football', 'athletic gear', 'sporting goods', 'shuttlecock'], categoryId: 'sports' },
+    { keywords: ['kitchen house', 'kitchenware', 'cookware', 'utensil', 'crockery', 'homeware', 'cutlery', 'dinner set', 'pots and pans', 'pressure cooker', 'stainless steel utensil'], categoryId: 'kitchen' },
+    { keywords: ['restaurant', 'dining', 'food', 'biryani', 'pizza', 'burger', 'dhaba', 'thali', 'mess', 'diner', 'eatery', 'cloud kitchen'], categoryId: 'restaurant' },
     { keywords: ['cafe', 'coffee', 'espresso', 'roaster', 'chai', 'tea', 'boba'], categoryId: 'cafe' },
     { keywords: ['bakery', 'baker', 'cake', 'pastry', 'croissant', 'sourdough', 'patisserie', 'confection'], categoryId: 'bakery' },
     { keywords: ['hotel', 'resort', 'stay', 'homestay', 'villa', 'motel', 'haveli', 'palace', 'inn'], categoryId: 'hotel' },
@@ -1334,13 +1414,28 @@ export function getAllCategories(): BusinessCategoryConfig[] {
 export function isFoodAndDiningBusiness(rawCategory?: string): boolean {
   if (!rawCategory) return true; // Default fallback is restaurant
   const config = normalizeBusinessCategory(rawCategory);
+  if (config.id === 'kitchen' || config.id === 'sports') return false;
+
+  const clean = rawCategory.toLowerCase().trim();
+  if (
+    clean.includes('kitchen house') || 
+    clean.includes('kitchenware') || 
+    clean.includes('cookware') || 
+    clean.includes('utensil') || 
+    clean.includes('crockery') ||
+    clean.includes('sports') ||
+    clean.includes('bat') ||
+    clean.includes('tennis')
+  ) {
+    return false;
+  }
+
   const foodCategoryIds = ['restaurant', 'cafe', 'bakery'];
   if (foodCategoryIds.includes(config.id)) return true;
 
-  const clean = rawCategory.toLowerCase().trim();
   const foodKeywords = [
     'restaurant', 'cafe', 'coffee', 'bakery', 'dining', 'food', 'biryani', 
-    'pizza', 'burger', 'dhaba', 'thali', 'mess', 'diner', 'kitchen', 'eatery',
+    'pizza', 'burger', 'dhaba', 'thali', 'mess', 'diner', 'cloud kitchen', 'eatery',
     'bistro', 'bar', 'pub', 'lounge', 'brewery', 'roaster', 'chai', 'tea',
     'boba', 'cake', 'pastry', 'croissant', 'patisserie', 'dessert', 'sweets',
     'mithai', 'ice cream', 'caterer', 'catering'

@@ -127,15 +127,226 @@ export const REVIEW_FRAGMENTS = {
   ]
 };
 
+export const CATEGORY_COMBINATOR_FRAGMENTS: Record<string, { openings: string[]; bodies: string[]; closings: string[] }> = {
+  sports: {
+    openings: [
+      "Outstanding sports shopping experience at {biz}!",
+      "Visited {biz} to upgrade my athletic gear and couldn't be happier.",
+      "If you play competitive cricket, tennis, or badminton, {biz} is the ultimate store.",
+      "My visit to {biz} completely blew me away with their equipment selection.",
+      "Such an impressive sporting goods collection at {biz}.",
+      "Just bought brand-new sports equipment from {biz} and the quality is unreal.",
+      "As a regular athlete, {biz} is hands down the best sports shop I have come across.",
+      "From the moment I walked into {biz}, the staff gave genuine sporting advice.",
+      "I was searching for authentic match-grade sports gear and found it all at {biz}.",
+      "Visiting {biz} was an absolute game changer for our sports team.",
+      "I rarely leave reviews, but the sports equipment quality at {biz} truly warrants 5 stars.",
+      "Got our entire club's tournament kits and gear from {biz}.",
+      "What a fantastic sports boutique {biz} turned out to be!",
+      "I have bought sports gear from many places, but {biz} stands in a league of its own.",
+      "Every athlete in the city needs to check out {biz}.",
+      "Exceptional customer care and authentic sporting products at {biz}.",
+      "I was thoroughly impressed by the variety of bats, balls, and rackets at {biz}.",
+      "A massive shoutout to the passionate sporting team at {biz}.",
+      "Such a professional and athlete-friendly environment at {biz}.",
+      "Top-tier sporting goods and lightning-fast stringing service at {biz}.",
+      "If you need genuine cricket bats or pro tennis gear, go straight to {biz}.",
+      "Just wrapped up an incredible shopping session at {biz}.",
+      "Everything about {biz} reflects authentic quality and athletic passion.",
+      "I am completely satisfied with my sports gear purchase from {biz}.",
+      "The best decision I made for my tournament preparation was visiting {biz}."
+    ],
+    bodies: [
+      "The Grade 1 English Willow cricket bat has phenomenal ping, straight grains, and a feather-light pickup.",
+      "Their tennis rackets are perfectly balanced, and the customized string tension gave my groundstrokes remarkable control.",
+      "The cricket leather match balls and heavy-duty tennis balls have supreme seam durability and long-lasting bounce.",
+      "The master stringer strung my badminton racket in under thirty minutes with laser-accurate high tension.",
+      "They have an unmatched selection of Yonex, Li-Ning, Wilson, Head, SG, and SS equipment with 100% brand authenticity.",
+      "The protective batting gear, split-finger gloves, and lightweight pads offer immense shock absorption without restricting movement.",
+      "Staff let me take practice swings and test the sweet spot of multiple bats before making a final decision.",
+      "The FIFA-standard tournament footballs hold air pressure reliably and feature top-notch composite leather stitching.",
+      "Their bat knocking, oiling, and toe-guarding service prepped my bat for match day with supreme craftsmanship.",
+      "The grip sizes, vibration dampeners, and racket accessories they recommended fit my playing style like a glove.",
+      "They stock genuine table tennis carbon blades, tournament rubbers, and 3-star balls at very honest prices.",
+      "The durable sports kit bags have spacious bat sleeves, shoe compartments, and heavy-duty reinforced zippers.",
+      "The hard-tennis and light-tennis cricket bats here deliver massive punch and huge sweet spots for local tournaments.",
+      "Staff has deep domain knowledge and explained string gauge differences and bat weight distribution with immense patience.",
+      "All fitness accessories, agility ladders, and training cones are built to withstand heavy daily coaching sessions.",
+      "The sports shoes and turf spikes provide outstanding traction, arch support, and cushioning on the field.",
+      "Zero counterfeit gear here; every item comes with manufacturer warranty and holographic authentication.",
+      "Their swimming gear, anti-fog goggles, and silicone caps are top-of-the-line and very durable.",
+      "The basketballs and volleyballs have excellent composite grip that performs reliably on both indoor and outdoor courts.",
+      "The balance point and stroke of the cricket bats in this store are superior to anything you find online.",
+      "They took time to measure my daughter's grip size and recommended the perfect junior tennis racket for her age.",
+      "The sweat-wicking athletic jerseys and compression wear are comfortable, breathable, and color-fast after washes.",
+      "Their bat re-handling and grip replacement service gave my favorite match bat a whole new life.",
+      "The electronic stringing machine ensures uniform tension across every cross and main string.",
+      "Bulk ordering for our school sports day was handled seamlessly with timely delivery and great package discounts.",
+      "The wristbands, bat grips, and sweat accessories are high quality and don't fray or slip during long matches.",
+      "The leather cricket balls retain their shine and pronounced seam even after 40 overs of hard play.",
+      "They have all varieties of squash rackets, protective eyewear, and high-bounce balls readily available in stock.",
+      "I was amazed by the sheer range of athletic braces, ankle supports, and sports physiotherapy gear on display.",
+      "The pricing is totally transparent with zero markups on original branded sporting goods.",
+      "The sales attendant was an active club cricketer himself and gave invaluable tips on bat care and grain preservation.",
+      "The high-visibility felt on their championship tennis balls holds up remarkably well on abrasive hard courts.",
+      "Super organized racks where cricket, tennis, badminton, and football sections are clearly demarcated.",
+      "Their customer exchange policy and billing process are completely straightforward and transparent.",
+      "The junior starter sets for cricket and badminton are lightweight, safe, and encouraged my kids to pick up the sport."
+    ],
+    closings: [
+      "I will definitely be returning for all my tournament gear!",
+      "Highly recommended to every cricketer, tennis player, and athlete.",
+      "A solid 5-star rating without any hesitation.",
+      "I wouldn't buy my sports gear anywhere else in town.",
+      "You have earned a loyal sports customer for life.",
+      "Do yourself a favor and visit {biz} before your next match.",
+      "A big thumbs up from a very happy athlete.",
+      "Easily the best sporting goods purchase I have made all year.",
+      "Keep up the fantastic work and genuine sports passion!",
+      "Thank you {biz} for elevating my performance on the court.",
+      "I will be recommending {biz} to all my teammates and coaches.",
+      "Top marks for quality, authenticity, and athlete care.",
+      "Looking forward to visiting again for new accessories.",
+      "Hands down a 10/10 sports shopping experience.",
+      "Can't wait to play my next league match with this gear!",
+      "They really understand what athletes need to succeed.",
+      "An absolute must-visit for every sports enthusiast.",
+      "Truly the premier sports destination in the city.",
+      "Thank you for the wonderful advice and stellar service!",
+      "I leave with full confidence and great equipment in hand."
+    ]
+  },
+
+  kitchen: {
+    openings: [
+      "Outstanding kitchen house experience at {biz}!",
+      "Shopping for cookware and home essentials at {biz} was an absolute delight.",
+      "If you're setting up a home or upgrading your kitchenware, {biz} is the place to visit.",
+      "I am genuinely blown away by the quality of cookware at {biz}.",
+      "Visiting {biz} was such a refreshing and productive shopping trip for our home.",
+      "I was looking for premium stainless steel and non-stick utensils, and {biz} had it all.",
+      "Every homemaker and cooking enthusiast needs to experience {biz}.",
+      "From the moment we walked into {biz}, the staff treated us with immense warmth and expertise.",
+      "What a fantastic kitchen house discovery {biz} turned out to be!",
+      "I rarely leave reviews, but {biz} has set a new benchmark for kitchenware stores.",
+      "We purchased complete kitchenware sets for our new home at {biz} and couldn't be happier.",
+      "High-end kitchen boutique feel with very reasonable and transparent pricing at {biz}.",
+      "Such an organized, clean, and welcoming kitchen house showroom at {biz}.",
+      "I had heard wonderful things about {biz}, and every single expectation was exceeded.",
+      "There is simply no better kitchen house in the entire city than {biz}.",
+      "A massive shoutout to the helpful and knowledgeable team at {biz}.",
+      "Everything about {biz} screams durability, hygiene, and kitchen elegance.",
+      "Just wrapped up an incredible shopping visit at {biz} for our festive dinnerware.",
+      "I am completely satisfied with the cookware and dinner sets I bought from {biz}.",
+      "Top-notch kitchen products, genuine brand warranties, and wonderful service at {biz}.",
+      "If you care about food safety and durable cookware, {biz} is the showroom to trust.",
+      "What a remarkably pleasant kitchen shopping experience at {biz}!",
+      "We found every single item on our kitchen checklist under one roof at {biz}.",
+      "The best decision we made for our kitchen renovation was visiting {biz}.",
+      "Effortlessly smooth and enjoyable experience from entrance to checkout at {biz}."
+    ],
+    bodies: [
+      "The tri-ply stainless steel cookware set heats with perfect uniformity, preventing food burning and making cooking effortless.",
+      "Their non-stick granite frying pans and dosa tawas require minimal oil and wash clean in seconds without peeling.",
+      "The heavy-gauge 304 food-grade stainless steel dabbas, containers, and utensils are built to last for generations.",
+      "The 32-piece bone china dinner set we purchased drew compliments from every single guest at our dinner party.",
+      "The inner-lid hard anodized pressure cooker features a super smooth safety valve and cooks dal and rice in record time.",
+      "Staff demonstrated the heat retention of sandwich-bottom kadhais and helped us pick the right capacity for our family.",
+      "Their forged chef knives and ergonomic kitchen shears are razor sharp, rust-free, and feel perfectly balanced in the hand.",
+      "We bought our 3-burner toughened glass gas hob and auto-clean kitchen chimney with prompt same-day home installation.",
+      "The traditional brass, bronze, and copper-bottom vessels in stock are pure heirloom craftsmanship rarely seen today.",
+      "The kitchen housewarming gift sets were beautifully boxed and made a lasting impression on our relatives.",
+      "Their borosilicate glass airtight storage containers keep pantry spices and pulses 100% moisture-free.",
+      "The heavy-duty 750W mixer grinder we purchased crushes tough dry spices and makes silky idli batter with ease.",
+      "Every product is 100% genuine and backed by official manufacturer warranties from Prestige, Hawkins, Vinod, and Milton.",
+      "The multi-layer idli steamer and momo cooker have thick bases that steam evenly without any water leakage.",
+      "They gave us a very fair and computerized exchange valuation on our old brass utensils toward brand-new steel sets.",
+      "The PFOA-free mineral coating on their pans is genuinely scratch-resistant and handles metal ladles without chipping.",
+      "The insulated thermosteel flasks and bento lunch boxes keep home-cooked meals steaming hot for over 8 hours.",
+      "Staff was patient and courteous, showing us multiple dinnerware patterns and thali sets without any rush.",
+      "The stainless steel dish drying racks and under-sink organizers have transformed our kitchen storage space.",
+      "Their cast-iron skillets and Dutch ovens come pre-seasoned and give restaurant-grade sear to all our recipes.",
+      "The milk boilers, tea kettles, and silicone-handled saucepans are practical, safe, and beautifully designed.",
+      "The melamine and opalware crockery sets are break-resistant, dishwasher-safe, and retain their vibrant gloss.",
+      "They have an extensive range of traditional spice masala dabbas, oil pourers, and roti boxes with airtight seals.",
+      "The induction-compatible cookware bases work flawlessly on both gas stoves and modern induction cooktops.",
+      "The pricing is remarkably competitive with great festive bundle discounts on complete kitchen sets.",
+      "The showroom is spotlessly clean with separate aisles for cookware, crockery, appliances, and plastic storage.",
+      "The owner shared practical advice on maintaining non-stick coating longevity and seasoned cast iron care.",
+      "The silicone spatulas, stainless steel whisks, and measuring spoon sets are food-grade and heat-resistant.",
+      "Their cutlery sets have a luxurious mirror finish and sturdy weight that feels wonderful to hold.",
+      "The vegetable choppers, spiralizers, and mandoline slicers make prep work incredibly fast and safe.",
+      "They stock hard-to-find replacement gaskets, pressure cooker weights, and safety valves for all major models.",
+      "The copper water dispensers and hammered brass jugs look regal on the dining table while providing health benefits.",
+      "The billing was crystal clear with printed itemized invoices and zero hidden charges.",
+      "The microwave-safe cookware bowls and oven glass dishes are super versatile for everyday reheating and baking.",
+      "We received attentive guidance on choosing between hard-anodized and tri-ply stainless steel for daily Indian curries."
+    ],
+    closings: [
+      "I will definitely be returning for all our home and kitchen needs!",
+      "Highly recommended to every family, homemaker, and home chef.",
+      "A solid 5-star rating from a thoroughly satisfied customer.",
+      "Our kitchen looks and functions so much better thanks to {biz}.",
+      "You have earned loyal customers for life.",
+      "Do yourself a favor and explore their kitchen collection.",
+      "A big thumbs up for their outstanding quality and hospitality.",
+      "Easily the best kitchenware purchase we made all year.",
+      "Keep up the exceptional standards and friendly customer service!",
+      "Thank you {biz} for making our cooking experience so enjoyable.",
+      "I have already recommended {biz} to my neighbors and relatives.",
+      "Top marks for durability, safety, and product aesthetics.",
+      "Looking forward to visiting again for festive gifting sets.",
+      "An easy 10/10 recommendation from our whole family.",
+      "Every penny spent here was completely worth it.",
+      "They truly understand what makes a kitchen functional and beautiful.",
+      "An absolute must-visit store for every household.",
+      "The premier kitchen house showroom in the city without a doubt.",
+      "Thank you for the patient demonstration and wonderful products!",
+      "We leave with big smiles and great cookware in our kitchen."
+    ]
+  }
+};
+
 import { getReviewsForCategory } from './categoryReviews';
 
 /**
+ * Generates an exact deterministic or randomized pool of up to N reviews for a given category.
+ * Mathematically produces 10,000+ unique, non-repeating reviews for Sports or Kitchen House.
+ */
+export function generateCategoryReviewPool(category: 'sports' | 'kitchen', limit: number = 10000, businessName: string = '{biz}'): string[] {
+  const lib = CATEGORY_COMBINATOR_FRAGMENTS[category] || CATEGORY_COMBINATOR_FRAGMENTS.sports;
+  const pool = new Set<string>();
+
+  for (const op of lib.openings) {
+    for (const b of lib.bodies) {
+      for (const cl of lib.closings) {
+        pool.add(`${op} ${b} ${cl}`.replace(/{biz}/g, businessName));
+        if (pool.size >= limit) return Array.from(pool);
+      }
+    }
+  }
+
+  return Array.from(pool);
+}
+
+/**
  * Generates dynamic, category-tailored, and combinatorially unique reviews.
- * Seamlessly integrates the massive industry library (clothes, perfumes, offices, real estate, etc.)
- * with combinator synthesis for infinite variations!
+ * Seamlessly integrates the massive industry library (clothes, perfumes, offices, sports, kitchen, etc.)
+ * with 10K+ combinator synthesis for infinite variations!
  */
 export function generateCombinatorialReviews(count: number, businessName: string, category?: string, highlight?: string): string[] {
   const result: string[] = [];
+  const normCat = (category || '').toLowerCase();
+
+  // Determine category-specific fragments if applicable
+  const isSports = normCat.includes('sport') || normCat.includes('bat') || normCat.includes('tennis') || normCat.includes('cricket') || normCat.includes('racket');
+  const isKitchen = normCat.includes('kitchen') || normCat.includes('cookware') || normCat.includes('utensil') || normCat.includes('crockery') || normCat.includes('homeware');
+
+  const fragments = isSports
+    ? CATEGORY_COMBINATOR_FRAGMENTS.sports
+    : isKitchen
+    ? CATEGORY_COMBINATOR_FRAGMENTS.kitchen
+    : REVIEW_FRAGMENTS;
 
   // 1. First check if we have tailored reviews from our massive category library
   const categoryReviews = getReviewsForCategory(category || '', businessName);
@@ -151,16 +362,18 @@ export function generateCombinatorialReviews(count: number, businessName: string
     }
   }
 
-  // 2. If we still need more reviews, synthesize from combinatorial fragments
-  while (result.length < count) {
-    const opening = REVIEW_FRAGMENTS.openings[Math.floor(Math.random() * REVIEW_FRAGMENTS.openings.length)];
-    const body = REVIEW_FRAGMENTS.bodies[Math.floor(Math.random() * REVIEW_FRAGMENTS.bodies.length)];
-    const closing = REVIEW_FRAGMENTS.closings[Math.floor(Math.random() * REVIEW_FRAGMENTS.closings.length)];
+  // 2. If we still need more reviews, synthesize from combinatorial fragments (10,000+ combinations)
+  let attempts = 0;
+  while (result.length < count && attempts < count * 50) {
+    attempts++;
+    const opening = fragments.openings[Math.floor(Math.random() * fragments.openings.length)];
+    const body = fragments.bodies[Math.floor(Math.random() * fragments.bodies.length)];
+    const closing = fragments.closings[Math.floor(Math.random() * fragments.closings.length)];
 
     let specificDetail = '';
     if (highlight && highlight.trim().length > 0 && result.length === 0) {
       specificDetail = ` Especially loved: ${highlight.trim()}.`;
-    } else if (category && Math.random() > 0.4) {
+    } else if (category && !isSports && !isKitchen && Math.random() > 0.4) {
       specificDetail = ` One of the best ${category.toLowerCase()} spots around.`;
     }
 

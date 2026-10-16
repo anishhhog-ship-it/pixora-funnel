@@ -474,6 +474,104 @@ export const CATEGORY_PRESETS: Record<string, CategoryPreset> = {
       base2: 'Immaculately clean clinic with polite staff and minimal waiting time. Grateful for the compassionate care at {biz}!',
       base3: 'The best family clinic in our locality. Accurate diagnosis, affordable consultation, and genuine care for patient wellbeing.'
     }
+  },
+
+  'Sports Goods & Fitness Equipment': {
+    category: 'Sports Goods & Fitness Equipment',
+    coverImage: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=1200&h=800&fit=crop',
+    logo: '/placeholder.png',
+    tagline: 'Premium cricket bats, tennis rackets, pro match balls & athletic equipment.',
+    keywords: ['Bat & Racket Quality', 'Ball & Gear Durability', 'Brand Variety', 'Pricing & Value', 'Staff Guidance', 'Overall Experience'],
+    sampleCategories: ['Cricket Gear & Bats', 'Tennis & Rackets', 'Match Balls & Footballs', 'Sports Fitness & Training'],
+    sampleItems: [
+      {
+        name: 'English Willow Cricket Bat (Grade 1)',
+        description: 'Handcrafted cleft with massive sweet spot, 8+ straight grains, and balanced pickup.',
+        price: 9500,
+        image: 'https://images.unsplash.com/photo-1531415074868-036b107e7742?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      },
+      {
+        name: 'Pro Tour Tennis Racket (Graphite)',
+        description: '100 sq inch head, 300g frame with 16x19 string pattern for optimum power and topspin.',
+        price: 8200,
+        image: 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      },
+      {
+        name: 'Match Leather Cricket Ball (Pack of 2)',
+        description: 'Four-piece alum tanned English leather ball with hand-stitched pronounced seam.',
+        price: 1100,
+        image: 'https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?w=600&h=400&fit=crop',
+        isBestseller: false,
+        isVegetarian: true,
+      },
+      {
+        name: 'Championship Extra Duty Tennis Balls (Can of 3)',
+        description: 'High-visibility Optivis felt with pressurized core for consistent bounce on hard courts.',
+        price: 490,
+        image: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      }
+    ],
+    reviewKeywords: ['Cricket Bat Balance & Ping', 'Tennis Racket & String Tension', 'Match Balls & Sports Gear'],
+    aiReviewTemplates: {
+      base1: 'Outstanding sports store at {biz}! Got an authentic cricket bat with incredible balance and stroke. The staff really know their equipment. 5 stars!',
+      base2: 'Best sporting goods shop in town! Their tennis racket selection and stringing precision are world class. Great prices and genuine brand warranty at {biz}.',
+      base3: 'Top-quality sports gear, match balls, and protective kit at {biz}. Knowledgeable staff who helped pick the right equipment for our game. Highly recommended!'
+    }
+  },
+
+  'Kitchen House & Cookware Store': {
+    category: 'Kitchen House & Cookware Store',
+    coverImage: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1200&h=800&fit=crop',
+    logo: '/placeholder.png',
+    tagline: 'Tri-ply stainless steel cookware, non-stick granite pans, dinnerware & modern kitchen house essentials.',
+    keywords: ['Cookware Quality', 'Utensil Variety', 'Material Durability', 'Pricing & Value', 'Staff Assistance', 'Overall Experience'],
+    sampleCategories: ['Tri-ply Cookware & Pans', 'Dinnerware & Crockery Sets', 'Pressure Cookers & Handis', 'Kitchen Appliances & Storage'],
+    sampleItems: [
+      {
+        name: 'Tri-Ply Stainless Steel Kadhai with Lid (2.5L)',
+        description: '3-layer heat retention base with stay-cool cast stainless handles and induction compatibility.',
+        price: 2450,
+        image: 'https://images.unsplash.com/photo-1584990347449-397a66b5952c?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      },
+      {
+        name: 'Granite Non-Stick Frying Pan & Dosa Tawa Set',
+        description: '5-layer scratch-resistant German mineral coating requiring 80% less oil. 100% PFOA free.',
+        price: 1890,
+        image: 'https://images.unsplash.com/photo-1583778176476-4a8b02a64c01?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      },
+      {
+        name: 'Hard Anodized Inner Lid Pressure Cooker (5L)',
+        description: 'Corrosion resistant hard-anodized body with food grade gasket release safety system.',
+        price: 2100,
+        image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&h=400&fit=crop',
+        isBestseller: true,
+        isVegetarian: true,
+      },
+      {
+        name: '32-Piece Luxury Bone China Dinner Set',
+        description: 'Chip-resistant gold accented plates, bowls, platters, and spoons for festive dining.',
+        price: 4999,
+        image: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?w=600&h=400&fit=crop',
+        isBestseller: false,
+        isVegetarian: true,
+      }
+    ],
+    reviewKeywords: ['Tri-Ply Cookware & Durability', 'Dinner Sets & Utensil Variety', 'Kitchen Essentials & Great Pricing'],
+    aiReviewTemplates: {
+      base1: 'The ultimate kitchen house destination at {biz}! Incredible variety of tri-ply cookware, durable utensils, and dinnerware sets. Beautiful store and fair prices.',
+      base2: 'Top-quality cookware and kitchen appliances at {biz}. Staff took time to explain induction compatibility and safety features. Will definitely shop here again!',
+      base3: 'Best kitchenware store in the city! Heavy gauge stainless steel, elegant dinner sets, and authentic brand warranties. 5/5 stars for {biz}!'
+    }
   }
 };
 

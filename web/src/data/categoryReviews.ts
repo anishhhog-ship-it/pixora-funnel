@@ -238,6 +238,61 @@ export const MASSIVE_CATEGORY_REVIEWS: Record<string, CategoryReviewItem> = {
       "Top-tier craftsmanship and punctual execution by the {biz} team! Renovated our modular kitchen and living room within the promised budget.",
       "Professional technicians who arrived on time, used quality branded materials, and cleaned the work area completely before leaving."
     ]
+  },
+
+  sports: {
+    category: 'Sports & Fitness Equipment',
+    subcategories: ['sports', 'bat', 'cricket', 'ball', 'tennis', 'racket', 'badminton', 'football', 'sports shop', 'gear', 'athletic', 'sporting goods', 'shuttlecock', 'cricket bat', 'table tennis', 'basketball', 'volleyball', 'gloves', 'pads'],
+    reviews: [
+      "Outstanding sports shop at {biz}! Picked up a Grade 1 English Willow cricket bat with supreme ping, incredible balance, and straight grains.",
+      "The tennis racket collection at {biz} is phenomenal. The staff accurately guided me on head size, swing weight, and strung it to perfection at 55 lbs.",
+      "Got genuine match-grade cricket leather balls and heavy tennis balls at {biz}. Outstanding seam quality, durable leather, and great bounce even after 35 overs.",
+      "Best place in town for badminton enthusiasts. Huge range of Yonex and Li-Ning rackets with authentic hologram verification. The grip and stringing service was super fast!",
+      "Purchased complete cricket protective gear including lightweight batting pads and flexible split-finger gloves. Top safety and comfort at {biz}!",
+      "The bat knocking, oiling, and toe-guarding service at {biz} is second to none. Prepared my bat for the weekend league match flawlessly.",
+      "Impressive selection of tournament footballs and turf boots at {biz}. Original FIFA-standard balls that hold air pressure consistently.",
+      "I love how knowledgeable the staff is at {biz}. They don't just sell products; they test your grip size, stance, and recommend the exact racket and bat weight suited for your game.",
+      "Found genuine professional tennis balls, dampeners, and overgrips at wholesale rates. {biz} is now our tennis club's permanent supplier.",
+      "Great variety of table tennis blades, rubbers, and 3-star tournament balls. Authentic products at competitive prices.",
+      "Top-quality sports kit bags with dedicated bat sleeves and shoe compartments. Heavy-duty zippers and very durable stitching.",
+      "Their collection of cricket tennis bats (hard tennis and light tennis) has unmatched punch! Perfect pickup and massive sweet spots.",
+      "Very friendly owner who took the time to explain string tension differences for my daughter's tennis racket. Outstanding customer experience at {biz}!",
+      "Bought basketballs and volleyballs for our sports academy from {biz}. High grip composite leather that holds up on outdoor courts.",
+      "Complete one-stop shop for athletes! From compression wear and ankle supports to match bats and balls, everything is 100% original.",
+      "The electronic racket stringing machine at {biz} ensures precise tension every single time. My tennis groundstrokes feel so much more controlled now.",
+      "Transparent pricing on all top sporting brands like SG, SS, Yonex, Wilson, Cosco, and Nivia. Zero counterfeit products.",
+      "Staff let me take practice swings with multiple bats in the store to feel the balance point before deciding. That level of patience is rare!",
+      "Purchased junior cricket and badminton starter kits for my kids. High quality, lightweight, and very reasonably priced at {biz}.",
+      "Durable fitness accessories, agility ladders, and training cones for coaches. Excellent bulk order discounts and prompt delivery.",
+      "The best sports store in the entire region! Whether you play cricket, tennis, football, or badminton, {biz} has the finest gear in stock."
+    ]
+  },
+
+  kitchen: {
+    category: 'Kitchen House & Cookware',
+    subcategories: ['kitchen', 'kitchen house', 'kitchenware', 'cookware', 'utensils', 'crockery', 'appliances', 'home & kitchen', 'homeware', 'pots', 'pans', 'chimney', 'cutlery', 'steel', 'kitchen appliances', 'dinner set', 'pressure cooker', 'gas stove', 'mixer grinder'],
+    reviews: [
+      "Incredible collection of kitchenware at {biz}! Bought a complete tri-ply stainless steel cookware set — heats evenly, doesn't burn food, and looks stunning.",
+      "The best kitchen house store in the city! Found durable non-stick granite frying pans and dosa tawas that require minimal oil and clean like a dream.",
+      "Purchased a 32-piece luxury dinner set and bone china crockery from {biz}. Exquisite designs, chip-resistant finish, and received so many compliments from dinner guests.",
+      "Heavy-gauge 304 food-grade stainless steel utensils, storage containers, and dabbas. The finishing and thickness at {biz} are built to last for generations.",
+      "Got an induction-friendly hard anodized pressure cooker and saucepan at {biz}. Whistle mechanism is safe, smooth, and cooks lentils in record time.",
+      "The kitchen appliance section at {biz} is loaded with top brands like Prestige, Hawkins, Vinod, Milton, and Borosil. Honest pricing and full manufacturer warranties.",
+      "Outstanding customer service! The sales team at {biz} demonstrated how the sandwich bottom and tri-ply layers work before we made our purchase.",
+      "Bought our kitchen chimney and 3-burner glass top gas stove from {biz}. Prompt same-day delivery and hassle-free professional installation.",
+      "Super sharp chef knives, wooden cutting boards, and forged stainless steel cutlery sets. Makes daily cooking prep an absolute pleasure.",
+      "I love how neatly every kitchen section is arranged at {biz}. From spice containers and oil dispensers to heavy kadhais, everything is easy to browse.",
+      "Their traditional brass, bronze, and copper-bottom vessel collection is breathtaking. Pure heirloom-grade kitchenware that is hard to find elsewhere.",
+      "Bought complete kitchen housewarming gift hampers from {biz}. Beautiful presentation, gift-ready packaging, and very accommodating staff.",
+      "Heavy-duty mixer grinder and cold press juicer purchased here perform like beasts. Silent motor, sharp blades, and smooth batter consistency.",
+      "Great exchange policy for old aluminium and brass utensils. They weighed everything transparently and gave us an amazing discount on new steel sets.",
+      "The non-stick coating on the cookware from {biz} is completely PFOA-free and scratch-resistant. We have used it daily for months with zero flaking.",
+      "Found airtight borosilicate glass containers for pantry organization. Microwavable, freezer-safe, and completely leakproof.",
+      "Multi-tier stainless steel idli steamers and momo makers with thick bases. Cooks evenly and cleans without stubborn residue.",
+      "Huge variety of insulated hot-pots, thermosteel flasks, and bento lunch boxes. Keeps meals piping hot for hours during office commutes.",
+      "Friendly owner who genuinely understands kitchen ergonomics and guided us to pick the right kadhai size for our family.",
+      "A five-star shopping experience from start to finish at {biz}. Pristine store ambiance, authentic branded cookware, and unbeatable value!"
+    ]
   }
 };
 
@@ -269,8 +324,10 @@ export const SALES_CATEGORY_OPTIONS: SalesCategoryOption[] = [
   { id: 'salons', name: 'Salons, Spas & Beauty Care', group: 'Wellness & Healthcare', icon: 'Scissors', description: 'Hair styling, skin treatments, hygiene & spa reviews' },
   { id: 'healthcare', name: 'Healthcare, Clinics & Doctors', group: 'Wellness & Healthcare', icon: 'Stethoscope', description: 'Doctor diagnosis, gentle care, hygiene & pharmacy reviews' },
   { id: 'fitness', name: 'Fitness Centers & Gyms', group: 'Wellness & Healthcare', icon: 'Dumbbell', description: 'Trainers, workout equipment, diet & progress reviews' },
+  { id: 'sports', name: 'Sports Goods & Fitness Equipment', group: 'Sports & Recreation', icon: 'Trophy', description: '20+ verified bats, match balls, tennis rackets & sports gear reviews' },
 
   { id: 'electronics', name: 'Electronics & Mobile Stores', group: 'Retail & Commerce', icon: 'Smartphone', description: 'Smartphones, warranty, gadgets, repairs & appliances' },
+  { id: 'kitchen', name: 'Kitchen House & Cookware Store', group: 'Retail & Commerce', icon: 'CookingPot', description: '20+ verified tri-ply cookware, utensils, dinner sets & kitchen house reviews' },
   { id: 'retail', name: 'Supermarkets & Grocery Retail', group: 'Retail & Commerce', icon: 'Store', description: 'Fresh groceries, aisle organization & quick billing' },
 
   { id: 'automotive', name: 'Automotive, Showrooms & Garages', group: 'Automotive & Services', icon: 'Car', description: 'Car servicing, mechanics, transparent billing & spares' },

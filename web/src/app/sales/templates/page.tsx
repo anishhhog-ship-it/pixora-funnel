@@ -36,6 +36,22 @@ const TEMPLATES = [
     description: 'Vibrant boutique aesthetics highlighting stylist hospitality, clean ambience, and 5-star ratings.',
     features: ['Service Category Tags', 'Stylist Compliment Helper', 'One-Tap Google Maps Rating'],
   },
+  {
+    slug: 'sports',
+    name: 'Sports Goods & Fitness Gear',
+    category: 'Sports & Fitness Equipment',
+    color: '#0284C7',
+    description: 'High-impact athletic design highlighting cricket bats, tennis rackets, match balls & sporting gear.',
+    features: ['Bat & Racket Feedback', 'Sports Durability Sentiment', 'One-Tap Google Maps Rating'],
+  },
+  {
+    slug: 'kitchen',
+    name: 'Kitchen House & Cookware',
+    category: 'Kitchenware & Home Essentials',
+    color: '#EA580C',
+    description: 'Modern cookware showcase designed for kitchen house stores, utensils, dinnerware & home appliances.',
+    features: ['Cookware & Steel Topics', 'Quality & Durability Rating', 'AI Review Generator'],
+  },
 ];
 
 export default function DemoTemplatesPage() {

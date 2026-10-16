@@ -82,3 +82,5 @@ export async function getQuickReviews(
 export function getUsageStats(_businessId: string): { used: number; available: number; category: string } {
   return { used: 3, available: 64000, category: 'library-curated' };
 }
+
+export { generateCategoryReviewPool, CATEGORY_COMBINATOR_FRAGMENTS } from './reviewCombinator';
