@@ -31,9 +31,17 @@ export async function generateSmartReviewsAsync(
   rawCategory: string = '',
   customerInput: string = '',
   _businessId = 'default',
+  excludeReviews: string[] = [],
 ): Promise<string[]> {
   try {
-    const baseReviews = generateCombinatorialReviews(count, businessName, rawCategory, customerInput);
+    // Generate a deep pool of combinatorial candidates (at least 60)
+    const baseReviews = generateCombinatorialReviews(
+      Math.max(count * 15, 60),
+      businessName,
+      rawCategory,
+      customerInput,
+      excludeReviews
+    );
 
     // Attempt to fetch custom templates for this category
     if (rawCategory && typeof window !== 'undefined') {
@@ -47,20 +55,21 @@ export async function generateSmartReviewsAsync(
         .from('review_category_templates')
         .select('content, category')
         .or(`category.ilike.%${rawCategory}%,category.ilike.%${rootWord}%`)
-        .limit(20);
+        .limit(30);
 
-      if (customTemplates && customTemplates.length > 0) {
-        const customized = (customTemplates as Array<{ content: string }>).map((t) => t.content.replace(/{biz}/g, businessName));
-        // Dynamically rank all templates by customer topic keyword (e.g. Crockery, Gifts, Essentials, etc.)
-        const allCandidates = Array.from(new Set([...customized, ...baseReviews]));
-        const ranked = rankReviewsByKeyword(allCandidates, customerInput);
-        return ranked.slice(0, count);
-      }
+      const customized = customTemplates && customTemplates.length > 0
+        ? (customTemplates as Array<{ content: string }>).map((t) => t.content.replace(/{biz}/g, businessName))
+        : [];
+
+      // Combine both custom templates and the massive combinatorial pool
+      const allCandidates = Array.from(new Set([...customized, ...baseReviews]));
+      const ranked = rankReviewsByKeyword(allCandidates, customerInput, excludeReviews);
+      return ranked.slice(0, count);
     }
 
-    return baseReviews;
+    return rankReviewsByKeyword(baseReviews, customerInput, excludeReviews).slice(0, count);
   } catch {
-    return generateCombinatorialReviews(count, businessName, rawCategory, customerInput);
+    return generateCombinatorialReviews(count, businessName, rawCategory, customerInput, excludeReviews);
   }
 }
 

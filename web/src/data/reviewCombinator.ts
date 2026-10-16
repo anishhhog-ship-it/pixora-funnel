@@ -220,33 +220,48 @@ export const CATEGORY_COMBINATOR_FRAGMENTS: Record<string, { openings: string[];
   kitchen: {
     openings: [
       "Outstanding kitchen house experience at {biz}!",
-      "Shopping for kitchenware, household items, and crockery at {biz} was an absolute delight.",
-      "If you're looking for premium cookware, daily household utility, or wedding gift items, {biz} is the place to visit.",
-      "I am genuinely blown away by the quality of cookware and luxury crockery at {biz}.",
+      "Shopping for kitchenware, household items, and utensils at {biz} was an absolute delight.",
+      "If you're looking for premium cookware, stainless steel utensils, or wedding gift items, {biz} is the place to visit.",
+      "I am genuinely blown away by the quality of cookware, steel utensils, and luxury crockery at {biz}.",
       "Visiting {biz} was such a refreshing and productive shopping trip for our home and kitchen needs.",
-      "I was looking for durable stainless steel utensils, crockery, and housewarming gifts, and {biz} had it all.",
-      "Every homemaker and gift shopper needs to experience the massive collection at {biz}.",
-      "From the moment we walked into {biz}, the staff treated us with immense warmth and guided us through their crockery and kitchenware.",
-      "What a fantastic kitchen house and gift showroom discovery {biz} turned out to be!",
-      "I rarely leave reviews, but {biz} has set a new benchmark for household items, crockery, and cookware stores.",
-      "We purchased complete kitchenware and dinner sets for our new home at {biz} and couldn't be happier.",
-      "High-end crockery boutique and household store with very reasonable and transparent pricing at {biz}.",
-      "Such an organized, clean, and welcoming kitchen house showroom with dedicated gift sections at {biz}.",
-      "I had heard wonderful things about their crockery and kitchen collection at {biz}, and every single expectation was exceeded.",
-      "There is simply no better kitchen house, crockery, and gift store in the entire city than {biz}.",
-      "A massive shoutout to the helpful and knowledgeable team at {biz} for packing our gift hampers so beautifully.",
-      "Everything about {biz} screams durability, hygiene, and kitchen elegance.",
-      "Just wrapped up an incredible shopping visit at {biz} for our festive dinnerware and wedding return gifts.",
-      "I am completely satisfied with the cookware, household containers, and dinner sets I bought from {biz}.",
-      "Top-notch kitchen products, luxury crockery, genuine brand warranties, and wonderful service at {biz}.",
-      "If you care about durable household essentials and elegant crockery, {biz} is the showroom to trust.",
-      "What a remarkably pleasant kitchenware and home shopping experience at {biz}!",
-      "We found every single item on our kitchen, crockery, and home gifting checklist under one roof at {biz}.",
-      "The best decision we made for our kitchen renovation and festive gifting was visiting {biz}.",
-      "Effortlessly smooth and enjoyable experience from entrance to gift packaging at {biz}."
+      "I was looking for durable stainless steel utensils, cookware, and housewarming gifts, and {biz} had it all.",
+      "Every homemaker and cooking enthusiast needs to experience the massive utensil collection at {biz}.",
+      "From the moment we walked into {biz}, the staff treated us with immense warmth and guided us through their cookware and utensils.",
+      "What a fantastic kitchen house, utensil, and gift showroom discovery {biz} turned out to be!",
+      "I rarely leave reviews, but {biz} has set a new benchmark for utensils, household items, and cookware stores.",
+      "We purchased complete kitchen utensils, cookware, and dinner sets for our new home at {biz} and couldn't be happier.",
+      "High-end utensil boutique and household store with very reasonable and transparent pricing at {biz}.",
+      "Such an organized, clean, and welcoming kitchen house showroom with dedicated utensil sections at {biz}.",
+      "I had heard wonderful things about their cookware and utensil collection at {biz}, and every single expectation was exceeded.",
+      "There is simply no better kitchen house and utensil store in the entire city than {biz}.",
+      "A massive shoutout to the helpful and knowledgeable team at {biz} for guiding us on the best cooking utensils.",
+      "Everything about {biz} screams durability, food-grade hygiene, and kitchen elegance.",
+      "Just wrapped up an incredible shopping visit at {biz} for our daily cooking utensils and festive dinnerware.",
+      "I am completely satisfied with the cookware, stainless steel utensils, and dinner sets I bought from {biz}.",
+      "Top-notch kitchen products, food-grade steel utensils, genuine brand warranties, and wonderful service at {biz}.",
+      "If you care about durable household utensils and elegant crockery, {biz} is the showroom to trust.",
+      "What a remarkably pleasant utensil and cookware shopping experience at {biz}!",
+      "We found every single item on our kitchen utensil, cookware, and home gifting checklist under one roof at {biz}.",
+      "The best decision we made for our kitchen setup and daily cooking was visiting {biz}.",
+      "Effortlessly smooth and enjoyable experience from entrance to billing at {biz}.",
+      "Best utensil and cookware showroom in the city! {biz} has everything a modern home kitchen needs.",
+      "My kitchen shopping experience at {biz} was absolutely stellar from start to finish.",
+      "If you want high-quality stainless steel utensils and long-lasting cookware, head straight to {biz}.",
+      "We completely upgraded our kitchen utensils and cookware at {biz} and couldn't be happier.",
+      "The collection of cooking products and utensils at {biz} is truly unmatched.",
+      "I was blown away by the variety of steel utensils, non-stick pans, and cookware at {biz}.",
+      "Visiting {biz} was the best decision for our new home kitchen setup.",
+      "Found all our daily kitchenware, cookware, and stainless steel utensils under one roof at {biz}.",
+      "Hands down the finest kitchen house and utensil store I have ever visited: {biz}.",
+      "Every home chef and family in the area should shop for their utensils at {biz}.",
+      "Such a wonderful shopping experience for utensils and cooking products at {biz}.",
+      "From everyday cooking utensils to heavy-bottom cookware, {biz} has an unbelievable selection.",
+      "We just restocked all our family cooking essentials and utensils at {biz}.",
+      "Incredible variety, authentic brand warranties, and super helpful staff at {biz}."
     ],
     bodies: [
       "The tri-ply stainless steel cookware set heats with perfect uniformity, preventing food burning and making cooking effortless.",
+      "Their heavy-gauge stainless steel thalis, katoris, glasses, and serving spoons have a brilliant mirror polish that does not fade after washing.",
       "Their crockery section is breathtaking with 32-piece luxury bone china dinner sets, crystal glassware, and elegant serving platters.",
       "The household utility department is loaded with airtight storage dabbas, pantry organizers, and multi-tier stainless steel dish racks.",
       "We bought 40 housewarming gift hampers and wedding return gifts here — beautifully packaged in velvet boxes that our guests adored.",
@@ -258,51 +273,64 @@ export const CATEGORY_COMBINATOR_FRAGMENTS: Record<string, { openings: string[];
       "Their forged chef knives and ergonomic kitchen shears are razor sharp, rust-free, and feel perfectly balanced in the hand.",
       "We bought our 3-burner toughened glass gas hob and auto-clean kitchen chimney with prompt same-day home installation.",
       "The traditional brass, bronze, and copper-bottom vessels in stock are pure heirloom craftsmanship rarely seen today.",
-      "The kitchen housewarming gift sets were beautifully boxed and made a lasting impression on our relatives.",
       "Their borosilicate glass airtight storage containers keep pantry spices and pulses 100% moisture-free.",
       "The heavy-duty 750W mixer grinder we purchased crushes tough dry spices and makes silky idli batter with ease.",
       "Every product is 100% genuine and backed by official manufacturer warranties from Prestige, Hawkins, Vinod, Milton, and Borosil.",
       "The multi-layer idli steamer and momo cooker have thick bases that steam evenly without any water leakage.",
-      "They gave us a very fair and computerized exchange valuation on our old brass utensils toward brand-new steel sets.",
+      "They gave us a very fair and computerized exchange valuation on our old brass and steel utensils toward brand-new tri-ply sets.",
       "The PFOA-free mineral coating on their pans is genuinely scratch-resistant and handles metal ladles without chipping.",
       "The insulated thermosteel flasks and bento lunch boxes keep home-cooked meals steaming hot for over 8 hours.",
-      "Staff was patient and courteous, showing us multiple crockery patterns, dinner sets, and gift hampers without any rush.",
+      "Staff was patient and courteous, showing us multiple utensil gauges, dinner sets, and cookware options without any rush.",
       "The stainless steel dish drying racks and under-sink organizers have transformed our household kitchen storage space.",
       "Their cast-iron skillets and Dutch ovens come pre-seasoned and give restaurant-grade sear to all our recipes.",
       "The milk boilers, tea kettles, and silicone-handled saucepans are practical, safe, and beautifully designed.",
       "The melamine and opalware crockery sets are break-resistant, dishwasher-safe, and retain their vibrant gloss.",
       "They have an extensive range of traditional spice masala dabbas, oil pourers, and roti boxes with airtight seals.",
       "The induction-compatible cookware bases work flawlessly on both gas stoves and modern induction cooktops.",
-      "The pricing is remarkably competitive with great festive bundle discounts on complete kitchenware and crockery sets.",
-      "The showroom is spotlessly clean with separate aisles for cookware, crockery, household plastics, and gift items.",
+      "The pricing is remarkably competitive with great festive bundle discounts on complete kitchenware and utensil sets.",
+      "The showroom is spotlessly clean with separate aisles for utensils, cookware, crockery, household plastics, and gift items.",
       "The owner shared practical advice on maintaining non-stick coating longevity and seasoned cast iron care.",
       "The silicone spatulas, stainless steel whisks, and measuring spoon sets are food-grade and heat-resistant.",
       "Their cutlery sets have a luxurious mirror finish and sturdy weight that feels wonderful to hold.",
       "The vegetable choppers, spiralizers, and mandoline slicers make prep work incredibly fast and safe.",
       "The copper water dispensers and hammered brass jugs look regal on the dining table while providing health benefits.",
-      "We received attentive guidance on choosing the best return gifts within our budget for our family celebration."
+      "We received attentive guidance on choosing the best return gifts and cooking utensils within our budget.",
+      "Their tri-ply stainless steel patilas and deep fry kadhais cook vegetables and gravies evenly without any hot spots or burning.",
+      "We picked up a 5-piece non-stick cookware set including a granite dosa tawa, deep kadhai, and frying pan with stay-cool handles.",
+      "Their hard-anodized pressure cookers are sturdy, safe, and cook lentils, curries, and rice in half the normal time.",
+      "We bought an entire stainless steel dinner set with laser-etched designs, heavy katoris, and matching serving bowls.",
+      "Their sandwich-bottom stainless steel saucepans and milk boilers prevent scorching and clean up with zero effort.",
+      "The roti tawas and cast iron skillets retain heat beautifully and give soft phulkas and crispy dosas every single day.",
+      "They have an outstanding collection of stainless steel strainers, spatulas, skimmers, and potato mashers that feel sturdy and durable.",
+      "We purchased airtight borosilicate glass jars and oil pourers with drip-free nozzles that keep our kitchen counter spotlessly clean.",
+      "The staff demonstrated different thickness gauges of stainless steel utensils and helped us pick the most durable heavy utensils."
     ],
     closings: [
-      "I will definitely be returning for all our cookware, crockery, and home gifting needs!",
-      "Highly recommended to every family, homemaker, and gift shopper.",
+      "I will definitely be returning for all our cookware, utensils, and home gifting needs!",
+      "Highly recommended to every family, homemaker, and home chef.",
       "A solid 5-star rating from a thoroughly satisfied customer.",
       "Our kitchen and dining table look so much more elegant thanks to {biz}.",
       "You have earned loyal customers for life.",
-      "Do yourself a favor and explore their cookware, crockery, and gift collection.",
+      "Do yourself a favor and explore their cookware, utensils, and gift collection.",
       "A big thumbs up for their outstanding quality, variety, and hospitality.",
-      "Easily the best household and crockery purchase we made all year.",
+      "Easily the best utensil and kitchen purchase we made all year.",
       "Keep up the exceptional standards and friendly customer service!",
-      "Thank you {biz} for making our shopping and gifting experience so seamless.",
+      "Thank you {biz} for making our shopping and kitchen experience so seamless.",
       "I have already recommended {biz} to all my neighbors and relatives.",
-      "Top marks for durability, crockery aesthetics, and gift packaging.",
-      "Looking forward to visiting again for festive gifting sets.",
+      "Top marks for durability, food-grade quality, and product variety.",
+      "Looking forward to visiting again for more cooking tools and accessories.",
       "An easy 10/10 recommendation from our whole family.",
       "Every rupee spent here was completely worth it.",
-      "They truly understand what makes a home functional and beautiful.",
+      "They truly understand what makes a kitchen functional and durable.",
       "An absolute must-visit store for every household.",
-      "The premier kitchen house, crockery, and gift destination in the city without a doubt.",
+      "The premier kitchen house, utensil, and cookware destination in the city without a doubt.",
       "Thank you for the patient demonstration and wonderful products!",
-      "We leave with big smiles and great cookware and gifts in hand."
+      "We leave with big smiles and great cookware and utensils in hand.",
+      "I will never buy kitchen utensils from anywhere else!",
+      "Can't wait to cook our next family meal with these amazing utensils.",
+      "The quality of their utensils speaks for itself.",
+      "Our daily cooking has become so much more enjoyable thanks to {biz}.",
+      "Best utensil shopping experience by a mile."
     ]
   }
 };
@@ -311,7 +339,7 @@ import { getReviewsForCategory } from './categoryReviews';
 
 /**
  * Generates an exact deterministic or randomized pool of up to N reviews for a given category.
- * Mathematically produces 10,000+ unique, non-repeating reviews for Sports or Kitchen House.
+ * Mathematically produces 50,000+ unique, non-repeating reviews for Sports or Kitchen House.
  */
 export function generateCategoryReviewPool(category: 'sports' | 'kitchen', limit: number = 10000, businessName: string = '{biz}'): string[] {
   const lib = CATEGORY_COMBINATOR_FRAGMENTS[category] || CATEGORY_COMBINATOR_FRAGMENTS.sports;
@@ -331,12 +359,20 @@ export function generateCategoryReviewPool(category: 'sports' | 'kitchen', limit
 
 /**
  * Ranks review texts based on semantic relevance to a selected topic or keyword.
- * Ensures clicking 'Crockery' gives crockery reviews, 'Gifts' gives gift reviews, etc.
+ * Actively filters out excluded reviews (e.g. current review) and shuffles matching reviews
+ * so tapping regenerate or switching keywords ALWAYS yields a fresh, unique review!
  */
-export function rankReviewsByKeyword(reviews: string[], keyword?: string): string[] {
+export function rankReviewsByKeyword(reviews: string[], keyword?: string, excludeReviews: string[] = []): string[] {
   if (!reviews || reviews.length === 0) return [];
+
+  // Exclude reviews that are currently displayed or recently seen
+  const excludeSet = new Set(excludeReviews.map(r => r.trim().toLowerCase()));
+  const eligible = reviews.filter(r => !excludeSet.has(r.trim().toLowerCase()));
+  const candidates = eligible.length > 0 ? eligible : reviews;
+
   if (!keyword || !keyword.trim()) {
-    return [...reviews].sort(() => 0.5 - Math.random());
+    // If no keyword, shuffle so the user receives fresh variety every time
+    return [...candidates].sort(() => 0.5 - Math.random());
   }
 
   const clean = keyword.toLowerCase().trim();
@@ -353,8 +389,10 @@ export function rankReviewsByKeyword(reviews: string[], keyword?: string): strin
     hampers: ['hamper', 'hampers', 'gift', 'gifts', 'wedding', 'return gift', 'housewarming', 'packaging'],
     household: ['household', 'storage', 'dabba', 'container', 'containers', 'jars', 'organizer', 'rack', 'flask', 'bottle', 'utility', 'pantry', 'mop'],
     essentials: ['essential', 'essentials', 'household', 'storage', 'dabba', 'container', 'jars', 'organizer', 'rack', 'utility', 'pantry'],
-    kitchenware: ['cookware', 'kitchenware', 'pan', 'kadhai', 'tri-ply', 'pressure cooker', 'stove', 'gas', 'pot', 'knife', 'knives', 'cutlery', 'utensil', 'non-stick'],
-    cookware: ['cookware', 'pan', 'pans', 'kadhai', 'tri-ply', 'pressure cooker', 'pot', 'pots', 'non-stick', 'granite', 'induction'],
+    kitchenware: ['cookware', 'kitchenware', 'pan', 'kadhai', 'tri-ply', 'pressure cooker', 'stove', 'gas', 'pot', 'knife', 'knives', 'cutlery', 'utensil', 'utensils', 'non-stick'],
+    utensil: ['utensil', 'utensils', 'thali', 'katori', 'spoon', 'spoons', 'ladle', 'patila', 'steel', 'stainless steel', 'dabba'],
+    utensils: ['utensil', 'utensils', 'thali', 'katori', 'spoon', 'spoons', 'ladle', 'patila', 'steel', 'stainless steel', 'dabba'],
+    cookware: ['cookware', 'pan', 'pans', 'kadhai', 'tri-ply', 'pressure cooker', 'pot', 'pots', 'non-stick', 'granite', 'induction', 'patila'],
     knives: ['knife', 'knives', 'chef knife', 'chopping', 'board', 'cutlery', 'shears', 'blade'],
     stoves: ['stove', 'gas', 'chimney', 'mixer', 'grinder', 'hob', 'appliance', 'appliances'],
     pricing: ['price', 'pricing', 'rate', 'rates', 'discount', 'budget', 'exchange', 'warranty', 'transparent', 'value', 'rupee', 'affordable'],
@@ -376,7 +414,8 @@ export function rankReviewsByKeyword(reviews: string[], keyword?: string): strin
     }
   }
 
-  const scored = reviews.map(text => {
+  // Score candidates
+  const scored = candidates.map(text => {
     const lower = text.toLowerCase();
     let score = 0;
 
@@ -392,24 +431,35 @@ export function rankReviewsByKeyword(reviews: string[], keyword?: string): strin
       }
     }
 
-    const tieBreaker = Math.random();
-    return { text, score: score + tieBreaker };
+    return { text, score };
   });
 
-  scored.sort((a, b) => b.score - a.score);
-  return scored.map(s => s.text);
+  // Separate high-affinity matches from general matches
+  const topMatches = scored.filter(s => s.score >= 4).map(s => s.text);
+  const otherMatches = scored.filter(s => s.score < 4).map(s => s.text);
+
+  // Shuffle both subsets so that every regenerate or keyword click gives a fresh variation
+  const shuffledTop = [...topMatches].sort(() => 0.5 - Math.random());
+  const shuffledOther = [...otherMatches].sort(() => 0.5 - Math.random());
+
+  return [...shuffledTop, ...shuffledOther];
 }
 
 /**
  * Generates dynamic, category-tailored, and combinatorially unique reviews.
- * Seamlessly integrates the massive industry library (clothes, perfumes, offices, sports, kitchen, etc.)
- * with 10K+ combinator synthesis for infinite variations!
+ * Actively synthesizes 50+ diverse reviews from 50,000+ combinatorial possibilities
+ * on EVERY call, so users NEVER get stuck on the same review!
  */
-export function generateCombinatorialReviews(count: number, businessName: string, category?: string, highlight?: string): string[] {
-  const result: string[] = [];
+export function generateCombinatorialReviews(
+  count: number,
+  businessName: string,
+  category?: string,
+  highlight?: string,
+  excludeReviews: string[] = []
+): string[] {
   const normCat = (category || '').toLowerCase();
 
-  // Determine category-specific fragments if applicable
+  // Determine category-specific fragments
   const isSports = normCat.includes('sport') || normCat.includes('bat') || normCat.includes('tennis') || normCat.includes('cricket') || normCat.includes('racket');
   const isKitchen = normCat.includes('kitchen') || normCat.includes('cookware') || normCat.includes('utensil') || normCat.includes('crockery') || normCat.includes('homeware');
 
@@ -419,36 +469,36 @@ export function generateCombinatorialReviews(count: number, businessName: string
     ? CATEGORY_COMBINATOR_FRAGMENTS.kitchen
     : REVIEW_FRAGMENTS;
 
-  // 1. First check if we have tailored reviews from our massive category library
+  // 1. Get verified category library reviews
   const categoryReviews = getReviewsForCategory(category || '', businessName);
-  if (categoryReviews.length > 0) {
-    // Rank by keyword relevance so clicking a topic returns the exact corresponding review!
-    const ranked = rankReviewsByKeyword(categoryReviews, highlight);
-    for (let i = 0; i < Math.min(count, ranked.length); i++) {
-      result.push(ranked[i]);
-    }
-  }
 
-  // 2. If we still need more reviews, synthesize from combinatorial fragments (10,000+ combinations)
+  // 2. Synthesize 50+ fresh combinatorial reviews from the massive fragments pool
+  const synthesized: string[] = [];
+  const targetSynth = Math.max(count * 15, 60);
   let attempts = 0;
-  while (result.length < count && attempts < count * 50) {
+
+  while (synthesized.length < targetSynth && attempts < targetSynth * 25) {
     attempts++;
     const opening = fragments.openings[Math.floor(Math.random() * fragments.openings.length)];
     const body = fragments.bodies[Math.floor(Math.random() * fragments.bodies.length)];
     const closing = fragments.closings[Math.floor(Math.random() * fragments.closings.length)];
 
     let specificDetail = '';
-    if (highlight && highlight.trim().length > 0 && result.length === 0) {
-      specificDetail = ` Especially loved: ${highlight.trim()}.`;
-    } else if (category && !isSports && !isKitchen && Math.random() > 0.4) {
-      specificDetail = ` One of the best ${category.toLowerCase()} spots around.`;
+    if (highlight && highlight.trim().length > 0 && Math.random() > 0.6) {
+      specificDetail = ` Especially impressed by: ${highlight.trim()}.`;
     }
 
     const reviewText = `${opening} ${body}${specificDetail} ${closing}`.replace(/{biz}/g, businessName);
-    if (!result.includes(reviewText)) {
-      result.push(reviewText);
+    if (!synthesized.includes(reviewText)) {
+      synthesized.push(reviewText);
     }
   }
 
-  return result.slice(0, count);
+  // 3. Pool both verified library and newly synthesized reviews
+  const allCandidates = Array.from(new Set([...categoryReviews, ...synthesized]));
+
+  // 4. Rank and dynamically randomize based on the selected topic/keyword while excluding seen reviews
+  const ranked = rankReviewsByKeyword(allCandidates, highlight, excludeReviews);
+
+  return ranked.slice(0, count);
 }

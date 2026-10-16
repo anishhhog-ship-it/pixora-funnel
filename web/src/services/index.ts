@@ -2369,10 +2369,11 @@ export const reviewEngine = {
     input: string,
     businessName: string = 'this place',
     category?: string,
-    businessId?: string
+    businessId?: string,
+    excludeReviews?: string[]
   ): Promise<string[]> => {
     const { generateSmartReviewsAsync } = await import('@/data/reviewLibrary');
-    return generateSmartReviewsAsync(3, businessName, category || '', input.trim(), businessId || 'default');
+    return generateSmartReviewsAsync(5, businessName, category || '', input.trim(), businessId || 'default', excludeReviews || []);
   },
 
   getQuickReviews: async (

@@ -139,9 +139,15 @@ export default function SinglePageReviewFunnel({
   const [popupBlockedUrl, setPopupBlockedUrl] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Session tracking to ensure users never see repetitive reviews
+  const seenReviewsRef = useRef<Set<string>>(new Set());
 
   // 1. Generate review suggestion using real existing review engine
-  const generateReviewForTopic = async (topicHighlight: string, bizContext?: Business | null) => {
+  const generateReviewForTopic = async (
+    topicHighlight: string,
+    bizContext?: Business | null,
+    forceFresh: boolean = false
+  ) => {
     const currentBiz = bizContext || business;
     if (!currentBiz) return;
 
@@ -149,17 +155,34 @@ export default function SinglePageReviewFunnel({
     setGenerationError(null);
 
     try {
+      // Build exclusion list containing current text and recent session reviews
+      const excludeList = Array.from(seenReviewsRef.current);
+      if (reviewText && !excludeList.includes(reviewText)) {
+        excludeList.push(reviewText);
+      }
+
       const suggestions = await reviewEngine.generateReviewSuggestions(
         topicHighlight,
         currentBiz.name || 'this business',
         currentBiz.category,
-        currentBiz.id || currentBiz.businessId || businessSlug
+        currentBiz.id || currentBiz.businessId || businessSlug,
+        excludeList
       );
 
       if (suggestions && suggestions.length > 0) {
-        const generated = suggestions[0];
-        // Only update review text if user hasn't manually edited their own words
-        if (!hasManuallyEdited) {
+        // Guarantee the new review is different from current reviewText if alternatives exist
+        const generated = suggestions.find(s => s !== reviewText) || suggestions[0];
+
+        // Track in session seen cache
+        seenReviewsRef.current.add(generated);
+        if (seenReviewsRef.current.size > 80) {
+          const first = seenReviewsRef.current.values().next().value;
+          if (first) seenReviewsRef.current.delete(first);
+        }
+
+        // Only update review text if user hasn't manually edited (or forced on regenerate/topic click)
+        if (!hasManuallyEdited || forceFresh) {
+          setHasManuallyEdited(false);
           setReviewText(generated);
           sessionStorage.setItem('final_review_text', generated);
         }
@@ -187,9 +210,9 @@ export default function SinglePageReviewFunnel({
       setTopics(cleanTopics);
       if (cleanTopics.length > 0) {
         setSelectedTopic(cleanTopics[0]);
-        generateReviewForTopic(cleanTopics[0], initialBusiness);
+        generateReviewForTopic(cleanTopics[0], initialBusiness, true);
       } else {
-        generateReviewForTopic('', initialBusiness);
+        generateReviewForTopic('', initialBusiness, true);
       }
       setIsLoadingBusiness(false);
       return;
@@ -210,9 +233,9 @@ export default function SinglePageReviewFunnel({
         if (cleanTopics.length > 0) {
           const firstTopic = cleanTopics[0];
           setSelectedTopic(firstTopic);
-          generateReviewForTopic(firstTopic, biz);
+          generateReviewForTopic(firstTopic, biz, true);
         } else {
-          generateReviewForTopic('', biz);
+          generateReviewForTopic('', biz, true);
         }
       })
       .catch((err) => {
@@ -235,7 +258,7 @@ export default function SinglePageReviewFunnel({
     analyticsService.trackEvent('topic_selected', { topic, slug: businessSlug });
     // Reset manual edit flag so the selected topic updates the text
     setHasManuallyEdited(false);
-    generateReviewForTopic(topic);
+    generateReviewForTopic(topic, null, true);
   };
 
   // 4. Manual review text change
@@ -730,7 +753,10 @@ export default function SinglePageReviewFunnel({
 
               <button
                 type="button"
-                onClick={() => generateReviewForTopic(selectedTopic || '')}
+                onClick={() => {
+                  setHasManuallyEdited(false);
+                  generateReviewForTopic(selectedTopic || '', null, true);
+                }}
                 disabled={isGenerating}
                 className="flex h-7 w-7 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-600 hover:bg-blue-50 transition cursor-pointer disabled:opacity-50"
                 title="Generate another variation"
