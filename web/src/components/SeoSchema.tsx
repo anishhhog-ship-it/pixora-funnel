@@ -47,12 +47,12 @@ const softwareApplicationSchema = {
   offers: [
     {
       "@type": "Offer",
-      name: "Standard 2-Year Plan (Without NFC Card)",
+       name: "Lifetime Software",
       price: "2599",
       priceCurrency: "INR",
       description:
-        "2-year software access. Includes QR review funnel, digital menu, scan analytics, and AI auto reply system. Without physical NFC card.",
-      availability: "https://schema.org/LimitedAvailability",
+         "Lifetime software access. Includes QR review funnel, digital menu, scan analytics, and AI auto reply system. Without physical NFC card.",
+       availability: "https://schema.org/InStock",
       seller: {
         "@type": "Organization",
         name: "Pixora Automations",
@@ -60,12 +60,12 @@ const softwareApplicationSchema = {
     },
     {
       "@type": "Offer",
-      name: "Pro 2-Year Plan (With Custom NFC Review Card)",
+       name: "Lifetime Software + NFC doorstep delivery",
       price: "2999",
       priceCurrency: "INR",
       description:
-        "2-year software access + Custom Branded NFC Smart Tap Review Card delivered to your doorstep. Includes QR funnel, auto reply system, digital menu, and analytics.",
-      availability: "https://schema.org/LimitedAvailability",
+         "Lifetime software access plus a Custom Branded NFC Smart Tap Review Card delivered to your doorstep. Includes QR funnel, auto reply system, digital menu, and analytics.",
+       availability: "https://schema.org/InStock",
       seller: {
         "@type": "Organization",
         name: "Pixora Automations",
@@ -140,7 +140,7 @@ const faqSchema = {
       name: "How does Pixora Funnel pricing work?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Pixora Funnel offers two transparent plans with zero monthly SaaS fees: Standard Plan at ₹2,599/year (software only, without physical NFC card) and Pro Plan at ₹2,999 where the first 100 accounts receive Lifetime Free access forever (includes full software suite + Custom NFC Smart Tap Review Card delivered to your doorstep). Both plans activate the 24/7 AI Auto Reply system.",
+         text: "Pixora Funnel offers two transparent lifetime plans with zero monthly SaaS fees: Lifetime Software at ₹2,599 without a physical NFC card and Lifetime Software + NFC doorstep delivery at ₹2,999. Both plans include the full software suite and activate the 24/7 AI Auto Reply system.",
       },
     },
     {
@@ -213,7 +213,7 @@ const webSiteSchema = {
     "@type": "SearchAction",
     target: {
       "@type": "EntryPoint",
-      urlTemplate: `${BASE_URL}/signup?ref={search_term_string}`,
+      urlTemplate: `${BASE_URL}/onboarding?ref={search_term_string}`,
     },
     "query-input": "required name=search_term_string",
   },

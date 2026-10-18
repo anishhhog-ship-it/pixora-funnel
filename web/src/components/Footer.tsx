@@ -2,10 +2,21 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
 import { ArrowUp } from 'lucide-react';
 import { smoothScrollTo } from '@/lib/scrollUtils';
 
 export default function Footer() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const isHomePage = pathname === '/';
+
+  const handleSectionLink = (event: React.MouseEvent<HTMLAnchorElement>, section: string) => {
+    if (!isHomePage) return;
+    event.preventDefault();
+    smoothScrollTo(section);
+  };
+
   return (
     <footer className="bg-slate-900 text-slate-300 pt-16 pb-12 border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -14,10 +25,9 @@ export default function Footer() {
           {/* Brand Info (2 cols) */}
           <div className="lg:col-span-2 space-y-4">
             <a 
-              href="#hero" 
+              href={isHomePage ? '#hero' : '/#hero'}
               onClick={(e) => {
-                e.preventDefault();
-                smoothScrollTo('#hero');
+                handleSectionLink(e, '#hero');
               }}
               className="public-focus-ring inline-block rounded-xl group cursor-pointer"
               title="Scroll back to top"
@@ -62,8 +72,8 @@ export default function Footer() {
             <ul className="space-y-2 text-xs sm:text-sm text-slate-400">
               <li>
                 <a 
-                  href="#features" 
-                  onClick={(e) => { e.preventDefault(); smoothScrollTo('#features'); }}
+                  href={isHomePage ? '#features' : '/#features'}
+                  onClick={(e) => handleSectionLink(e, '#features')}
                    className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   QR Review Funnel
@@ -71,8 +81,8 @@ export default function Footer() {
               </li>
               <li>
                 <a 
-                  href="#features" 
-                  onClick={(e) => { e.preventDefault(); smoothScrollTo('#features'); }}
+                  href={isHomePage ? '#features' : '/#features'}
+                  onClick={(e) => handleSectionLink(e, '#features')}
                    className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Smart AI Suggestions
@@ -80,8 +90,8 @@ export default function Footer() {
               </li>
               <li>
                 <a 
-                  href="#features" 
-                  onClick={(e) => { e.preventDefault(); smoothScrollTo('#features'); }}
+                  href={isHomePage ? '#features' : '/#features'}
+                  onClick={(e) => handleSectionLink(e, '#features')}
                    className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Auto Reply System
@@ -89,8 +99,8 @@ export default function Footer() {
               </li>
               <li>
                 <a 
-                  href="#features" 
-                  onClick={(e) => { e.preventDefault(); smoothScrollTo('#features'); }}
+                  href={isHomePage ? '#features' : '/#features'}
+                  onClick={(e) => handleSectionLink(e, '#features')}
                    className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Digital Menu Builder
@@ -98,8 +108,8 @@ export default function Footer() {
               </li>
               <li>
                 <a 
-                  href="#stats" 
-                  onClick={(e) => { e.preventDefault(); smoothScrollTo('#stats'); }}
+                  href={isHomePage ? '#stats' : '/#stats'}
+                  onClick={(e) => handleSectionLink(e, '#stats')}
                    className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Customer Insights
@@ -114,8 +124,8 @@ export default function Footer() {
             <ul className="space-y-2 text-xs sm:text-sm text-slate-400">
               <li>
                 <a 
-                  href="#industries" 
-                  onClick={(e) => { e.preventDefault(); smoothScrollTo('#industries'); }}
+                  href={isHomePage ? '#industries' : '/#industries'}
+                  onClick={(e) => handleSectionLink(e, '#industries')}
                    className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Restaurants & Cafés
@@ -123,8 +133,8 @@ export default function Footer() {
               </li>
               <li>
                 <a 
-                  href="#industries" 
-                  onClick={(e) => { e.preventDefault(); smoothScrollTo('#industries'); }}
+                  href={isHomePage ? '#industries' : '/#industries'}
+                  onClick={(e) => handleSectionLink(e, '#industries')}
                    className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Salons & Spas
@@ -132,8 +142,8 @@ export default function Footer() {
               </li>
               <li>
                 <a 
-                  href="#industries" 
-                  onClick={(e) => { e.preventDefault(); smoothScrollTo('#industries'); }}
+                  href={isHomePage ? '#industries' : '/#industries'}
+                  onClick={(e) => handleSectionLink(e, '#industries')}
                    className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Clinics & Healthcare
@@ -141,8 +151,8 @@ export default function Footer() {
               </li>
               <li>
                 <a 
-                  href="#industries" 
-                  onClick={(e) => { e.preventDefault(); smoothScrollTo('#industries'); }}
+                  href={isHomePage ? '#industries' : '/#industries'}
+                  onClick={(e) => handleSectionLink(e, '#industries')}
                    className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Retail Stores
@@ -150,8 +160,8 @@ export default function Footer() {
               </li>
               <li>
                 <a 
-                  href="#industries" 
-                  onClick={(e) => { e.preventDefault(); smoothScrollTo('#industries'); }}
+                  href={isHomePage ? '#industries' : '/#industries'}
+                  onClick={(e) => handleSectionLink(e, '#industries')}
                   className="hover:text-white transition-colors cursor-pointer"
                 >
                   Hotels & Homestays
@@ -166,10 +176,11 @@ export default function Footer() {
             <ul className="space-y-2 text-xs sm:text-sm text-slate-400">
                <li><Link href="/login" className="public-focus-ring rounded-sm hover:text-white transition-colors">Client Portal Login</Link></li>
                <li><Link href="/onboarding" className="public-focus-ring rounded-sm hover:text-white transition-colors">Start 1-Day Trial</Link></li>
-              <li>
+               <li><Link href="/download" className="public-focus-ring rounded-sm hover:text-white transition-colors">Download Mobile App</Link></li>
+               <li>
                 <a 
-                  href="#pricing" 
-                  onClick={(e) => { e.preventDefault(); smoothScrollTo('#pricing'); }}
+                  href={isHomePage ? '#pricing' : '/#pricing'}
+                  onClick={(e) => handleSectionLink(e, '#pricing')}
                    className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Pricing & Hardware
@@ -177,8 +188,8 @@ export default function Footer() {
               </li>
               <li>
                 <a 
-                  href="#faq" 
-                  onClick={(e) => { e.preventDefault(); smoothScrollTo('#faq'); }}
+                  href={isHomePage ? '#faq' : '/#faq'}
+                  onClick={(e) => handleSectionLink(e, '#faq')}
                    className="public-focus-ring rounded-sm transition-colors hover:text-white cursor-pointer"
                 >
                   Help & FAQ
@@ -213,7 +224,10 @@ export default function Footer() {
             {/* Animated Scroll To Top Button */}
             <button
               type="button"
-              onClick={() => smoothScrollTo('#hero')}
+               onClick={() => {
+               if (isHomePage) smoothScrollTo('#hero');
+                 else router.push('/#hero');
+               }}
                className="public-focus-ring inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-700/80 bg-slate-800 px-3 py-1.5 text-slate-300 transition-all hover:bg-slate-700 hover:text-white group active:scale-95"
               title="Smooth scroll up to top"
             >

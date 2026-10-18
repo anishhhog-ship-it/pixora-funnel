@@ -27,19 +27,13 @@ export function useSession(): AuthContextValue {
 
 export function SessionProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(() => isMobileSupabaseConfigured());
+  const [error, setError] = useState<string | null>(() => isMobileSupabaseConfigured() ? null : 'Supabase is not configured for this build. Add the public mobile environment variables and restart Expo.');
 
   useEffect(() => {
     let mounted = true;
 
-    if (!isMobileSupabaseConfigured()) {
-      setError('Supabase is not configured for this build. Add the public mobile environment variables and restart Expo.');
-      setIsLoading(false);
-      return () => {
-        mounted = false;
-      };
-    }
+    if (!isMobileSupabaseConfigured()) return () => { mounted = false; };
 
     supabase.auth.getSession().then(({ data, error: sessionError }) => {
       if (!mounted) return;

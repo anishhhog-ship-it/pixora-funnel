@@ -24,12 +24,14 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { paymentGatewayService, PaymentOrder } from '@/services/paymentGatewayService';
+import { DEFAULT_PRICING_PLAN_SLUG, getPricingPlan } from '@/config/pricing';
 
 interface PaymentGatewayModalProps {
   isOpen: boolean;
   onClose: () => void;
   planId?: string;
   planName?: string;
+  /** Legacy compatibility only; checkout amount is always returned by the server. */
   amount?: number;
   businessId?: string;
   businessName?: string;
@@ -39,9 +41,8 @@ interface PaymentGatewayModalProps {
 export default function PaymentGatewayModal({
   isOpen,
   onClose,
-  planId = 'plan_2year_software',
-  planName = 'Standard 2-Year Plan',
-  amount = 2599,
+  planId = DEFAULT_PRICING_PLAN_SLUG,
+  planName = 'Lifetime Software',
   businessId = 'active',
   businessName = 'Your Business',
   onSuccess,
@@ -102,8 +103,6 @@ export default function PaymentGatewayModal({
         businessId,
         businessName,
         planId,
-        planName,
-        amount,
       }),
     })
       .then((res) => res.json())
@@ -120,8 +119,6 @@ export default function PaymentGatewayModal({
             businessId,
             businessName,
             planId,
-            planName,
-            amount,
           });
           setOrder(localOrder);
           if (localOrder.status === 'PENDING_APPROVAL') {
@@ -135,8 +132,6 @@ export default function PaymentGatewayModal({
           businessId,
           businessName,
           planId,
-          planName,
-          amount,
         });
         setOrder(localOrder);
         if (localOrder.status === 'PENDING_APPROVAL') {
@@ -163,7 +158,7 @@ export default function PaymentGatewayModal({
       if (timerRef.current) clearInterval(timerRef.current);
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [isOpen, planId, planName, amount, businessId, businessName]);
+  }, [isOpen, planId, planName, businessId, businessName]);
 
   // Real-time status polling every 3s
   useEffect(() => {
@@ -303,10 +298,9 @@ export default function PaymentGatewayModal({
         body: JSON.stringify({
           orderId: order.id,
           utr: clean,
+          planId: order.planId,
           businessId: order.businessId,
           businessName: order.businessName,
-          amount,
-          planName,
         }),
       });
       const data = await res.json();
@@ -334,6 +328,11 @@ export default function PaymentGatewayModal({
 
   const config = paymentGatewayService.getConfig();
   const upiId = order?.upiUri ? new URL(order.upiUri.replace('upi://pay?', 'https://d/?')).searchParams.get('pa') || config.upiId : config.upiId;
+  const checkoutPlan = getPricingPlan(order?.planId || planId);
+  const checkoutPlanName = order?.planName || checkoutPlan?.name || 'Loading plan…';
+  const checkoutAmount = order?.amount ?? null;
+  const checkoutAmountLabel = checkoutAmount == null ? '—' : `₹${checkoutAmount.toLocaleString('en-IN')}`;
+  const checkoutValidity = 'Lifetime access';
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
   const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
@@ -384,7 +383,7 @@ export default function PaymentGatewayModal({
               <div className="space-y-1.5">
                 <h3 className="text-lg font-extrabold text-slate-900">Cancel Payment?</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Are you sure you want to cancel? If you have already transferred money via PhonePe, GPay, or Paytm, enter your <strong>12-digit UTR number</strong> to instantly activate your 2-year dashboard.
+                  Are you sure you want to cancel? If you have already transferred money via PhonePe, GPay, or Paytm, enter your <strong>12-digit UTR number</strong> to activate your dashboard.
                 </p>
               </div>
 
@@ -441,7 +440,7 @@ export default function PaymentGatewayModal({
                 </div>
                 <div className="flex justify-between items-center text-slate-500">
                   <span>Payable Amount:</span>
-                  <strong className="text-slate-900 font-bold">₹{amount.toLocaleString('en-IN')}</strong>
+                  <strong className="text-slate-900 font-bold">{checkoutAmountLabel}</strong>
                 </div>
                 <div className="flex justify-between items-center text-slate-500">
                   <span>Status:</span>
@@ -495,11 +494,11 @@ export default function PaymentGatewayModal({
                 </span>
                 <h3 className="text-2xl font-extrabold text-slate-900">Dashboard Activated!</h3>
                 <p className="text-sm text-slate-600 max-w-sm mx-auto">
-                  {successMessage || 'Your 2-Year software suite and 24/7 AI Auto-Replies are now live.'}
+                  {successMessage || 'Your lifetime software suite and 24/7 AI Auto-Replies are now live.'}
                 </p>
               </div>
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 inline-block">
-                Order ID: <strong className="text-slate-900">{order?.id}</strong> · Validity: <strong className="text-emerald-700">2 Full Years</strong>
+                Order ID: <strong className="text-slate-900">{order?.id}</strong> · Validity: <strong className="text-emerald-700">{checkoutValidity}</strong>
               </div>
             </div>
           ) : isPendingApproval ? (
@@ -523,7 +522,7 @@ export default function PaymentGatewayModal({
                   Verification in Progress
                 </h3>
                 <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
-                  Your UPI Reference (UTR) has been submitted to the Admin Panel. The dashboard will automatically unlock for <strong>2 Full Years</strong> as soon as the admin verifies your payment.
+                  Your UPI Reference (UTR) has been submitted to the Admin Panel. The dashboard will automatically unlock with <strong>{checkoutValidity}</strong> as soon as the admin verifies your payment.
                 </p>
               </div>
 
@@ -584,13 +583,13 @@ export default function PaymentGatewayModal({
 
                 <div className="flex justify-between items-center text-slate-500 pt-1 border-t border-slate-200/60">
                   <span>Payable Amount:</span>
-                  <strong className="text-slate-900 font-bold">₹{amount.toLocaleString('en-IN')}</strong>
+                  <strong className="text-slate-900 font-bold">{checkoutAmountLabel}</strong>
                 </div>
 
                 <div className="flex justify-between items-center text-slate-500 pt-1 border-t border-slate-200/60">
                   <span>License Duration:</span>
                   <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    2 Years Commercial Access
+                    {checkoutValidity}
                   </span>
                 </div>
               </div>
@@ -618,7 +617,7 @@ export default function PaymentGatewayModal({
 
                 <a
                   href={`https://wa.me/919257378047?text=${encodeURIComponent(
-                    `Hi Admin! I have made a payment of ₹${amount} for Order ${order?.id || ''} (${businessName}). My UTR is ${submittedUtr}. Please approve and activate my dashboard.`
+                    `Hi Admin! I have made a payment of ${checkoutAmountLabel} for Order ${order?.id || ''} (${businessName}). My UTR is ${submittedUtr}. Please approve and activate my dashboard.`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -647,15 +646,15 @@ export default function PaymentGatewayModal({
                     <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded">
                       Commercial License
                     </span>
-                    <span className="text-[11px] font-bold text-emerald-700">✓ 2 Years Validity</span>
+                    <span className="text-[11px] font-bold text-emerald-700">✓ {checkoutValidity}</span>
                   </div>
-                  <h4 className="text-sm font-bold text-slate-900">{planName}</h4>
+                  <h4 className="text-sm font-bold text-slate-900">{checkoutPlanName}</h4>
                   <p className="text-xs text-slate-500">For: <strong className="text-slate-700">{businessName}</strong></p>
                 </div>
 
                 <div className="text-right shrink-0">
                   <div className="text-[10px] uppercase font-bold text-slate-400">Total Payable</div>
-                  <div className="text-2xl font-black text-slate-900 tracking-tight">₹{amount.toLocaleString('en-IN')}</div>
+                  <div className="text-2xl font-black text-slate-900 tracking-tight">{checkoutAmountLabel}</div>
                   <div className="text-[10px] font-semibold text-emerald-700">Zero Gateway Surcharge</div>
                 </div>
               </div>
@@ -696,7 +695,7 @@ export default function PaymentGatewayModal({
 
                 <div className="mt-3 text-center">
                   <span className="text-xs font-extrabold text-slate-900 bg-slate-100 px-3 py-1 rounded-full border border-slate-200 inline-block">
-                    Exact Amount: ₹{amount.toLocaleString('en-IN')}
+                    Exact Amount: {checkoutAmountLabel}
                   </span>
                   <p className="text-[11px] text-slate-500 mt-1">
                     Amount &amp; order note auto-filled upon scanning.
@@ -824,7 +823,7 @@ export default function PaymentGatewayModal({
                 <div>
                   <a
                     href={`https://wa.me/919257378047?text=${encodeURIComponent(
-                      `Hi Pixora Support! I am making a payment for Order ${order?.id || ''} (${planName}) for ${businessName}. Please assist.`
+                      `Hi Pixora Support! I am making a payment for Order ${order?.id || ''} (${checkoutPlanName}) for ${businessName}. Please assist.`
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"

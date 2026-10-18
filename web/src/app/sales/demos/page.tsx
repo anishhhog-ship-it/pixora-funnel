@@ -68,6 +68,11 @@ export default function MyDemosPage() {
     );
   });
 
+  const isDemoExpired = (demo: SalesDemo) => Boolean(demo.is_expired);
+  const isDemoRevoked = (demo: SalesDemo) => demo.status === 'revoked';
+  const isDemoInvalid = (demo: SalesDemo) => !['active', 'shared', 'converted'].includes(demo.status);
+  const isDemoLocked = (demo: SalesDemo) => isDemoExpired(demo) || isDemoInvalid(demo);
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Header */}
@@ -152,15 +157,21 @@ export default function MyDemosPage() {
                     </div>
                   </div>
 
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                      d.status === 'converted'
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : 'bg-indigo-50 text-[#5356EC] border-indigo-200'
-                    }`}
-                  >
-                    {d.status === 'converted' ? 'CONVERTED' : 'ACTIVE'}
-                  </span>
+                   <span
+                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        isDemoRevoked(d)
+                          ? 'bg-slate-100 text-slate-600 border-slate-300'
+                          : isDemoInvalid(d)
+                          ? 'bg-slate-100 text-slate-600 border-slate-300'
+                          : isDemoExpired(d)
+                          ? 'bg-rose-50 text-rose-700 border-rose-200'
+                         : d.status === 'converted'
+                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                         : 'bg-indigo-50 text-[#5356EC] border-indigo-200'
+                     }`}
+                   >
+                      {isDemoRevoked(d) ? 'REVOKED' : isDemoInvalid(d) ? 'UNAVAILABLE' : isDemoExpired(d) ? 'EXPIRED' : d.status === 'converted' ? 'CONVERTED' : 'ACTIVE'}
+                   </span>
                 </div>
 
                 <div className="flex items-center gap-4 text-slate-500 text-[11px]">
@@ -195,15 +206,21 @@ export default function MyDemosPage() {
                     )}
                   </button>
 
-                  <a
-                    href={`/f/${d.slug}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-2 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors"
-                    title="Open Customer Funnel"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
+                   {isDemoLocked(d) ? (
+                     <span className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-500" title={isDemoRevoked(d) ? 'Demo revoked' : isDemoInvalid(d) ? 'Demo unavailable' : 'Demo expired'}>
+                       <ExternalLink className="w-3.5 h-3.5" />
+                     </span>
+                   ) : (
+                     <a
+                       href={`/f/${d.slug}`}
+                       target="_blank"
+                       rel="noreferrer"
+                       className="p-2 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors"
+                       title="Open Customer Funnel"
+                     >
+                       <ExternalLink className="w-3.5 h-3.5" />
+                     </a>
+                   )}
 
                   <button
                     onClick={() => setQrModalDemo(d)}
@@ -214,7 +231,7 @@ export default function MyDemosPage() {
                   </button>
                 </div>
 
-                {d.status !== 'converted' && (
+                {d.status !== 'converted' && !isDemoLocked(d) && (
                   <Link
                     href={`/sales/conversions?demoId=${d.id}&prospectId=${d.prospect_id || ''}`}
                     className="w-full py-2.5 rounded-xl bg-[#5356EC] hover:bg-[#4346DB] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all"

@@ -41,8 +41,6 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<StaffUser | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [slotsUsed, setSlotsUsed] = useState(0);
-  const [maxSlots, setMaxSlots] = useState(100);
 
   useEffect(() => {
     async function checkSalesAuth() {
@@ -71,7 +69,7 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
 
         const meData = await meRes.json();
         const res = analyticsRes;
-        const data = await res.json();
+        await res.json();
 
         if (!meData.success || !meData.staff) {
           router.push('/dashboard');
@@ -85,10 +83,6 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
           return;
         }
 
-        if (data.metrics) {
-          setSlotsUsed(data.metrics.lifetimeSlotsUsed ?? 0);
-          setMaxSlots(data.metrics.lifetimeSlotsMax ?? 100);
-        }
       } catch (e) {
         console.warn('Sales auth check error:', e);
       } finally {
@@ -140,8 +134,6 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
     { href: '/sales/settings', label: 'Settings', icon: Settings },
   ];
 
-  const slotsRemaining = Math.max(0, maxSlots - slotsUsed);
-  const slotProgressPercent = Math.min(100, Math.round((slotsUsed / maxSlots) * 100));
 
   return (
     <div className="flex h-screen bg-[#F4F6F9] text-slate-800 font-sans overflow-hidden">
@@ -191,23 +183,11 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
               <Crown className="w-5 h-5 text-amber-400 fill-amber-400" />
             </div>
             <div className="text-center">
-              <h4 className="text-xs font-bold text-white tracking-wide">First 100 Businesses</h4>
-              <p className="text-[11px] text-slate-300 font-medium mt-0.5">Lifetime Access</p>
+              <h4 className="text-xs font-bold text-white tracking-wide">Lifetime Plans</h4>
+              <p className="text-[11px] text-slate-300 font-medium mt-0.5">No account cap</p>
             </div>
 
-            {/* Progress Bar */}
-            <div className="mt-3 space-y-1.5">
-              <div className="w-full bg-white/15 rounded-full h-1.5 overflow-hidden">
-                <div
-                  className="bg-emerald-400 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${slotProgressPercent}%` }}
-                />
-              </div>
-              <div className="flex justify-between items-center text-[10px] text-slate-300 font-semibold px-0.5">
-                <span>{slotsUsed} / {maxSlots} used</span>
-                <span>{slotsRemaining} remaining</span>
-              </div>
-            </div>
+            <p className="mt-3 text-center text-[10px] text-slate-300 font-semibold">Both lifetime plans are available without an account cap.</p>
           </div>
 
           <button

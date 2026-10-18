@@ -47,6 +47,7 @@ function normalizeBusiness(row: Record<string, unknown>): MobileBusiness {
     address: (row.address as string | null) ?? null,
     city: (row.city as string | null) ?? null,
     state: (row.state as string | null) ?? null,
+    pincode: (row.pincode as string | null) ?? null,
     country: (row.country as string | null) ?? null,
     logo_url: (row.logo_url as string | null) ?? null,
     cover_image_url: (row.cover_image_url as string | null) ?? null,
@@ -75,13 +76,15 @@ function errorMessage(error: unknown): string {
 
 export function WorkspaceProvider({ children }: PropsWithChildren) {
   const { session, user } = useSession();
+  const accessToken = session?.access_token ?? null;
+  const userId = user?.id ?? null;
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot | null>(null);
   const [status, setStatus] = useState<WorkspaceStatus>('loading');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadWorkspace = useCallback(async (silent = false) => {
-    if (!session?.access_token) {
+    if (!accessToken) {
       setWorkspace(null);
       setStatus('loading');
       return;
@@ -92,7 +95,7 @@ export function WorkspaceProvider({ children }: PropsWithChildren) {
     setError(null);
 
     try {
-      const response = await getMobileBusinesses(session.access_token);
+      const response = await getMobileBusinesses(accessToken);
       const rawBusiness = response.businesses[0];
 
       if (!rawBusiness) {
@@ -152,14 +155,17 @@ export function WorkspaceProvider({ children }: PropsWithChildren) {
     } finally {
       setIsRefreshing(false);
     }
-  }, [session?.access_token]);
+  }, [accessToken]);
 
   useEffect(() => {
+    // Loading remote tenant data is the purpose of this effect; its callback
+    // updates the workspace state after the request resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadWorkspace();
   }, [loadWorkspace]);
 
   const loadMoreReviews = useCallback(async () => {
-    if (!session?.access_token || !workspace?.business.id || !workspace.hasMoreReviews) return;
+    if (!accessToken || !workspace?.business.id || !workspace.hasMoreReviews) return;
     const oldest = workspace.reviews[workspace.reviews.length - 1]?.review_time;
     if (!oldest) return;
     const db = supabase as any;
@@ -177,7 +183,7 @@ export function WorkspaceProvider({ children }: PropsWithChildren) {
       reviews: [...current.reviews, ...nextReviews],
       hasMoreReviews: nextReviews.length === 50,
     } : current);
-  }, [session?.access_token, workspace]);
+  }, [accessToken, workspace]);
 
   const updateBusiness = useCallback(async (updates: Record<string, unknown>) => {
     if (!workspace?.business.id) throw new Error('No business is selected.');
@@ -200,23 +206,24 @@ export function WorkspaceProvider({ children }: PropsWithChildren) {
   }, [workspace]);
 
   const updateProfile = useCallback(async (updates: { full_name?: string; phone?: string }) => {
-    if (!user?.id) throw new Error('No signed-in user is available.');
+    if (!userId) throw new Error('No signed-in user is available.');
     const db = supabase as any;
     const { error: updateError } = await db
       .from('profiles')
       .update({ ...updates, updated_at: new Date().toISOString() })
-      .or(`auth_user_id.eq.${user.id},id.eq.${user.id}`);
+      .or(`auth_user_id.eq.${userId},id.eq.${userId}`);
     if (updateError) throw new Error(updateError.message);
-  }, [user?.id]);
+  }, [userId]);
 
   const syncReviews = useCallback(async () => {
-    if (!session?.access_token || !workspace?.business.id) {
+    const businessId = workspace?.business.id ?? null;
+    if (!accessToken || !businessId) {
       return { success: false, status: 'requires_auth', message: 'Sign in before syncing reviews.' };
     }
-    const result = await syncGoogleReviews(session.access_token, workspace.business.id);
+    const result = await syncGoogleReviews(accessToken, businessId);
     if (result.success || result.status === 'access_pending') await loadWorkspace(true);
     return result;
-  }, [loadWorkspace, session?.access_token, workspace?.business.id]);
+  }, [accessToken, loadWorkspace, workspace]);
 
   const value = useMemo<WorkspaceContextValue>(() => ({
     workspace,

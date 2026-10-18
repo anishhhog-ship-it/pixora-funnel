@@ -79,16 +79,16 @@ export async function GET(req: NextRequest) {
     if (dispatchedResult.error) return databaseFailure();
     const nfcDispatchedCount = dispatchedResult.count;
 
-    // 5. Fetch Launch Offer Lifetime Slots
+    // 5. Fetch lifetime plan status. Lifetime plans have no account cap.
     const lifetimeResult = await (supabase as any)
       .from('commercial_plans')
       .select('max_slots, slots_used')
-      .eq('slug', 'lifetime_launch_100')
+      .eq('slug', 'lifetime_software')
       .maybeSingle();
     if (lifetimeResult.error) return databaseFailure();
     const lifetimePlan = lifetimeResult.data;
 
-    const maxSlots = lifetimePlan?.max_slots ?? 100;
+    const maxSlots = lifetimePlan?.max_slots ?? null;
     const slotsUsed = lifetimePlan?.slots_used ?? 0;
 
     // 6. Active Customers count
@@ -238,7 +238,7 @@ export async function GET(req: NextRequest) {
       nfcPendingFulfillment: nfcPendingCount || 0,
       lifetimeSlotsUsed: slotsUsed,
       lifetimeSlotsMax: maxSlots,
-      lifetimeSlotsRemaining: Math.max(0, maxSlots - slotsUsed),
+       lifetimeSlotsRemaining: maxSlots == null ? null : Math.max(0, maxSlots - slotsUsed),
       leadSourceBreakdown: sourceBreakdown,
       stagePipeline,
     };

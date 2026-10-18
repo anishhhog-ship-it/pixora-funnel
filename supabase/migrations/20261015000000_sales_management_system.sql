@@ -156,52 +156,45 @@ CREATE TABLE IF NOT EXISTS public.commercial_plans (
 INSERT INTO public.commercial_plans (name, slug, description, price_paise, billing_interval, duration_years, is_lifetime, includes_nfc, max_slots, slots_used, display_order, features)
 VALUES
   (
-    'Founder Launch Lifetime Offer',
-    'lifetime_launch_100',
-    'Exclusive launch offer for first 100 businesses. Lifetime Review Funnel software access with zero renewal fees.',
+    'Lifetime Software',
+    'lifetime_software',
+    'Lifetime Pixora Review Funnel software access without NFC hardware.',
     259900, -- ₹2,599 in paise
     'lifetime',
-    99,
+    0,
     true,
     false,
-    100,
+    NULL,
     0,
     1,
-    '["Lifetime Review Funnel Software", "Unlimited Google Reviews Routing", "Smart AI Review Wizard", "Custom QR Stand Asset", "Zero Recurring Fees"]'::jsonb
+    '["Lifetime Review Funnel Software", "Unlimited Google Reviews Routing", "Smart AI Review Wizard", "Custom QR Stand Asset", "No account cap"]'::jsonb
   ),
   (
-    'Standard 2-Year Plan',
-    'standard_2year_software',
-    'Full access for 2 full years to Pixora Review Funnel, smart routing, and QR assets.',
-    259900, -- ₹2,599 in paise
-    '2_years',
-    2,
-    false,
-    false,
-    NULL,
-    0,
-    2,
-    '["2-Year Full Software License", "Unlimited Table & Counter Scans", "AI Auto-Reply Generator", "Dynamic Feedback Routing", "Priority Support"]'::jsonb
-  ),
-  (
-    'Standard 2-Year Plan + NFC Delivery',
-    'standard_2year_nfc',
-    '2-Year Review Funnel access plus premium custom printed NFC Card & Stand delivered to doorstep.',
+    'Lifetime Software + NFC doorstep delivery',
+    'lifetime_software_nfc',
+    'Lifetime Pixora Review Funnel software access with NFC hardware delivered to your doorstep.',
     299900, -- ₹2,999 in paise
-    '2_years',
-    2,
-    false,
+    'lifetime',
+    0,
+    true,
     true,
     NULL,
     0,
-    3,
-    '["2-Year Full Software License", "1x Custom NFC Business Card", "1x Acrylic Table Display Stand", "Doorstep Express Courier", "Ready to Tap & Collect Reviews"]'::jsonb
+    2,
+    '["Lifetime Review Funnel Software", "Unlimited Google Reviews Routing", "Smart AI Review Wizard", "Custom NFC Review Card + Stand", "Doorstep delivery in India", "No account cap"]'::jsonb
   )
 ON CONFLICT (slug) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,
   price_paise = EXCLUDED.price_paise,
+  billing_interval = EXCLUDED.billing_interval,
+  duration_years = EXCLUDED.duration_years,
+  is_lifetime = EXCLUDED.is_lifetime,
   includes_nfc = EXCLUDED.includes_nfc,
+  max_slots = EXCLUDED.max_slots,
+  is_active = EXCLUDED.is_active,
+  display_order = EXCLUDED.display_order,
+  features = EXCLUDED.features,
   updated_at = now();
 
 -- ----------------------------------------------------------------------------

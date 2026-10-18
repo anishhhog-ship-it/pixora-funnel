@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AlertCircle, ArrowRight, CheckCircle2, RefreshCw, Star } from 'lucide-react-native';
 import { colors, radii, shadow } from '@/theme';
 
@@ -13,7 +13,6 @@ export function LogoMark({ small = false }: { small?: boolean }) {
 
 export function Screen({ children, scroll = true, contentContainerStyle }: { children: ReactNode; scroll?: boolean; contentContainerStyle?: object }) {
   if (!scroll) return <View style={[styles.screen, contentContainerStyle]}>{children}</View>;
-  const { ScrollView } = require('react-native') as typeof import('react-native');
   return <ScrollView style={styles.screen} contentContainerStyle={[styles.screenContent, contentContainerStyle]} showsVerticalScrollIndicator={false}>{children}</ScrollView>;
 }
 

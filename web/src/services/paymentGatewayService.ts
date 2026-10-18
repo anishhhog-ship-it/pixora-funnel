@@ -1,6 +1,7 @@
 import { Business } from '@/types';
 import { businessService } from './index';
 import { constructUpiUri } from '@/lib/qrDecoder';
+import { DEFAULT_PRICING_PLAN_SLUG, getPricingPlan } from '@/config/pricing';
 
 export interface PaymentGatewayConfig {
   upiId: string;
@@ -15,9 +16,11 @@ export interface PaymentOrder {
   id: string; // e.g. PX-ORD-171293
   businessId: string;
   businessName: string;
-  planId: 'plan_2year_software' | 'plan_pro_nfc_lifetime' | string;
+  planId: string;
   planName: string;
   amount: number;
+  isLifetime: boolean;
+  includesNfc: boolean;
   currency: string;
   status: 'PENDING' | 'PENDING_APPROVAL' | 'VERIFYING' | 'PAID' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
   upiUri: string;
@@ -106,21 +109,18 @@ class PaymentGatewayService {
   }
 
   /**
-   * Creates a live payment order with dynamic UPI URI pre-encoded with exact amount and Order ID
+   * Creates a live payment order with the amount derived from the canonical plan catalog.
    */
   public createOrder({
     businessId,
     businessName,
     planId,
-    planName,
-    amount,
   }: {
     businessId: string;
     businessName: string;
     planId: string;
-    planName: string;
-    amount: number;
   }): PaymentOrder {
+    const plan = getPricingPlan(planId) || getPricingPlan(DEFAULT_PRICING_PLAN_SLUG)!;
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const orderId = `PX-ORD-${Date.now().toString().slice(-6)}${randomSuffix}`;
     const now = new Date();
@@ -129,18 +129,20 @@ class PaymentGatewayService {
     const upiUri = constructUpiUri({
       upiId: this.config.upiId,
       payeeName: this.config.payeeName,
-      amount,
+      amount: plan.price_inr,
       orderId,
-      note: `Pixora ${planName.slice(0, 20)} - ${orderId}`,
+      note: `Pixora ${plan.name.slice(0, 20)} - ${orderId}`,
     });
 
     const order: PaymentOrder = {
       id: orderId,
       businessId,
       businessName,
-      planId,
-      planName,
-      amount,
+      planId: plan.slug,
+      planName: plan.name,
+      amount: plan.price_inr,
+      isLifetime: plan.is_lifetime,
+      includesNfc: plan.includes_nfc,
       currency: 'INR',
       status: 'PENDING',
       upiUri,
@@ -192,7 +194,7 @@ class PaymentGatewayService {
   }
 
   /**
-   * Admin approves transaction: marks PAID and triggers 2-year dashboard activation
+   * Admin approves transaction: marks PAID and triggers dashboard activation
    */
   public async approveOrder(orderId: string): Promise<{ success: boolean; message: string; order?: PaymentOrder }> {
     const res = await this.completeOrder(orderId, 'ADMIN_MANUAL', 'Approved by Admin');
@@ -225,7 +227,7 @@ class PaymentGatewayService {
   }
 
   /**
-   * Marks order as paid, generates 2-year license, and triggers instant dashboard activation
+   * Marks order as paid, generates the plan entitlement, and triggers instant dashboard activation
    */
   public async completeOrder(
     orderId: string,
@@ -243,7 +245,7 @@ class PaymentGatewayService {
     order.rawNotification = rawDetails || order.rawNotification;
     this.saveState();
 
-    // Activate business dashboard for 2 years!
+    // Activate the business dashboard for the selected lifetime plan.
     try {
       const generatedLicenseKey = `PX-${order.id.replace('PX-ORD-', '')}-${Math.floor(1000 + Math.random() * 9000)}`;
       await businessService.activateDashboardWithLicenseKey(order.businessId, generatedLicenseKey);
@@ -269,7 +271,7 @@ class PaymentGatewayService {
 
     return {
       success: true,
-      message: '✓ Payment verified! Your 2-Year Dashboard license has been activated instantly.',
+      message: '✓ Payment verified! Your lifetime dashboard access has been activated instantly.',
       order,
     };
   }

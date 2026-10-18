@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { businessService } from '@/services';
+import { getPublicFunnelResolution } from '@/services/publicFunnelResolver';
 import SinglePageReviewFunnel from './SinglePageReviewFunnel';
 
 export default async function FunnelPage({
@@ -8,7 +8,8 @@ export default async function FunnelPage({
   params: Promise<{ businessSlug: string }>;
 }) {
   const { businessSlug } = await params;
-  const business = await businessService.getBusinessBySlug(businessSlug);
+  const resolution = await getPublicFunnelResolution(businessSlug);
+  const business = resolution.business;
 
   if (!business) {
     notFound();

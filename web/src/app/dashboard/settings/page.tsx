@@ -234,8 +234,8 @@ export default function SettingsPage() {
   const [isActivatingLicenseKey, setIsActivatingLicenseKey] = useState(false);
   const [showGatewayModal, setShowGatewayModal] = useState(false);
   const [gatewayPlan, setGatewayPlan] = useState({
-    planId: 'plan_2year_software',
-    planName: 'Standard 2-Year Plan',
+    planId: 'lifetime_software',
+    planName: 'Lifetime Software',
     amount: 2599,
   });
   const [licenseKeySuccess, setLicenseKeySuccess] = useState<string | null>(null);
@@ -1015,7 +1015,7 @@ export default function SettingsPage() {
         const updatedBiz: Business = {
           ...activeBiz,
           planStatus: 'active',
-          trialExpiresAt: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString(),
+           trialExpiresAt: undefined,
         };
         setActiveBiz(updatedBiz);
       }
@@ -1028,7 +1028,7 @@ export default function SettingsPage() {
   };
 
   const handleDownloadInvoice = (item: string) => {
-    const content = `PIXORA TECHNOLOGIES PRIVATE LIMITED\nTAX INVOICE & LICENSE RECEIPT\n----------------------------------------\nItem: ${item}\nBusiness: ${activeBiz?.name || 'Client'}\nDate: ${new Date().toLocaleDateString()}\nStatus: PAID / ACTIVE\nLicense Model: 2-Year Full Commercial\nSupport Desk: support@pixora.in | +91 92573 78047\n----------------------------------------\nThank you for choosing Pixora!`;
+    const content = `PIXORA TECHNOLOGIES PRIVATE LIMITED\nTAX INVOICE & LICENSE RECEIPT\n----------------------------------------\nItem: ${item}\nBusiness: ${activeBiz?.name || 'Client'}\nDate: ${new Date().toLocaleDateString()}\nStatus: PAID / ACTIVE\nLicense Model: Lifetime Full Commercial\nSupport Desk: support@pixora.in | +91 92573 78047\n----------------------------------------\nThank you for choosing Pixora!`;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -3257,7 +3257,7 @@ export default function SettingsPage() {
                 Subscription, Plans &amp; License Key Activation
               </h2>
               <p className="text-xs text-stone-500 mt-1 max-w-2xl">
-                Activate your dashboard instantly using an admin license key or review your active 2-year commercial plan status.
+                 Activate your dashboard instantly using an admin license key or review your active lifetime commercial plan status.
               </p>
             </div>
 
@@ -3288,7 +3288,7 @@ export default function SettingsPage() {
                       ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
                       : "bg-amber-100 text-amber-800 border-amber-300"
                   )}>
-                    {activeBiz?.planStatus === 'active' ? 'Active · 2-Year Full License' : '1-Day Free Evaluation Trial'}
+                     {activeBiz?.planStatus === 'active' ? 'Active · Lifetime Full License' : '1-Day Free Evaluation Trial'}
                   </span>
                 </div>
                 <h3 className="text-lg font-bold">
@@ -3302,7 +3302,7 @@ export default function SettingsPage() {
                 )}>
                   {activeBiz?.planStatus === 'active'
                     ? 'Your account has full commercial access to automated review routing, AI auto-reply, digital menu scans, and priority support.'
-                    : 'Your trial gives a live demonstration of the customer funnel. Enter your admin-issued license key below to activate 2 full years.'}
+                     : 'Your trial gives a live demonstration of the customer funnel. Enter your admin-issued license key below to activate lifetime access.'}
                 </p>
               </div>
 
@@ -3334,12 +3334,12 @@ export default function SettingsPage() {
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-emerald-950">2-Year Commercial License Active</h4>
+                   <h4 className="text-sm font-bold text-emerald-950">Lifetime Commercial License Active</h4>
                   <p className="text-xs text-emerald-800 mt-0.5">Your account has full commercial access to automated review routing, AI auto-reply, digital menu scans, and priority support.</p>
                 </div>
               </div>
               <span className="self-start sm:self-auto px-3 py-1 rounded-full bg-emerald-600 text-white text-[11px] font-bold shrink-0">
-                Active · 2 Years
+                   Active · Lifetime
               </span>
             </div>
           ) : (
@@ -3353,7 +3353,7 @@ export default function SettingsPage() {
                   Activate Dashboard with License Key
                 </h3>
                 <p className="text-xs text-stone-500 mt-0.5">
-                  Our core model: Admin issues a unique 2-year license key upon order confirmation. Enter it below to unlock your dashboard instantly.
+                   Our core model: Admin issues a unique lifetime license key upon order confirmation. Enter it below to unlock your dashboard instantly.
                 </p>
               </div>
             </div>
@@ -3372,7 +3372,7 @@ export default function SettingsPage() {
                     className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-300 focus:border-emerald-800 focus:bg-white rounded-xl text-sm font-mono font-bold tracking-widest text-slate-900 uppercase outline-none transition"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-stone-400 uppercase">
-                    2-Year Key
+                     Lifetime Key
                   </span>
                 </div>
 
@@ -3415,26 +3415,26 @@ export default function SettingsPage() {
           {/* Pricing Plans Overview (Both Plans Displayed in Full) */}
           <div className="space-y-4">
             <div>
-              <h3 className="font-bold text-slate-900 text-base">Annual Commercial Plans</h3>
+               <h3 className="font-bold text-slate-900 text-base">Lifetime Commercial Plans</h3>
               <p className="text-xs text-stone-500 mt-0.5">
-                Transparent 2-year pricing. Zero monthly subscriptions or hidden gateway charges.
+                 Transparent lifetime pricing. Zero monthly subscriptions or hidden gateway charges.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Plan 1: 2,599 Without NFC */}
+               {/* Plan 1: 2,599 Lifetime Software */}
               <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-xs flex flex-col justify-between space-y-5">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider bg-stone-100 px-2 py-0.5 rounded">
                       Plan 1 · Software Suite
                     </span>
-                    <span className="text-[10px] font-bold text-stone-600">2 Years License</span>
+                     <span className="text-[10px] font-bold text-stone-600">Lifetime License</span>
                   </div>
 
                   <div className="flex items-baseline gap-1.5 mb-1">
                     <span className="text-3xl font-extrabold text-slate-900">₹2,599</span>
-                    <span className="text-xs text-slate-500 font-semibold">/ 2 Years</span>
+                     <span className="text-xs text-slate-500 font-semibold">/ Lifetime</span>
                   </div>
                   <p className="text-xs font-semibold text-slate-600">
                     Without NFC Card · Full Software Suite
@@ -3451,7 +3451,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>2 Years Software License &amp; Unlimited Scans</span>
+                       <span>Lifetime Software License &amp; Unlimited Scans</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -3466,15 +3466,15 @@ export default function SettingsPage() {
                 {isAccountUpgradedInSettings ? (
                   <div className="w-full py-3 px-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-xs flex items-center justify-center gap-2">
                     <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
-                    <span>Plan Activated · 2-Year Commercial License</span>
+                     <span>Plan Activated · Lifetime Commercial License</span>
                   </div>
                 ) : (
                   <button
                     type="button"
                     onClick={() => {
                       setGatewayPlan({
-                        planId: 'plan_2year_software',
-                        planName: 'Standard 2-Year Plan',
+                         planId: 'lifetime_software',
+                         planName: 'Lifetime Software',
                         amount: 2599,
                       });
                       setShowGatewayModal(true);
@@ -3488,10 +3488,10 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              {/* Plan 2: 2,999 With NFC Card (Lifetime Deal for First 100 Accounts) */}
+               {/* Plan 2: 2,999 Lifetime Software + NFC doorstep delivery */}
               <div className="bg-blue-50/60 rounded-2xl border-2 border-blue-600 p-6 shadow-md flex flex-col justify-between space-y-5 relative">
                 <div className="absolute -top-3 right-6 bg-blue-600 text-white text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
-                  🔥 Lifetime Deal · First 100
+                   Lifetime access · No account cap
                 </div>
 
                 <div>
@@ -3500,16 +3500,16 @@ export default function SettingsPage() {
                       Plan 2 · Software + NFC
                     </span>
                     <span className="text-[10px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded">
-                      Lifetime Free
+                       Lifetime access
                     </span>
                   </div>
 
                   <div className="flex items-baseline gap-1.5 mb-1">
                     <span className="text-3xl font-extrabold text-blue-900">₹2,999</span>
-                    <span className="text-xs text-blue-700 font-bold">/ Lifetime Free</span>
+                     <span className="text-xs text-blue-700 font-bold">/ Lifetime</span>
                   </div>
                   <p className="text-xs font-semibold text-blue-800">
-                    First 100 Accounts: Lifetime Free Access + NFC Review Card
+                     Lifetime Software + NFC doorstep delivery
                   </p>
 
                   {/* NFC Review Card Mockup */}
@@ -3530,7 +3530,7 @@ export default function SettingsPage() {
                   <div className="text-xs text-slate-700 space-y-2">
                     <div className="flex items-center gap-2 text-blue-950 font-bold">
                       <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                      <span>First 100 Accounts: Lifetime Free Software Access</span>
+                       <span>Lifetime Software Access · No account cap</span>
                     </div>
                     <div className="flex items-center gap-2 text-blue-950 font-medium">
                       <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
@@ -3542,7 +3542,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex items-center gap-2 text-slate-700 font-medium">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Zero Annual Renewal Fees Forever</span>
+                       <span>No renewal charges</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -3561,8 +3561,8 @@ export default function SettingsPage() {
                     type="button"
                     onClick={() => {
                       setGatewayPlan({
-                        planId: 'plan_pro_nfc_lifetime',
-                        planName: 'Pro Plan + NFC Card (Lifetime Deal)',
+                         planId: 'lifetime_software_nfc',
+                         planName: 'Lifetime Software + NFC doorstep delivery',
                         amount: 2999,
                       });
                       setShowGatewayModal(true);
@@ -3608,14 +3608,14 @@ export default function SettingsPage() {
               {activeBiz?.planStatus === 'active' && (
                 <div className="p-3.5 flex items-center justify-between text-xs hover:bg-stone-50/50 transition">
                   <div>
-                    <p className="font-bold text-slate-900">2-Year Commercial Software License</p>
+                     <p className="font-bold text-slate-900">Lifetime Commercial Software License</p>
                     <p className="text-[10px] text-stone-500">
                       Valid through {new Date(activeBiz.trialExpiresAt || Date.now()).toLocaleDateString()} · Active
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleDownloadInvoice('2-Year Commercial Software License')}
+                     onClick={() => handleDownloadInvoice('Lifetime Commercial Software License')}
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:underline cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />

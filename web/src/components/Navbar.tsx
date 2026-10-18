@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Menu, X, ArrowRight } from 'lucide-react';
 import { triggerPwaInstall } from '@/components/PwaInstallPrompt';
 import { smoothScrollTo } from '@/lib/scrollUtils';
@@ -11,6 +12,8 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('hero');
+  const pathname = usePathname();
+  const isHomePage = pathname === '/';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -72,8 +75,9 @@ export default function Navbar() {
           {/* Center: Desktop Navigation Links with Smooth Scroll Animations */}
           <nav className="hidden md:flex items-center gap-7 text-[13px] font-medium text-slate-600">
             <a 
-              href="#features" 
+              href={isHomePage ? '#features' : '/#features'}
               onClick={(e) => {
+                if (!isHomePage) return;
                 e.preventDefault();
                 smoothScrollTo('#features');
               }}
@@ -90,9 +94,17 @@ export default function Navbar() {
               )}
             </a>
 
+            <Link
+              href="/download"
+              className="public-focus-ring rounded-md py-1 text-slate-600 transition-colors hover:text-blue-600"
+            >
+              Mobile App
+            </Link>
+
             <a 
-              href="#industries" 
+              href={isHomePage ? '#industries' : '/#industries'}
               onClick={(e) => {
+                if (!isHomePage) return;
                 e.preventDefault();
                 smoothScrollTo('#industries');
               }}
@@ -110,8 +122,9 @@ export default function Navbar() {
             </a>
 
             <a 
-              href="#how-it-works" 
+              href={isHomePage ? '#how-it-works' : '/#how-it-works'}
               onClick={(e) => {
+                if (!isHomePage) return;
                 e.preventDefault();
                 smoothScrollTo('#how-it-works');
               }}
@@ -129,8 +142,9 @@ export default function Navbar() {
             </a>
 
             <a 
-              href="#pricing" 
+              href={isHomePage ? '#pricing' : '/#pricing'}
               onClick={(e) => {
+                if (!isHomePage) return;
                 e.preventDefault();
                 smoothScrollTo('#pricing');
               }}
@@ -148,8 +162,9 @@ export default function Navbar() {
             </a>
 
             <a 
-              href="#faq" 
+              href={isHomePage ? '#faq' : '/#faq'}
               onClick={(e) => {
+                if (!isHomePage) return;
                 e.preventDefault();
                 smoothScrollTo('#faq');
               }}
@@ -218,8 +233,9 @@ export default function Navbar() {
           <div id="mobile-navigation-drawer" className="mt-3 space-y-3 border-t border-slate-100 pt-4 pb-6 animate-in fade-in duration-200 md:hidden">
             <div className="flex flex-col space-y-2 text-sm font-medium text-slate-700">
               <a
-                href="#features"
+                href={isHomePage ? '#features' : '/#features'}
                 onClick={(e) => {
+                  if (!isHomePage) return;
                   e.preventDefault();
                   setMobileMenuOpen(false);
                   smoothScrollTo('#features');
@@ -230,8 +246,9 @@ export default function Navbar() {
                 <span className="text-xs text-slate-400">↓</span>
               </a>
               <a
-                href="#industries"
+                href={isHomePage ? '#industries' : '/#industries'}
                 onClick={(e) => {
+                  if (!isHomePage) return;
                   e.preventDefault();
                   setMobileMenuOpen(false);
                   smoothScrollTo('#industries');
@@ -241,9 +258,18 @@ export default function Navbar() {
                 <span>Industries</span>
                 <span className="text-xs text-slate-400">↓</span>
               </a>
+              <Link
+                href="/download"
+                onClick={() => setMobileMenuOpen(false)}
+                className="public-focus-ring flex items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
+              >
+                <span>Mobile App</span>
+                <ArrowRight className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+              </Link>
               <a
-                href="#how-it-works"
+                href={isHomePage ? '#how-it-works' : '/#how-it-works'}
                 onClick={(e) => {
+                  if (!isHomePage) return;
                   e.preventDefault();
                   setMobileMenuOpen(false);
                   smoothScrollTo('#how-it-works');
@@ -254,8 +280,9 @@ export default function Navbar() {
                 <span className="text-xs text-slate-400">↓</span>
               </a>
               <a
-                href="#pricing"
+                href={isHomePage ? '#pricing' : '/#pricing'}
                 onClick={(e) => {
+                  if (!isHomePage) return;
                   e.preventDefault();
                   setMobileMenuOpen(false);
                   smoothScrollTo('#pricing');
@@ -266,8 +293,9 @@ export default function Navbar() {
                 <span className="text-xs text-slate-400">↓</span>
               </a>
               <a
-                href="#faq"
+                href={isHomePage ? '#faq' : '/#faq'}
                 onClick={(e) => {
+                  if (!isHomePage) return;
                   e.preventDefault();
                   setMobileMenuOpen(false);
                   smoothScrollTo('#faq');

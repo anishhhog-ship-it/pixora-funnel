@@ -34,7 +34,9 @@ import {
   ArrowRight,
   BookOpen,
   LifeBuoy,
-  Menu as MenuIcon
+  Menu as MenuIcon,
+  Lock,
+  type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PORTAL_FOCUS_RING } from '@/components/client-portal/PortalUI';
@@ -49,6 +51,7 @@ import {
 import { Business } from '@/types';
 import PaymentGatewayModal from '@/components/payment/PaymentGatewayModal';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
+import { isBusinessAccessExpired } from '@/services/businessAccess';
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -94,6 +97,10 @@ function PageTitle(pathname: string, businessName: string) {
       title: 'QR Codes', 
       subtitle: 'Create and download print-ready QR table stands & stands.' 
     },
+    '/dashboard/store': {
+      title: 'Pixora Store',
+      subtitle: 'Request NFC cards, acrylic stands and branded hardware bundles.'
+    },
     '/dashboard/analytics': { 
       title: 'Analytics', 
       subtitle: 'Track review velocity, QR scans, customer actions and ratings.' 
@@ -114,6 +121,39 @@ function PageTitle(pathname: string, businessName: string) {
   return map[pathname] || { title: 'Dashboard', subtitle: '' };
 }
 
+function hasExpiredBusinessAccess(business: Business | null): boolean {
+  if (!business) return false;
+  return isBusinessAccessExpired({
+    status: business.planStatus,
+    plan_status: business.planStatus,
+    trial_expires_at: business.trialExpiresAt,
+  });
+}
+
+function ExpiredDashboardGate({ businessName, onActivate }: { businessName: string; onActivate: () => void }) {
+  return (
+    <div className="mx-auto flex min-h-[60vh] w-full max-w-xl items-center justify-center">
+      <section className="w-full rounded-3xl border border-rose-200 bg-white p-8 text-center shadow-xl sm:p-10" role="alert">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+          <Lock className="h-8 w-8" aria-hidden="true" />
+        </div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-600">Dashboard locked</p>
+        <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Your 24-hour trial has ended</h2>
+        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-600">
+          The customer funnel and dashboard for <strong>{businessName}</strong> are paused. Activate a lifetime plan to restore access.
+        </p>
+        <button
+          type="button"
+          onClick={onActivate}
+          className="mt-6 inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-blue-700"
+        >
+          Activate lifetime access
+        </button>
+      </section>
+    </div>
+  );
+}
+
 export default function DashboardContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -130,8 +170,8 @@ export default function DashboardContent({ children }: { children: React.ReactNo
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showGatewayModal, setShowGatewayModal] = useState(false);
   const [gatewayPlan, setGatewayPlan] = useState({
-    planId: 'plan_2year_software',
-    planName: 'Standard 2-Year Plan',
+    planId: 'lifetime_software',
+    planName: 'Lifetime Software',
     amount: 2599,
   });
 
@@ -166,12 +206,13 @@ export default function DashboardContent({ children }: { children: React.ReactNo
   const terminology = getCatalogTerminology(activeBusiness?.category);
   const CatalogNavIcon = terminology.isFood ? UtensilsCrossed : BookOpen;
 
-  const sidebarItems: Array<{ label: string; icon: any; href: string; badge?: string }> = [
+  const sidebarItems: Array<{ label: string; icon: LucideIcon; href: string; badge?: string }> = [
     { label: 'Dashboard', icon: Home, href: '/dashboard' },
     { label: 'Reviews', icon: Star, href: '/dashboard/reviews' },
     { label: 'Auto Reply', icon: MessageSquare, href: '/dashboard/auto-reply', badge: 'Beta' },
     { label: terminology.sidebarLabel, icon: CatalogNavIcon, href: '/dashboard/menu' },
     { label: 'QR Codes', icon: QrCode, href: '/dashboard/qr' },
+    { label: 'Store', icon: Store, href: '/dashboard/store' },
     { label: 'Analytics', icon: BarChart2, href: '/dashboard/analytics' },
     { label: 'Customers', icon: Users, href: '/dashboard/customers' },
     { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
@@ -181,6 +222,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
     { label: 'Home', icon: Home, href: '/dashboard' },
     { label: 'Reviews', icon: Star, href: '/dashboard/reviews' },
     { label: 'QR Stand', icon: QrCode, href: '/dashboard/qr' },
+    { label: 'Store', icon: Store, href: '/dashboard/store' },
     { label: terminology.mobileNavLabel, icon: CatalogNavIcon, href: '/dashboard/menu' },
     { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
   ];
@@ -234,11 +276,14 @@ export default function DashboardContent({ children }: { children: React.ReactNo
           localStorage.getItem(`pixora_plan_active_${matched.businessId}`) === 'true' ||
           localStorage.getItem(`pixora_plan_active_${matched.slug}`) === 'true'
         );
-        const isPlanActive = matched.planStatus === 'active' || isLocallyActive;
+        const isExpired = hasExpiredBusinessAccess(matched);
+        const isPlanActive = !isExpired && (matched.planStatus === 'active' || isLocallyActive);
 
         if (isPlanActive) {
           matched.planStatus = 'active';
-          setTrialTimeText('Active · 2 Year License Valid');
+          setTrialTimeText('Active · Lifetime License Valid');
+        } else if (isExpired) {
+          setTrialTimeText('Trial · Trial expired');
         } else {
           // Update trial timer
           const status = trialService.getRemainingTime(matched.trialExpiresAt);
@@ -273,7 +318,9 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                   setAllBusinesses(json.businesses);
                   setActiveBusiness(b);
                   businessService.setActiveBusinessSlug(b.slug);
-                  setTrialTimeText('Active · 2 Year License Valid');
+                   setTrialTimeText(
+                     hasExpiredBusinessAccess(b) ? 'Trial · Trial expired' : 'Active · Lifetime License Valid',
+                   );
                   setIsInitializing(false);
                   return;
                 }
@@ -296,7 +343,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
 
     // Dashboard activation event listener (e.g. key entered in modal)
     const handleActivatedEvent = () => {
-      setTrialTimeText('Active · 2 Year License Valid');
+              setTrialTimeText('Active · Lifetime License Valid');
       setActiveBusiness(prev => prev ? { ...prev, planStatus: 'active' } : null);
     };
     window.addEventListener('pixora:dashboard_activated', handleActivatedEvent);
@@ -334,12 +381,12 @@ export default function DashboardContent({ children }: { children: React.ReactNo
         return;
       }
       setLicenseKeySuccess(res.message);
-      setTrialTimeText('Active · 2 Year License Valid');
+       setTrialTimeText('Active · Lifetime License Valid');
       if (activeBusiness) {
         setActiveBusiness({
           ...activeBusiness,
           planStatus: 'active',
-          trialExpiresAt: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString(),
+           trialExpiresAt: undefined,
         });
       }
       setTimeout(() => {
@@ -516,12 +563,13 @@ export default function DashboardContent({ children }: { children: React.ReactNo
     );
   }
 
-  const isLocallyActive = typeof window !== 'undefined' && activeBusiness && (
+  const isAccountExpired = hasExpiredBusinessAccess(activeBusiness);
+  const isLocallyActive = !isAccountExpired && typeof window !== 'undefined' && activeBusiness && (
     localStorage.getItem(`pixora_plan_active_${activeBusiness.id}`) === 'true' ||
     localStorage.getItem(`pixora_plan_active_${activeBusiness.businessId}`) === 'true' ||
     localStorage.getItem(`pixora_plan_active_${activeBusiness.slug}`) === 'true'
   );
-  const isAccountUpgraded = activeBusiness?.planStatus === 'active' || Boolean(isLocallyActive);
+  const isAccountUpgraded = !isAccountExpired && (activeBusiness?.planStatus === 'active' || Boolean(isLocallyActive));
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 font-[Inter,sans-serif] text-slate-900" suppressHydrationWarning>
@@ -752,7 +800,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
             ) : (
               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-xs font-bold">
                 <Check className="w-3.5 h-3.5 stroke-[3]" />
-                <span>Active (2 Years)</span>
+                <span>Active (Lifetime)</span>
               </div>
             )}
 
@@ -1068,7 +1116,11 @@ export default function DashboardContent({ children }: { children: React.ReactNo
               <span className="max-w-[120px] truncate text-slate-800 sm:max-w-[180px]">{bizName}</span>
             </div>
           </div>
-          {children}
+          {isAccountExpired ? (
+            <ExpiredDashboardGate businessName={bizName} onActivate={() => setShowUpgradeModal(true)} />
+          ) : (
+            children
+          )}
         </main>
 
         {/* Mobile Client App Bottom Tab Bar */}
@@ -1125,7 +1177,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                 <Crown className="w-6 h-6" />
               </div>
               <h3 id="upgrade-plan-title" className="text-xl font-bold text-slate-900 sm:text-2xl">
-                Choose Your 2-Year Active Plan
+                 Choose Your Lifetime Active Plan
               </h3>
               <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto">
                 Turn on the <strong>AI Auto Reply System</strong>, keep your branded QR funnel live, and accelerate 5-star Google reviews.
@@ -1133,16 +1185,16 @@ export default function DashboardContent({ children }: { children: React.ReactNo
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-              {/* Option 1: 2,599 Without NFC */}
+               {/* Option 1: 2,599 Lifetime Software */}
               <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Plan 1 · Software</span>
-                    <span className="text-[10px] font-bold text-slate-700 bg-slate-200 px-2 py-0.5 rounded">2 Years Validity</span>
+                     <span className="text-[10px] font-bold text-slate-700 bg-slate-200 px-2 py-0.5 rounded">Lifetime access</span>
                   </div>
                   <div className="flex items-baseline gap-1.5 mb-1">
                     <span className="text-3xl font-extrabold text-slate-900">₹2,599</span>
-                    <span className="text-xs text-slate-500 font-semibold">/ 2 Years</span>
+                     <span className="text-xs text-slate-500 font-semibold">/ Lifetime</span>
                   </div>
                   <p className="text-xs font-semibold text-slate-600 mb-3">
                     Without NFC Card · Full Software Suite
@@ -1159,7 +1211,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>2 Years Software License</span>
+                       <span>Lifetime Software License</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -1176,8 +1228,8 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                   onClick={() => {
                     setShowUpgradeModal(false);
                     setGatewayPlan({
-                      planId: 'plan_2year_software',
-                      planName: 'Standard 2-Year Plan',
+                       planId: 'lifetime_software',
+                       planName: 'Lifetime Software',
                       amount: 2599,
                     });
                     setShowGatewayModal(true);
@@ -1185,27 +1237,27 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                   className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
                 >
                   <CreditCard className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Pay & Activate Online (₹2,599)</span>
+                   <span>Pay & Activate Lifetime Software (₹2,599)</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              {/* Option 2: 2,999 With NFC */}
+               {/* Option 2: 2,999 Lifetime Software + NFC */}
               <div className="p-5 rounded-2xl bg-blue-50/70 border-2 border-blue-600 flex flex-col justify-between relative shadow-sm">
                 <div className="absolute -top-3 right-4 bg-blue-600 text-white text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider">
-                  🔥 Lifetime Deal · First 100
+                   Lifetime access · No account cap
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Plan 2 · Software + NFC</span>
-                    <span className="text-[10px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded">Lifetime Free</span>
+                     <span className="text-[10px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded">Lifetime access</span>
                   </div>
                   <div className="flex items-baseline gap-1.5 mb-1">
                     <span className="text-3xl font-extrabold text-blue-900">₹2,999</span>
-                    <span className="text-xs text-blue-700 font-bold">/ Lifetime Free</span>
+                     <span className="text-xs text-blue-700 font-bold">/ Lifetime</span>
                   </div>
                   <p className="text-xs font-semibold text-blue-700 mb-2">
-                    First 100 Accounts: Lifetime Free Access + NFC Card
+                     Lifetime Software + NFC doorstep delivery
                   </p>
 
                   {/* NFC Review Card Mockup Image */}
@@ -1227,7 +1279,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                   <div className="text-xs text-slate-700 space-y-1.5 mb-4">
                     <div className="flex items-center gap-1.5 text-blue-950 font-bold">
                       <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                      <span>First 100 Accounts: Lifetime Free Access</span>
+                       <span>Lifetime Software Access · No account cap</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-blue-950 font-medium">
                       <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
@@ -1235,11 +1287,11 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                     </div>
                     <div className="flex items-center gap-1.5 text-emerald-700 font-semibold">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Auto Reply System Activated for Life</span>
+                       <span>Auto Reply System Activated for Life</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-700 font-medium">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Zero Annual Renewal Fees Forever</span>
+                       <span>No renewal charges</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -1253,8 +1305,8 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                   onClick={() => {
                     setShowUpgradeModal(false);
                     setGatewayPlan({
-                      planId: 'plan_pro_nfc_lifetime',
-                      planName: 'Pro Plan + NFC Card (Lifetime Offer)',
+                       planId: 'lifetime_software_nfc',
+                       planName: 'Lifetime Software + NFC doorstep delivery',
                       amount: 2999,
                     });
                     setShowGatewayModal(true);
@@ -1262,7 +1314,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
                   className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Claim & Pay Online (₹2,999)</span>
+                   <span>Pay & Activate Lifetime + NFC (₹2,999)</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -1471,7 +1523,7 @@ export default function DashboardContent({ children }: { children: React.ReactNo
         businessName={bizName}
         onSuccess={() => {
           setActiveBusiness((prev) => (prev ? { ...prev, planStatus: 'active' } : null));
-          setTrialTimeText('Active · 2 Year License Valid');
+          setTrialTimeText('Active · Lifetime License Valid');
         }}
       />
 

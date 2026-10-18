@@ -18,8 +18,8 @@ import {
 } from 'lucide-react';
 
 const plan1Features = [
-  '2 Years Full Software Access',
-  'AI Auto Reply System Activated',
+  'Lifetime Full Software Access',
+  'AI Auto Reply System Activated for Life',
   'Custom Branded QR Review Funnel',
   '1-Tap Smart Review Assistance for Guests',
   'Google Business Profile Direct Routing',
@@ -30,11 +30,11 @@ const plan1Features = [
 ];
 
 const plan2Features = [
-  'Lifetime Free Software Access (First 100 Accounts Offer)',
+  'Lifetime Full Software Access',
   'AI Auto Reply System Activated for Life',
   'Custom Branded NFC Smart Tap Review Card Included',
   'Free Express Doorstep Delivery in India',
-  'Zero Annual Renewal Charges Forever (First 100 Accounts)',
+  'No account cap or renewal charges',
   'Unlimited Contactless NFC Taps & QR Scans',
   '1-Tap Smart Review Assistance for Guests',
   'Google Business Profile Direct Routing',
@@ -73,8 +73,8 @@ const physicalAddons = [
 export default function PricingSection() {
   const [showGatewayModal, setShowGatewayModal] = useState(false);
   const [gatewayPlan, setGatewayPlan] = useState({
-    planId: 'plan_2year_software',
-    planName: 'Standard 2-Year Plan',
+    planId: 'lifetime_software',
+    planName: 'Lifetime Software',
     amount: 2599,
   });
   return (
@@ -85,20 +85,20 @@ export default function PricingSection() {
         <div className="text-center max-w-3xl mx-auto mb-12">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-wider mb-3">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-             LAUNCH OFFER · REVIEW PLAN TERMS BELOW
+             LIFETIME PLANS · REVIEW PLAN TERMS BELOW
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Simple Pricing. Zero Monthly Software Fees.
           </h2>
           <p className="mt-3 text-slate-600 text-sm sm:text-base leading-relaxed">
-             Test the complete system with our 1-day free trial, then compare the software-only and NFC card options below. Plan availability and included access are described in each option.
+             Test the complete system with our 1-day free trial, then choose lifetime software access with or without NFC doorstep delivery.
           </p>
 
           {/* Auto Reply Policy Callout */}
           <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
             <Info className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-               <strong>Auto Reply System:</strong> Auto Reply is turned off for trial accounts and becomes available with an active plan (Lifetime Free on the ₹2,999 plan for the first 100 accounts).
+                <strong>Auto Reply System:</strong> Auto Reply is turned off for trial accounts and becomes available with either lifetime plan.
             </span>
           </div>
         </div>
@@ -110,7 +110,7 @@ export default function PricingSection() {
         {/* 2 Main Pricing Cards Side-by-Side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16 items-stretch">
           
-          {/* PLAN 1: ₹2,599 (Without NFC Card · 2 Years Validity) */}
+           {/* PLAN 1: ₹2,599 Lifetime Software */}
           <div className="rounded-3xl bg-white border-2 border-slate-200 shadow-md hover:border-slate-300 transition-all p-7 sm:p-9 flex flex-col justify-between">
             <div>
               {/* Badge & Title */}
@@ -119,32 +119,24 @@ export default function PricingSection() {
                   Plan Option 1
                 </span>
                 <span className="text-xs font-bold text-slate-500">
-                  2 Years Validity
+                   Lifetime access
                 </span>
               </div>
 
-              <h3 className="text-2xl font-bold text-slate-900">Standard 2-Year Plan</h3>
+               <h3 className="text-2xl font-bold text-slate-900">Lifetime Software</h3>
               <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                Pure software suite for 1 business location (without physical NFC card)
+                 Full lifetime software suite for 1 business location (without physical NFC card)
               </p>
 
               {/* Price Row */}
               <div className="mt-5 pb-5 border-b border-slate-100">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg line-through text-slate-400 font-semibold decoration-rose-500 decoration-2">
-                    ₹5,999
-                  </span>
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-rose-50 border border-rose-200 text-rose-600 text-[11px] font-bold">
-                    57% OFF
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">₹2,599</span>
-                  <span className="text-xs text-slate-500 font-semibold">/ 2 Years (Without NFC Card)</span>
-                </div>
-                <p className="text-xs text-emerald-600 font-semibold mt-1.5 flex items-center gap-1">
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>Turns ON AI Auto Reply System for 2 Years</span>
+                 <div className="flex items-baseline gap-2">
+                   <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">₹2,599</span>
+                   <span className="text-xs text-slate-500 font-semibold">/ Lifetime (Without NFC Card)</span>
+                 </div>
+                 <p className="text-xs text-emerald-600 font-semibold mt-1.5 flex items-center gap-1">
+                   <Zap className="w-3.5 h-3.5" />
+                   <span>Turns ON AI Auto Reply System for Life</span>
                 </p>
               </div>
 
@@ -171,15 +163,15 @@ export default function PricingSection() {
                 type="button"
                 onClick={() => {
                   setGatewayPlan({
-                    planId: 'plan_2year_software',
-                    planName: 'Standard 2-Year Plan',
+                     planId: 'lifetime_software',
+                     planName: 'Lifetime Software',
                     amount: 2599,
                   });
                   setShowGatewayModal(true);
                 }}
                 className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-black text-white text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer"
               >
-                <span>Activate 2-Year Plan Online (₹2,599)</span>
+                 <span>Activate Lifetime Software Online (₹2,599)</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
@@ -192,12 +184,12 @@ export default function PricingSection() {
             </div>
           </div>
 
-          {/* PLAN 2: ₹2,999 (With NFC Card · Lifetime Deal for First 100 Accounts) — HIGHLIGHTED & RECOMMENDED */}
+           {/* PLAN 2: ₹2,999 Lifetime Software + NFC doorstep delivery — HIGHLIGHTED & RECOMMENDED */}
           <div className="relative rounded-3xl bg-white border-2 border-blue-600 shadow-xl p-7 sm:p-9 flex flex-col justify-between overflow-hidden">
             {/* Top highlight ribbon */}
             <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-extrabold px-5 py-1.5 rounded-bl-2xl shadow-sm flex items-center gap-1.5 uppercase tracking-wider">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>FIRST 100 ACCOUNTS · LIFETIME FREE ACCESS</span>
+               <span>LIFETIME ACCESS · NO ACCOUNT CAP</span>
             </div>
 
             <div>
@@ -205,35 +197,27 @@ export default function PricingSection() {
               <div className="flex items-center gap-2 mb-3 pt-2">
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
                   <Crown className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Pro Plan + NFC Card (Lifetime Deal)</span>
+                   <span>Lifetime Software + NFC doorstep delivery</span>
                 </span>
                 <span className="text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
                   Doorstep Delivery
                 </span>
               </div>
 
-              <h3 className="text-2xl font-bold text-slate-900">Pro Plan + NFC Card (Lifetime Free)</h3>
+               <h3 className="text-2xl font-bold text-slate-900">Lifetime Software + NFC doorstep delivery</h3>
               <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                Complete software suite + Custom Branded NFC Review Card delivered to your door. First 100 accounts get Lifetime Free access!
+                 Complete lifetime software suite with a Custom Branded NFC Review Card delivered to your door. No account cap.
               </p>
 
               {/* Price Row */}
               <div className="mt-5 pb-5 border-b border-slate-100">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg line-through text-slate-400 font-semibold decoration-rose-500 decoration-2">
-                    ₹6,999
-                  </span>
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-rose-50 border border-rose-200 text-rose-600 text-[11px] font-bold">
-                    57% OFF · LIFETIME
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl sm:text-5xl font-extrabold text-blue-600 tracking-tight">₹2,999</span>
-                  <span className="text-xs text-blue-700 font-bold">/ Lifetime Free Access (First 100 Accounts Only)</span>
-                </div>
-                <p className="text-xs text-blue-700 font-semibold mt-1.5 flex items-center gap-1">
-                  <Truck className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Includes Physical NFC Card + Lifetime Free Software & Auto Reply</span>
+                 <div className="flex items-baseline gap-2">
+                   <span className="text-4xl sm:text-5xl font-extrabold text-blue-600 tracking-tight">₹2,999</span>
+                   <span className="text-xs text-blue-700 font-bold">/ Lifetime access</span>
+                 </div>
+                 <p className="text-xs text-blue-700 font-semibold mt-1.5 flex items-center gap-1">
+                   <Truck className="w-3.5 h-3.5 text-blue-600" />
+                   <span>Includes Physical NFC Card + Lifetime Software & Auto Reply</span>
                 </p>
               </div>
 
@@ -278,8 +262,8 @@ export default function PricingSection() {
                 type="button"
                 onClick={() => {
                   setGatewayPlan({
-                    planId: 'plan_pro_nfc_lifetime',
-                    planName: 'Pro Plan + NFC Card (Lifetime Deal)',
+                     planId: 'lifetime_software_nfc',
+                     planName: 'Lifetime Software + NFC doorstep delivery',
                     amount: 2999,
                   });
                   setShowGatewayModal(true);
@@ -287,7 +271,7 @@ export default function PricingSection() {
                 className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-bold shadow-md hover:shadow-xl transition-all cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>Claim Lifetime Plan + NFC Online (₹2,999)</span>
+                 <span>Activate Lifetime Software + NFC Online (₹2,999)</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 

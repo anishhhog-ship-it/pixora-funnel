@@ -83,6 +83,10 @@ export interface SinglePageReviewFunnelProps {
   businessSlug?: string;
 }
 
+function getBusinessKey(business: Business, slug: string): string {
+  return `${slug}:${business.id || business.businessId || 'unknown'}`;
+}
+
 export function resolveBusinessTopics(biz: Business): string[] {
   // Review prompts are controlled by the business category so every client
   // gets a consistent, relevant funnel. Profile details remain editable in
@@ -141,6 +145,13 @@ export default function SinglePageReviewFunnel({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // Session tracking to ensure users never see repetitive reviews
   const seenReviewsRef = useRef<Set<string>>(new Set());
+  // Every generation is tied to one business and one request. This prevents a
+  // slow AM Kitchen House response from overwriting a later Hashmi Perfumes
+  // funnel when both are opened in the same browser session.
+  const generationVersionRef = useRef(0);
+  const activeBusinessKeyRef = useRef<string | null>(
+    initialBusiness ? getBusinessKey(initialBusiness, businessSlug) : null
+  );
 
   // 1. Generate review suggestion using real existing review engine
   const generateReviewForTopic = async (
@@ -150,6 +161,9 @@ export default function SinglePageReviewFunnel({
   ) => {
     const currentBiz = bizContext || business;
     if (!currentBiz) return;
+
+    const requestVersion = ++generationVersionRef.current;
+    const requestBusinessKey = getBusinessKey(currentBiz, businessSlug);
 
     setIsGenerating(true);
     setGenerationError(null);
@@ -169,6 +183,13 @@ export default function SinglePageReviewFunnel({
         excludeList
       );
 
+      if (
+        generationVersionRef.current !== requestVersion ||
+        activeBusinessKeyRef.current !== requestBusinessKey
+      ) {
+        return;
+      }
+
       if (suggestions && suggestions.length > 0) {
         // Guarantee the new review is different from current reviewText if alternatives exist
         const generated = suggestions.find(s => s !== reviewText) || suggestions[0];
@@ -184,7 +205,6 @@ export default function SinglePageReviewFunnel({
         if (!hasManuallyEdited || forceFresh) {
           setHasManuallyEdited(false);
           setReviewText(generated);
-          sessionStorage.setItem('final_review_text', generated);
         }
       } else {
         setGenerationError('Could not generate suggestion. You can type your own review below.');
@@ -201,10 +221,22 @@ export default function SinglePageReviewFunnel({
   useEffect(() => {
     let isActive = true;
 
+    // Invalidate requests from the previous business before loading this one.
+    generationVersionRef.current += 1;
+    setReviewText('');
+    setHasManuallyEdited(false);
+    setRating(0);
+    setHoverRating(0);
+    setGenerationError(null);
+    seenReviewsRef.current.clear();
+    sessionStorage.removeItem('final_review_text');
+    sessionStorage.removeItem('temp_experience');
+
     analyticsService.trackEvent('funnel_loaded', { slug: businessSlug });
 
     // If initialBusiness is provided from Server Component, use it immediately with zero delay
     if (initialBusiness) {
+      activeBusinessKeyRef.current = getBusinessKey(initialBusiness, businessSlug);
       setBusiness(initialBusiness);
       const cleanTopics = resolveBusinessTopics(initialBusiness);
       setTopics(cleanTopics);
@@ -215,7 +247,10 @@ export default function SinglePageReviewFunnel({
         generateReviewForTopic('', initialBusiness, true);
       }
       setIsLoadingBusiness(false);
-      return;
+      return () => {
+        isActive = false;
+        generationVersionRef.current += 1;
+      };
     }
 
     businessService.getBusinessBySlug(businessSlug)
@@ -225,6 +260,7 @@ export default function SinglePageReviewFunnel({
           setLoadError(true);
           return;
         }
+        activeBusinessKeyRef.current = getBusinessKey(biz, businessSlug);
         setBusiness(biz);
 
         const cleanTopics = resolveBusinessTopics(biz);
@@ -248,6 +284,7 @@ export default function SinglePageReviewFunnel({
 
     return () => {
       isActive = false;
+      generationVersionRef.current += 1;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businessSlug, initialBusiness]);
@@ -267,7 +304,6 @@ export default function SinglePageReviewFunnel({
     setReviewText(newText);
     setHasManuallyEdited(true);
     if (validationError) setValidationError(null);
-    sessionStorage.setItem('final_review_text', newText);
   };
 
   // 5. Rating selection
@@ -278,8 +314,6 @@ export default function SinglePageReviewFunnel({
       slug: businessSlug,
       businessId: business?.id || business?.businessId,
     });
-    sessionStorage.setItem('temp_rating', star.toString());
-
     // Keep low ratings in the private resolution flow. Do this at selection
     // time so a 1–3 star customer never sees or submits the Google CTA.
     if (getPublicRatingRoute(star) === 'feedback') {
@@ -376,6 +410,13 @@ export default function SinglePageReviewFunnel({
 
   // 8. Primary CTA action: Copy Review & Open Google
   const handleCopyAndOpenGoogle = async () => {
+    const expectedBusiness = initialBusiness || business;
+    const expectedBusinessKey = expectedBusiness ? getBusinessKey(expectedBusiness, businessSlug) : null;
+    if (!expectedBusinessKey || activeBusinessKeyRef.current !== expectedBusinessKey) {
+      setValidationError('This business funnel is still loading. Please try again in a moment.');
+      return;
+    }
+
     if (getPublicRatingRoute(rating) !== 'google') {
       if (getPublicRatingRoute(rating) === 'feedback') router.push(`/f/${businessSlug}/feedback?rating=${rating}`);
       else setValidationError('Please choose a 4 or 5 star rating to continue to Google.');

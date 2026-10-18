@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSalesSession, salesDb, databaseFailure, boundedText, isUuid } from '@/services/salesServer';
 import { CustomerHandoverPackage } from '@/types/sales';
+import { DEFAULT_PRICING_PLAN_SLUG, getPricingPlan, resolvePricingPlanSlug } from '@/config/pricing';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://funnel.pixoraautomations.com';
 const PAYMENT_STATUSES = ['UPI', 'Bank Transfer', 'Cash', 'Online Gateway'];
@@ -38,7 +39,8 @@ export async function POST(req: NextRequest) {
     const customerEmail = boundedText(body.customerEmail, 320)?.toLowerCase().trim();
     const customerPhone = boundedText(body.customerPhone, 40);
     const category = boundedText(body.category, 80) || 'General Business';
-    const planSlug = boundedText(body.planSlug || 'standard_2year_software', 80);
+    const requestedPlanSlug = boundedText(body.planSlug || DEFAULT_PRICING_PLAN_SLUG, 80);
+    const planSlug = resolvePricingPlanSlug(requestedPlanSlug);
     const paymentMethod = boundedText(body.paymentMethod || 'UPI', 30);
     const idempotencyKey = boundedText(body.idempotencyKey, 255) || (prospectId ? `sales-conv:${prospectId.slice(0, 8)}:${demoId ? demoId.slice(0, 8) : 'none'}:${crypto.randomUUID()}` : `sales-conv:${crypto.randomUUID()}`);
 
@@ -54,6 +56,11 @@ export async function POST(req: NextRequest) {
     }
     if (!planSlug) {
       return NextResponse.json({ success: false, error: 'Commercial plan is required' }, { status: 400 });
+    }
+
+    const canonicalPlan = getPricingPlan(planSlug);
+    if (!canonicalPlan) {
+      return NextResponse.json({ success: false, error: 'Commercial plan is not available' }, { status: 400 });
     }
     if (!paymentMethod) {
       return NextResponse.json({ success: false, error: 'Payment method is required' }, { status: 400 });
@@ -215,16 +222,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Load commercial plan
-    const plan = await db.from('commercial_plans').select('name,slug,price_paise,duration_years,is_lifetime,includes_nfc,is_active,max_slots').eq('slug', planSlug).eq('is_active', true).maybeSingle();
-    if (plan.error) return databaseFailure();
-    if (!plan.data) return NextResponse.json({ success: false, error: 'Plan not found' }, { status: 400 });
+    const planLookup = await db.from('commercial_plans').select('name,slug,price_paise,duration_years,is_lifetime,includes_nfc,is_active,max_slots').eq('slug', planSlug).eq('is_active', true).maybeSingle();
+    if (planLookup.error) return databaseFailure();
+    const authoritativePlan = canonicalPlan;
 
     const snapshot = {
-      name: plan.data.name,
-      pricePaise: plan.data.price_paise,
-      durationYears: plan.data.duration_years,
-      isLifetime: plan.data.is_lifetime,
-      includesNfc: plan.data.includes_nfc,
+      name: authoritativePlan.name,
+      pricePaise: authoritativePlan.price_paise,
+      durationYears: authoritativePlan.duration_years,
+      isLifetime: authoritativePlan.is_lifetime,
+      includesNfc: authoritativePlan.includes_nfc,
       customerName,
       customerEmail,
       customerPhone: boundedText(body.customerPhone, 40) || prospectData.phone || null,
@@ -240,9 +247,9 @@ export async function POST(req: NextRequest) {
       : boundedText(body.transactionReference, 160);
 
     const now = new Date();
-    const expiresAt = plan.data.is_lifetime
+    const expiresAt = authoritativePlan.is_lifetime
       ? null
-      : new Date(now.getTime() + (plan.data.duration_years || 2) * 365 * 24 * 60 * 60 * 1000).toISOString();
+      : new Date(now.getTime() + (authoritativePlan.duration_years || 1) * 365 * 24 * 60 * 60 * 1000).toISOString();
 
     const orderNo = `PX-${crypto.randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`;
 
@@ -258,7 +265,7 @@ export async function POST(req: NextRequest) {
       customer_id: null,
       plan_slug: planSlug,
       plan_snapshot: snapshot,
-      amount_paise: plan.data.price_paise,
+      amount_paise: authoritativePlan.price_paise,
       payment_method: paymentMethod,
       transaction_reference: txnRef,
       payment_status: 'VERIFIED',
@@ -268,6 +275,22 @@ export async function POST(req: NextRequest) {
       verified_by: verifiedBy,
       idempotency_key: idempotencyKey,
     };
+
+    if (authoritativePlan.includes_nfc) {
+      const requiredShipping = [
+        snapshot.shippingAddress,
+        snapshot.shippingCity,
+        snapshot.shippingState,
+        snapshot.shippingPincode,
+        snapshot.customerPhone,
+      ];
+      if (requiredShipping.some((value) => !value)) {
+        return NextResponse.json({
+          success: false,
+          error: 'NFC doorstep delivery requires shipping address, city, state, pincode, and customer phone.',
+        }, { status: 400 });
+      }
+    }
 
     // Try insert with optional hardening columns first
     let order = await db.from('sales_orders').insert({
@@ -297,6 +320,28 @@ export async function POST(req: NextRequest) {
         success: false,
         error: order.error?.message || 'Unable to record order'
       }, { status: 400 });
+    }
+
+    if (authoritativePlan.includes_nfc) {
+      const { error: nfcError } = await db.from('nfc_orders').insert({
+        sales_order_id: order.data.id,
+        business_id: businessId,
+        recipient_name: customerName,
+        shipping_address: snapshot.shippingAddress,
+        city: snapshot.shippingCity,
+        state: snapshot.shippingState,
+        pincode: snapshot.shippingPincode,
+        contact_phone: snapshot.customerPhone,
+        nfc_asset_type: 'Card + Stand',
+        status: 'Ordered',
+        notes: 'Lifetime Software + NFC doorstep delivery plan',
+      });
+
+      if (nfcError) {
+        console.error('NFC fulfillment record creation failed:', nfcError);
+        await db.from('sales_orders').delete().eq('id', order.data.id);
+        return NextResponse.json({ success: false, error: 'The NFC fulfillment record could not be created. The order was not activated.' }, { status: 500 });
+      }
     }
 
     // Direct Activation of Prospect and Demo
@@ -340,6 +385,7 @@ export async function POST(req: NextRequest) {
       if (authUserId) {
         await db.from('profiles').upsert({
           id: authUserId,
+          auth_user_id: authUserId,
           email: customerEmail,
           full_name: customerName,
           role: 'business_owner',
@@ -416,7 +462,7 @@ export async function POST(req: NextRequest) {
         staff_id: access.session.staffId,
         type: 'converted',
         title: 'Client Plan Directly Activated',
-        description: `Plan ${plan.data.name} activated directly. Order ${orderNo}.`,
+        description: `Plan ${authoritativePlan.name} activated directly. Order ${orderNo}.`,
       });
       await db.from('sales_audit_logs').insert({
         staff_id: access.session.staffId,
@@ -437,11 +483,11 @@ export async function POST(req: NextRequest) {
       loginUrl: `${APP_URL}/login`,
       publicFunnelUrl: `/f/${businessSlug}`,
       qrCodeDownloadUrl: `/api/qr/download?slug=${businessSlug}`,
-      planName: plan.data.name,
-      isLifetime: plan.data.is_lifetime,
+      planName: authoritativePlan.name,
+      isLifetime: authoritativePlan.is_lifetime,
       expiresAt,
-      nfcOrdered: false,
-      nfcAssetType: plan.data.includes_nfc ? 'Card + Stand' : undefined,
+       nfcOrdered: authoritativePlan.includes_nfc,
+      nfcAssetType: authoritativePlan.includes_nfc ? 'Card + Stand' : undefined,
       initialPassword: customerPassword,
       whatsappMessageTemplate: `Hello ${customerName}! Welcome to Pixora Funnel.\nYour account for ${prospectData.business_name} has been activated!\n\nSign in to your Dashboard:\n🔗 ${APP_URL}/login\n📧 Email: ${customerEmail}\n🔑 Password: ${customerPassword}\n\nLive Customer Review Funnel:\n🔗 ${APP_URL}/f/${businessSlug}\n\nYou can change your password anytime in your Profile & Security section!`,
       activationStatus: 'active',

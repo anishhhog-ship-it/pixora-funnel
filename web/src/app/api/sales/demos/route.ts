@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSalesSession, salesDb, databaseFailure, boundedText, isUuid } from '@/services/salesServer';
 import { isAllowedGoogleMapsUrl, isAllowedGoogleReviewUrl, isAllowedReviewDestinationUrl, isHttpsUrl } from '@/services/salesValidation';
+import { getSalesDemoVisibilityFilter } from '@/services/salesDemoVisibility';
+import { isPaidBusiness } from '@/services/businessAccess';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://funnel.pixoraautomations.com';
 const DEFAULT_CATEGORY = 'General Business';
@@ -9,7 +11,7 @@ function slugBase(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 48) || 'business';
 }
 
-async function uniqueSlug(db: any, name: string) {
+async function uniqueSlug(db: ReturnType<typeof salesDb>, name: string) {
   const base = slugBase(name);
   // 1. Try clean business name slug first (no random hashes)
   const { data: d1 } = await db.from('sales_demos').select('id').eq('slug', base).maybeSingle();
@@ -45,7 +47,22 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const db = salesDb();
     let query = db.from('sales_demos').select('*, prospect:prospect_id(id, business_name, contact_name, phone, stage)').order('created_at', { ascending: false });
-    if (access.session.role === 'salesperson') query = query.eq('created_by', access.session.staffId);
+    if (access.session.role === 'salesperson') {
+      const staffId = access.session.staffId;
+      if (!staffId) return databaseFailure();
+      // Reused demos keep their original creator. A salesperson assigned to the
+      // related prospect must still be able to see that demo in their list.
+      const { data: assignedProspects, error: assignedProspectsError } = await db
+        .from('prospects')
+        .select('id')
+        .eq('assigned_to', staffId);
+      if (assignedProspectsError) return databaseFailure();
+
+      query = query.or(getSalesDemoVisibilityFilter(
+        staffId,
+        (assignedProspects || []).map((prospect: { id: string }) => prospect.id),
+      ));
+    }
     const prospectId = searchParams.get('prospectId');
     if (prospectId) {
       if (!isUuid(prospectId)) return NextResponse.json({ success: false, error: 'Invalid prospect ID' }, { status: 400 });
@@ -53,7 +70,21 @@ export async function GET(req: NextRequest) {
     }
     const { data, error } = await query;
     if (error) return databaseFailure();
-    return NextResponse.json({ success: true, demos: data || [] });
+    const now = Date.now();
+    const demos = (data || []).map((demo: Record<string, unknown>) => {
+      const status = typeof demo.status === 'string' ? demo.status : '';
+      const expiresAtMs = typeof demo.expires_at === 'string'
+        ? new Date(demo.expires_at).getTime()
+        : Number.NaN;
+      return {
+        ...demo,
+        is_expired: Boolean(
+          status !== 'converted' &&
+          (!demo.expires_at || !Number.isFinite(expiresAtMs) || expiresAtMs <= now),
+        ),
+      };
+    });
+    return NextResponse.json({ success: true, demos });
   } catch { return databaseFailure(); }
 }
 
@@ -68,6 +99,17 @@ export async function POST(req: NextRequest) {
     if (!businessName) return NextResponse.json({ success: false, error: 'Business name is required' }, { status: 400 });
     const prospectId = body.prospectId == null ? null : body.prospectId;
     if (prospectId && !isUuid(prospectId)) return NextResponse.json({ success: false, error: 'Invalid prospect ID' }, { status: 400 });
+    if (access.session.role === 'salesperson' && prospectId) {
+      const { data: assignedProspect, error: assignedProspectError } = await db
+        .from('prospects')
+        .select('assigned_to')
+        .eq('id', prospectId)
+        .maybeSingle();
+      if (assignedProspectError) return databaseFailure();
+      if (!assignedProspect || assignedProspect.assigned_to !== access.session.staffId) {
+        return NextResponse.json({ success: false, error: 'Cannot create a demo for an unassigned prospect' }, { status: 403 });
+      }
+    }
     const defaults = categoryDefaults(typeof body.category === 'string' ? body.category : DEFAULT_CATEGORY);
     let reviewUrl = boundedText(body.reviewDestinationUrl, 2000);
     const googleMapsUrl = boundedText(body.googleMapsUrl, 2000);
@@ -81,7 +123,12 @@ export async function POST(req: NextRequest) {
     }
 
     // If reviewUrl is missing or the generic placeholder https://maps.app.goo.gl/, fetch from prospect
-    let prospectData: any = null;
+    let prospectData: {
+      google_maps_url?: string | null;
+      address?: string | null;
+      city?: string | null;
+      phone?: string | null;
+    } | null = null;
     if (prospectId) {
       const { data: p } = await db.from('prospects').select('google_maps_url, address, city, phone').eq('id', prospectId).maybeSingle();
       if (p) {
@@ -122,7 +169,7 @@ export async function POST(req: NextRequest) {
     if (prospectId) {
       const { data: foundDemo } = await db
         .from('sales_demos')
-        .select('id, slug, business_id, created_by, status')
+        .select('id, slug, business_id, created_by, status, expires_at')
         .eq('prospect_id', prospectId)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -133,37 +180,94 @@ export async function POST(req: NextRequest) {
     }
 
     if (existingDemo) {
+      if (access.session.role === 'salesperson' && existingDemo.created_by !== access.session.staffId) {
+        const { data: assignedProspect } = await db
+          .from('prospects')
+          .select('assigned_to')
+          .eq('id', prospectId)
+          .maybeSingle();
+
+        if (assignedProspect?.assigned_to !== access.session.staffId) {
+          return NextResponse.json({
+            success: false,
+            error: 'This prospect already has a demo owned by another salesperson. Ask a manager to reassign it before editing.',
+          }, { status: 409 });
+        }
+      }
+
+      if (existingDemo.status === 'revoked') {
+        return NextResponse.json({
+          success: false,
+          error: 'This demo has been revoked and cannot be reopened.',
+        }, { status: 409 });
+      }
+
+      // Editing a demo must not silently restart its 24-hour preview clock.
+      // Expired or malformed unpaid demos require a fresh creation path rather
+      // than being reopened through the same-prospect update path.
+      const existingExpiresAtMs = typeof existingDemo.expires_at === 'string'
+        ? new Date(existingDemo.expires_at).getTime()
+        : Number.NaN;
+      if (existingDemo.status !== 'converted' &&
+        (!Number.isFinite(existingExpiresAtMs) || existingExpiresAtMs <= Date.now())) {
+        return NextResponse.json({
+          success: false,
+          error: 'This demo preview has expired and cannot be reopened.',
+        }, { status: 409 });
+      }
+
       const slug = existingDemo.slug;
       businessId = existingDemo.business_id;
+      if (!businessId) {
+        return NextResponse.json({ success: false, error: 'This demo is not linked to a valid business.' }, { status: 409 });
+      }
+
+      const { data: existingBusiness, error: existingBusinessError } = await db
+        .from('businesses')
+        .select('status, plan_status, trial_expires_at')
+        .eq('id', businessId)
+        .maybeSingle();
+      if (existingBusinessError) return databaseFailure();
+      if (!existingBusiness) {
+        return NextResponse.json({ success: false, error: 'This demo is not linked to a valid business.' }, { status: 409 });
+      }
+
+      // Editing a converted/paid demo must never demote its tenant back to an
+      // trial or replace lifetime access with a new preview clock.
+      const preserveEntitlement = existingDemo.status === 'converted' || isPaidBusiness(existingBusiness);
+      const nextDemoStatus = existingDemo.status === 'converted' ? 'converted' : 'active';
 
       // Update existing business record
-      if (businessId) {
-        const businessUpdate: Record<string, unknown> = {
-          name: businessName,
-          category: defaults.category,
-          website: reviewUrl,
-          primary_color: color,
-          secondary_color: '#D4AF37',
-          status: 'trial',
-          plan_status: 'trial',
-          trial_expires_at: expires,
-          headline: config.headline || defaults.headline,
-          subheadline: config.subheadline || null,
-          updated_at: now.toISOString(),
-        };
-        if (demoAddress) businessUpdate.address = demoAddress;
-        if (demoCity) businessUpdate.city = demoCity;
-        if (demoPhone) businessUpdate.phone = demoPhone;
-
-        // Do not clear previously confirmed Google data when an older demo edit
-        // does not include the new Quick Demo fields.
-        if (googlePlaceId) businessUpdate.google_place_id = googlePlaceId;
-        if (googleMapsUrl) businessUpdate.google_maps_url = googleMapsUrl;
-        if (googleReviewUrl || isAllowedGoogleReviewUrl(reviewUrl)) {
-          businessUpdate.google_review_url = googleReviewUrl || reviewUrl;
-        }
-        await db.from('businesses').update(businessUpdate).eq('id', businessId);
+      const businessUpdate: Record<string, unknown> = {
+        name: businessName,
+        category: defaults.category,
+        website: reviewUrl,
+        primary_color: color,
+        secondary_color: '#D4AF37',
+        headline: config.headline || defaults.headline,
+        subheadline: config.subheadline || null,
+        updated_at: now.toISOString(),
+      };
+      if (!preserveEntitlement) {
+        businessUpdate.status = 'trial';
+        businessUpdate.plan_status = 'trial';
+        // Keep the first server-issued trial deadline; an edit must not extend
+        // dashboard access after the original 24-hour preview has elapsed.
+        businessUpdate.trial_expires_at = existingBusiness.trial_expires_at || existingDemo.expires_at;
       }
+      if (demoAddress) businessUpdate.address = demoAddress;
+      if (demoCity) businessUpdate.city = demoCity;
+      if (demoPhone) businessUpdate.phone = demoPhone;
+
+      // Do not clear previously confirmed Google data when an older demo edit
+      // does not include the new Quick Demo fields.
+      if (googlePlaceId) businessUpdate.google_place_id = googlePlaceId;
+      if (googleMapsUrl) businessUpdate.google_maps_url = googleMapsUrl;
+      if (googleReviewUrl || isAllowedGoogleReviewUrl(reviewUrl)) {
+        businessUpdate.google_review_url = googleReviewUrl || reviewUrl;
+      }
+      const businessUpdateResult = await db.from('businesses').update(businessUpdate).eq('id', businessId);
+      if (businessUpdateResult.error) return databaseFailure();
 
       // Update existing demo record
       const { data: updatedDemo, error: demoUpdateErr } = await db.from('sales_demos').update({
@@ -175,8 +279,10 @@ export async function POST(req: NextRequest) {
         cover_url: boundedText(body.coverUrl, 2000),
         template_slug: boundedText(body.templateSlug, 80) || 'classic',
         config: publicConfig,
-        status: 'active',
-        expires_at: expires,
+        status: nextDemoStatus,
+        // Preserve the original preview deadline; never extend an existing
+        // unpaid demo by editing its business details.
+        expires_at: existingDemo.expires_at,
         updated_at: now.toISOString(),
       }).eq('id', existingDemo.id).select().single();
 
@@ -266,10 +372,10 @@ export async function POST(req: NextRequest) {
       }
     }
     return NextResponse.json({ success: true, demo: demoResult.data, publicFunnelUrl: `/f/${slug}`, publicDemoUrl: `/f/${slug}` });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Demo creation error:', error);
     if (businessId) await db.from('businesses').delete().eq('id', businessId); // best-effort cleanup of an unreferenced trial tenant
-    return databaseFailure(error?.message === 'Unable to persist demo' ? 'Unable to persist demo' : 'Unable to create demo');
+    return databaseFailure(error instanceof Error && error.message === 'Unable to persist demo' ? 'Unable to persist demo' : 'Unable to create demo');
   }
 }
 

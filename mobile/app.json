@@ -23,6 +23,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.pixora.funnel",
+      "buildNumber": "1",
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -30,6 +31,7 @@
     },
     "android": {
       "package": "com.pixora.funnel",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

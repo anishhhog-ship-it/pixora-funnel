@@ -46,7 +46,7 @@ const FAQS = [
   },
   {
     q: 'How do I activate the AI Auto-Reply system?',
-    a: 'AI Auto-Replies are activated with our ₹2,599 (2-Year Software) or ₹2,999 (First 100 Accounts Lifetime Free Access + NFC Card) plans. Once activated, the AI automatically drafts polite, SEO-optimized responses to incoming Google reviews in your brand tone, boosting your local search ranking.',
+     a: 'AI Auto-Replies are activated with our ₹2,599 Lifetime Software plan or ₹2,999 Lifetime Software + NFC doorstep delivery plan. Once activated, the AI automatically drafts polite, SEO-optimized responses to incoming Google reviews in your brand tone, boosting your local search ranking.',
   },
   {
     q: 'Can I print custom QR table stands for multiple dining tables or counters?',

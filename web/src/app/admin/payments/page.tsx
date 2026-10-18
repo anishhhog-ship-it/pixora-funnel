@@ -308,7 +308,7 @@ export default function AdminPaymentsPage() {
       await paymentGatewayService.approveOrder(orderId);
 
       loadOrders();
-      showNotice('success', `✓ Order ${orderId} approved! ${businessName} dashboard activated for 2 Years.`);
+       showNotice('success', `✓ Order ${orderId} approved! ${businessName} dashboard activated with lifetime access.`);
     } catch (err: any) {
       showNotice('error', err.message || 'Unable to approve order.');
     } finally {
@@ -510,7 +510,7 @@ export default function AdminPaymentsPage() {
     payeeName: config.payeeName,
     amount: 2599,
     orderId: 'PX-SAMPLE-1001',
-    note: 'Pixora 2-Year Plan',
+     note: 'Pixora Lifetime Plan',
   });
 
   const webhookUrl = typeof window !== 'undefined'
@@ -555,7 +555,7 @@ export default function AdminPaymentsPage() {
             Payment Approvals &amp; Gateway
           </h1>
           <p className="text-[14px] text-slate-500 mt-1 max-w-2xl">
-            Review customer UPI transactions, verify submitted UTR numbers, and activate 2-Year business licenses with 1-click approvals.
+             Review customer UPI transactions, verify submitted UTR numbers, and activate lifetime business licenses with 1-click approvals.
           </p>
         </div>
 
@@ -665,7 +665,7 @@ export default function AdminPaymentsPage() {
             <span className="text-3xl font-extrabold text-slate-900">₹{totalRevenue.toLocaleString('en-IN')}</span>
           </div>
           <div className="mt-2 text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
-            <span>{paidOrders.length} Approved 2-Year Licenses</span>
+             <span>{paidOrders.length} Approved Lifetime Licenses</span>
           </div>
         </div>
 
@@ -682,7 +682,7 @@ export default function AdminPaymentsPage() {
             <span className="text-xs text-slate-500">active</span>
           </div>
           <div className="mt-2 text-[11px] font-semibold text-blue-700">
-            <span>2 Years Full Software Suite</span>
+             <span>Lifetime Full Software Suite</span>
           </div>
         </div>
 
@@ -742,7 +742,7 @@ export default function AdminPaymentsPage() {
                 )}
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Review customer UTR reference numbers against your bank statement. Approving an order immediately unlocks their 2-Year dashboard.
+                 Review customer UTR reference numbers against your bank statement. Approving an order immediately unlocks their lifetime dashboard.
               </p>
             </div>
 
@@ -816,7 +816,7 @@ export default function AdminPaymentsPage() {
 
                     <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
                       <Check className="w-3 h-3" />
-                      <span>Unlocks 2 Years Full Commercial Suite Upon Approval</span>
+                       <span>Unlocks Lifetime Full Commercial Suite Upon Approval</span>
                     </div>
                   </div>
 
@@ -866,7 +866,7 @@ export default function AdminPaymentsPage() {
                       className="py-3 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-50 text-white font-extrabold text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2"
                     >
                       <Check className="w-4 h-4 stroke-[3]" />
-                      <span>Approve &amp; Activate (2 Years)</span>
+                       <span>Approve &amp; Activate (Lifetime)</span>
                     </button>
 
                     <button
@@ -1020,7 +1020,7 @@ export default function AdminPaymentsPage() {
                       </td>
                       <td className="px-6 py-4 text-slate-600">
                         <span>{o.planName}</span>
-                        <span className="block text-[10px] text-emerald-700 font-semibold">2 Years Validity</span>
+                       <span className="block text-[10px] text-emerald-700 font-semibold">Lifetime Validity</span>
                       </td>
                       <td className="px-6 py-4 font-extrabold text-slate-900 text-sm">
                         ₹{o.amount.toLocaleString('en-IN')}
@@ -1482,7 +1482,7 @@ export default function AdminPaymentsPage() {
                 <h4 className="text-base font-extrabold">Reconstructed Dynamic QR</h4>
               </div>
               <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                2-Year ₹2,599
+                 Lifetime ₹2,599
               </span>
             </div>
 
@@ -1507,7 +1507,7 @@ export default function AdminPaymentsPage() {
                 <p className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">{config.payeeName}</p>
                 <p className="text-[10px] font-mono text-slate-500">{config.upiId}</p>
                 <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-[10px] font-extrabold text-slate-800">
-                  Exact Amount: ₹2,599
+                   Exact Amount: ₹2,599
                 </span>
               </div>
             </div>
@@ -1518,7 +1518,7 @@ export default function AdminPaymentsPage() {
                 <span>Zero Third-Party Gateway Fees</span>
               </div>
               <p className="text-[11px] text-slate-300 leading-relaxed">
-                Money credits directly to your bank account with zero 2% Razorpay/Cashfree cut. Customer enters their 12-digit UTR, you approve here, and their 2-Year dashboard activates!
+                 Money credits directly to your bank account with zero 2% Razorpay/Cashfree cut. Customer enters their 12-digit UTR, you approve here, and their lifetime dashboard activates!
               </p>
             </div>
           </div>

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { router } from 'expo-router';
 import { Mail, Lock, ArrowRight, KeyRound } from 'lucide-react-native';
 import { useSession } from '@/ctx';
 import { colors, radii } from '@/theme';

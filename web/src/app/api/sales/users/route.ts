@@ -84,6 +84,7 @@ export async function POST(req: NextRequest) {
       await db.from('profiles').upsert(
         {
           id: authUserId,
+          auth_user_id: authUserId,
           email,
           full_name: fullName,
           role: 'business_owner',
@@ -117,23 +118,27 @@ export async function POST(req: NextRequest) {
     if (targetBusinessId) {
       const { data: biz } = await db
         .from('businesses')
-        .select('id,slug')
+        .select('id,slug,plan_status,trial_expires_at')
         .eq('id', targetBusinessId)
         .maybeSingle();
 
       businessSlug = biz?.slug || businessSlug;
 
-      await db
-        .from('businesses')
-        .update({
-          owner_id: authUserId,
-          email,
-          status: 'active',
-          plan_status: 'active',
-          trial_expires_at: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', targetBusinessId);
+      const { data: paidOrder } = await db
+        .from('sales_orders')
+        .select('id')
+        .eq('business_id', targetBusinessId)
+        .eq('payment_status', 'VERIFIED')
+        .limit(1)
+        .maybeSingle();
+      const canActivate = biz?.plan_status === 'active' || Boolean(paidOrder);
+
+      await db.from('businesses').update({
+        owner_id: authUserId,
+        email,
+        ...(canActivate ? { status: 'active', plan_status: 'active', trial_expires_at: null } : {}),
+        updated_at: new Date().toISOString(),
+      }).eq('id', targetBusinessId);
 
       try {
         await db.from('business_members').upsert(

@@ -24,10 +24,12 @@ export { isDemoMode } from '@/config/env';
 import { authService } from './authService';
 export { authService } from './authService';
 export { trialService } from './trialService';
+import { resolveBusinessPlanStatus } from './businessAccess';
 export { funnelService } from './funnelService';
 export { onboardingService } from './onboardingService';
 export { replyService } from './replyService';
 import { statsService } from './statsService';
+import { getTrialWindow } from './trialContract';
 export { statsService } from './statsService';
 export type { PlatformStats } from './statsService';
 export { googleBusinessProfile, googleBusinessProfileService } from './googleBusinessProfileService';
@@ -151,8 +153,8 @@ export const businessService = {
             phone: b.phone || '',
             email: b.email || '',
             menuEnabled: b.menu_enabled ?? true,
-            planStatus: (b.status === 'active' ? 'active' : 'trial') as 'trial' | 'active' | 'expired',
-            trialExpiresAt: b.trial_expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            planStatus: resolveBusinessPlanStatus(b),
+            trialExpiresAt: b.trial_expires_at || undefined,
             qrScans: 0,
             reviewsCount: 0,
             createdAt: b.created_at,
@@ -200,8 +202,12 @@ export const businessService = {
             ownerName: demoConfig.owner_name || 'Business Owner',
             phone: demoConfig.phone || '',
             email: demoConfig.email || '',
-            planStatus: 'active',
-            trialExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            planStatus: resolveBusinessPlanStatus({
+              status: 'trial',
+              plan_status: 'trial',
+              trial_expires_at: demo.expires_at,
+            }),
+            trialExpiresAt: demo.expires_at || undefined,
             qrScans: 0,
             reviewsCount: 0,
             createdAt: demo.created_at,
@@ -315,8 +321,8 @@ export const businessService = {
             phone: b.phone || '',
             email: b.email || '',
             menuEnabled: b.menu_enabled ?? true,
-            planStatus: (b.status === 'active' ? 'active' : 'trial') as 'trial' | 'active' | 'expired',
-            trialExpiresAt: b.trial_expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            planStatus: resolveBusinessPlanStatus(b),
+            trialExpiresAt: b.trial_expires_at || undefined,
             qrScans: 0,
             reviewsCount: 0,
             createdAt: b.created_at,
@@ -403,8 +409,8 @@ export const businessService = {
             phone: b.phone || '',
             email: b.email || targetEmail || '',
             menuEnabled: b.menu_enabled ?? true,
-            planStatus: 'active' as const,
-            trialExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            planStatus: resolveBusinessPlanStatus(b),
+            trialExpiresAt: b.trial_expires_at || undefined,
             qrScans: 0,
             reviewsCount: 0,
             createdAt: b.created_at,
@@ -523,8 +529,6 @@ export const businessService = {
       return { success: false, message: 'Invalid license key format. Keys must be at least 6 characters.' };
     }
 
-    const twoYearsExpiry = new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString();
-
     // 1. Supabase Cloud Sync
     if (isSupabaseConfigured() && businessIdOrSlug && !businessIdOrSlug.startsWith('biz_')) {
       try {
@@ -548,13 +552,16 @@ export const businessService = {
         // Update businesses status to 'active'
         await (supabase as any)
           .from('businesses')
-          .update({ status: 'active', trial_expires_at: twoYearsExpiry })
+          .update({ status: 'active', plan_status: 'active', trial_expires_at: null })
           .or(`id.eq.${businessIdOrSlug},slug.eq.${businessIdOrSlug}`);
 
-        // Update trials
+        // Lifetime activation removes the trial clock. Do not write a
+        // synthetic multi-year trial row for a lifetime entitlement.
         await (supabase as any)
           .from('trials')
-          .upsert({ business_id: businessIdOrSlug, status: 'active', expires_at: twoYearsExpiry });
+          .update({ status: 'cancelled' })
+          .eq('business_id', businessIdOrSlug)
+          .eq('status', 'active');
       } catch (err) {
         console.warn('Supabase key activation fallback to local:', err);
       }
@@ -573,7 +580,7 @@ export const businessService = {
           stored[targetKey] = {
             ...stored[targetKey],
             planStatus: 'active',
-            trialExpiresAt: twoYearsExpiry,
+            trialExpiresAt: undefined,
           };
           updatedBiz = stored[targetKey];
           saveStoredBusinesses(stored);
@@ -581,7 +588,7 @@ export const businessService = {
           const currentSlug = businessService.getActiveBusinessSlug() || businessIdOrSlug;
           if (runtimeBusinesses[currentSlug]) {
             runtimeBusinesses[currentSlug].planStatus = 'active';
-            runtimeBusinesses[currentSlug].trialExpiresAt = twoYearsExpiry;
+            runtimeBusinesses[currentSlug].trialExpiresAt = undefined;
             updatedBiz = runtimeBusinesses[currentSlug];
           }
         }
@@ -592,7 +599,7 @@ export const businessService = {
 
         // Notify all dashboard tabs & listeners
         window.dispatchEvent(new CustomEvent('pixora:dashboard_activated', {
-          detail: { businessId: businessIdOrSlug, key, expiresAt: twoYearsExpiry }
+          detail: { businessId: businessIdOrSlug, key, isLifetime: true }
         }));
       } catch (e) {
         console.warn('Local activation cache error:', e);
@@ -601,7 +608,7 @@ export const businessService = {
 
     return {
       success: true,
-      message: '✓ Dashboard activated successfully for 2 Years! Full software suite and 24/7 AI Auto-Replies are now live.',
+      message: '✓ Dashboard activated successfully with lifetime access! Full software suite and 24/7 AI Auto-Replies are now live.',
       business: updatedBiz || undefined,
     };
   },
@@ -692,8 +699,7 @@ export const businessService = {
     const logo = params.logoUrl || preset.logo;
     const tagline = params.tagline || catConfig.description || preset.tagline;
 
-    // 1-Day Trial
-    const trialExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const { expiresAt: trialExpiresAt } = getTrialWindow();
 
     const currentUser = authService.getCurrentUser();
     const ownerId = params.ownerId || params.userId || currentUser?.id;
@@ -723,7 +729,9 @@ export const businessService = {
             cover_image_url: coverImage,
             primary_color: params.primaryColor || '#0B3D2E',
             secondary_color: params.secondaryColor || '#D4AF37',
-            status: 'active',
+             status: 'trial',
+             plan_status: 'trial',
+             trial_expires_at: trialExpiresAt,
           })
           .select('id')
           .single();
@@ -1001,7 +1009,11 @@ export const businessService = {
       try {
         await supabase
           .from('businesses')
-          .update({ status: status === 'active' ? 'active' : 'trial' })
+          .update({
+            status: status === 'active' ? 'active' : 'trial',
+            plan_status: status,
+            ...(status === 'active' ? { trial_expires_at: null } : {}),
+          })
           .eq('id', biz.businessId);
       } catch (e) {}
     }

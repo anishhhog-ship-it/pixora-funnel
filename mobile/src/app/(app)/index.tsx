@@ -1,11 +1,11 @@
 import { type ReactNode, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { Bell, ChevronRight, ExternalLink, Link2, QrCode, Settings, Smartphone, Star, UsersRound } from 'lucide-react-native';
 import { useWorkspace } from '@/workspace';
-import { colors, radii, shadow } from '@/theme';
+import { colors, shadow } from '@/theme';
 import { formatRelativeDate, formatEventLabel } from '@/lib/format';
-import { getPublicFunnelUrl } from '@/lib/config';
 import { Card, EmptyState, ErrorState, IconButton, LoadingState, LogoMark, PrimaryButton, SectionTitle, StatusPill } from '@/components/ui';
 
 export default function HomeScreen() {
@@ -16,10 +16,9 @@ export default function HomeScreen() {
   if (status === 'error') return <ErrorState message={error || 'The business workspace could not be loaded.'} onRetry={() => void refresh()} />;
   if (status === 'empty' || !workspace) return <EmptyState icon={<UsersRound color={colors.blue} size={27} />} title="No business workspace linked" description="Sign in with the Pixora customer account created during onboarding. A workspace will appear here once it is linked." actionLabel="Try again" onAction={() => void refresh()} />;
 
-  const { business, funnelUrl, activities, stats } = workspace;
+  const { business, activities } = workspace;
   const connection = business.googleConnection;
   const isConnected = connection?.status === 'connected';
-  const publicUrl = funnelUrl || getPublicFunnelUrl(business.funnel?.slug || business.slug);
   const onRefresh = async () => {
     setIsRefreshing(true);
     await refresh(true);
@@ -38,7 +37,7 @@ export default function HomeScreen() {
     <Card style={styles.googleCard}>
       <View style={styles.googleTop}><View style={styles.googleIcon}><Text style={styles.googleG}>G</Text></View><View style={styles.googleCopy}><Text style={styles.cardTitle}>{isConnected ? 'Google Business Profile connected' : 'Connect your Google Business Profile'}</Text><Text style={styles.cardBody}>{isConnected ? 'Your connection is recorded. Review sync availability depends on Google API access approval.' : 'Connect your business to sync available Google reviews.'}</Text></View></View>
       {isConnected ? <View style={styles.connectionMeta}><StatusPill label={connection?.last_synced_at ? `Last synced ${formatRelativeDate(connection.last_synced_at)}` : 'Connection recorded'} tone="mint" /><TouchableOpacity accessibilityRole="button" accessibilityLabel="Refresh Google connection" onPress={openGoogleSettings} style={styles.refreshLink}><Text style={styles.refreshLinkText}>Review status</Text><ExternalLink color={colors.blue} size={15} /></TouchableOpacity></View> : <PrimaryButton label="Connect account" onPress={openGoogleSettings} icon={<Link2 color="#fff" size={18} />} />}
-      {!isConnected && business.google_review_url ? <TouchableOpacity accessibilityRole="link" accessibilityLabel="Open Google review page" onPress={() => Alert.alert('Open Google review page', business.google_review_url || '')} style={styles.googleLink}><Text style={styles.googleLinkText}>Open Google Reviews</Text><ExternalLink color={colors.blue} size={15} /></TouchableOpacity> : null}
+      {!isConnected && business.google_review_url ? <TouchableOpacity accessibilityRole="link" accessibilityLabel="Open Google review page" onPress={() => void Linking.openURL(business.google_review_url || '')} style={styles.googleLink}><Text style={styles.googleLinkText}>Open Google Reviews</Text><ExternalLink color={colors.blue} size={15} /></TouchableOpacity> : null}
     </Card>
 
     <SectionTitle title="Quick actions" />

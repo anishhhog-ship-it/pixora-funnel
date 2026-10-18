@@ -127,22 +127,18 @@ async function runTests() {
   assert(secondAttempt.idempotentReturn === true, 'Repeated click or network retry is handled idempotently without duplicate order');
   assert(firstAttempt.order.id === secondAttempt.order.id, 'Returned same original order ID');
 
-  // Test Suite 5: Founder Launch Offer Slot Limits
-  console.log('\n--- Test Suite 5: Atomic Lifetime Slot Limit Logic ---');
-  let slotsUsed = 99;
-  const maxSlots = 100;
+  // Test Suite 5: Lifetime plan availability
+  console.log('\n--- Test Suite 5: Unlimited Lifetime Plan Availability ---');
+  let slotsUsed = 100;
 
   function reserveSlot(): boolean {
-    if (slotsUsed < maxSlots) {
-      slotsUsed++;
-      return true;
-    }
-    return false;
+    slotsUsed++;
+    return true;
   }
 
-  assert(reserveSlot() === true, 'Slot 100 reserved successfully');
-  assert(slotsUsed === 100, 'Slots used count reaches exactly 100');
-  assert(reserveSlot() === false, 'Slot 101 correctly rejected when 100 slot cap is exhausted');
+  assert(reserveSlot() === true, 'Lifetime software plan remains available');
+  assert(slotsUsed === 101, 'Lifetime plan usage can exceed the former 100-account threshold');
+  assert(reserveSlot() === true, 'Lifetime NFC plan has no account cap');
 
   // Test Suite 6: NFC Fulfillment State Machine
   console.log('\n--- Test Suite 6: NFC Fulfillment State Machine ---');

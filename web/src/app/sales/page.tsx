@@ -85,9 +85,6 @@ export default function WhiteSalesDashboardPage() {
   const paymentPending = metrics?.paymentPendingOrders ?? 0;
   const activeCustomers = metrics?.activatedCustomers ?? 0;
   const nfcPending = metrics?.nfcPendingFulfillment ?? 0;
-  const slotsUsed = metrics?.lifetimeSlotsUsed ?? 0;
-  const maxSlots = metrics?.lifetimeSlotsMax ?? 100;
-  const slotsRemaining = Math.max(0, maxSlots - slotsUsed);
   const trendMax = Math.max(1, ...performanceTrend.flatMap((bucket) => [Number(bucket.leads || 0), Number(bucket.demos || 0), Number(bucket.conversions || 0)]));
 
   if (loading) {
@@ -247,7 +244,7 @@ export default function WhiteSalesDashboardPage() {
             subtitleColor="text-orange-600 font-semibold"
           />
 
-          {/* Lifetime Slots Card with Progress */}
+          {/* Lifetime Access Card */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#FEF9C3] flex items-center justify-center flex-shrink-0">
@@ -255,28 +252,15 @@ export default function WhiteSalesDashboardPage() {
               </div>
               <div className="flex-1 truncate">
                 <span className="text-[11px] font-semibold text-slate-500 block truncate">
-                  Lifetime Slots Remaining
+                  Lifetime Plans
                 </span>
                 <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-xl font-extrabold text-slate-900 leading-none">
-                    {slotsRemaining}
-                  </span>
-                  <span className="text-xs text-slate-400 font-bold">/ {maxSlots}</span>
+                  <span className="text-xl font-extrabold text-slate-900 leading-none">No cap</span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-3 flex items-center gap-2">
-              <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
-                <div
-                  className="bg-[#5356EC] h-full rounded-full transition-all duration-500"
-                  style={{ width: `${Math.min(100, (slotsUsed / maxSlots) * 100)}%` }}
-                />
-              </div>
-              <span className="text-[10px] text-slate-500 font-semibold whitespace-nowrap">
-                {slotsUsed} used
-              </span>
-            </div>
+            <p className="mt-3 text-[10px] text-slate-500 font-semibold">Lifetime Software and Lifetime Software + NFC plans are available to every account.</p>
           </div>
         </div>
       </div>

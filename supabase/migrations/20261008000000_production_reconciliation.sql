@@ -58,7 +58,8 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
 INSERT INTO public.plans (id, name, slug, description, price_inr, billing_interval, is_active)
 VALUES
   ('a1111111-1111-1111-1111-111111111111', '1-Day Free Trial', 'trial', 'Full access for 24 hours to test live table scans and review routing.', 0, 'one_time', true),
-  ('a2222222-2222-2222-2222-222222222222', 'Pixora Funnel Lifetime Plan', 'lifetime_2599', 'Unlimited table scans, AI smart review engine, and QR stands with zero recurring fees.', 2599, 'lifetime', true)
+  ('a2222222-2222-2222-2222-222222222222', 'Lifetime Software', 'lifetime_software', 'Lifetime Pixora Review Funnel software access without NFC hardware.', 2599, 'lifetime', true),
+  ('a3333333-3333-3333-3333-333333333333', 'Lifetime Software + NFC doorstep delivery', 'lifetime_software_nfc', 'Lifetime Pixora Review Funnel software access with NFC hardware delivered to your doorstep.', 2999, 'lifetime', true)
 ON CONFLICT (slug) DO UPDATE SET
   price_inr = EXCLUDED.price_inr,
   updated_at = now();

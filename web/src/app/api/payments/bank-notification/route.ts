@@ -60,8 +60,6 @@ export async function POST(req: NextRequest) {
 
     // 3. Log notification in Supabase audit / logs if available
     const supabase = getSupabaseAdminClient();
-    const twoYearsExpiry = new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString();
-
     let matchedBusiness: any = null;
 
     if (supabase) {
@@ -82,12 +80,14 @@ export async function POST(req: NextRequest) {
             // Activate in Supabase
             await (supabase as any)
               .from('businesses')
-              .update({ status: 'active', trial_expires_at: twoYearsExpiry })
+               .update({ status: 'active', plan_status: 'active', trial_expires_at: null })
               .eq('id', pendingBiz.id);
 
             await (supabase as any)
               .from('trials')
-              .upsert({ business_id: pendingBiz.id, status: 'active', expires_at: twoYearsExpiry });
+              .update({ status: 'cancelled' })
+              .eq('business_id', pendingBiz.id)
+              .eq('status', 'active');
           }
         }
 

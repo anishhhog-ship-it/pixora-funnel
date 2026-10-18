@@ -1,3 +1,7 @@
+/* The mobile endpoint spans legacy tables that are not present in the stale
+ * generated web Database type. Keep the dynamic admin boundary local until
+ * the authoritative Supabase types are regenerated. */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdminClient } from '@/lib/supabase/server';
 import { extractAuthToken } from '@/services/salesAuthService';
@@ -55,7 +59,8 @@ export async function GET(req: NextRequest) {
       const { data: emailBusinesses } = await admin
         .from('businesses')
         .select('id')
-        .ilike('email', email);
+        .ilike('email', email)
+        .eq('status', 'active');
       for (const row of emailBusinesses || []) if (row.id) candidateIds.add(row.id);
     }
 

@@ -67,6 +67,8 @@ export interface Database {
           menu_enabled: boolean | null;
           services_enabled: boolean | null;
           status: string;
+          plan_status: 'trial' | 'active' | 'expired' | null;
+          trial_expires_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -95,6 +97,8 @@ export interface Database {
           menu_enabled?: boolean | null;
           services_enabled?: boolean | null;
           status?: string;
+          plan_status?: 'trial' | 'active' | 'expired' | null;
+          trial_expires_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -123,6 +127,8 @@ export interface Database {
           menu_enabled?: boolean | null;
           services_enabled?: boolean | null;
           status?: string;
+          plan_status?: 'trial' | 'active' | 'expired' | null;
+          trial_expires_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

@@ -12,8 +12,8 @@ interface UnlockFunnelClientProps {
 export default function UnlockFunnelClient({ businessId, businessName }: UnlockFunnelClientProps) {
   const [showGatewayModal, setShowGatewayModal] = useState(false);
   const [gatewayPlan, setGatewayPlan] = useState({
-    planId: 'plan_2year_software',
-    planName: 'Standard 2-Year Plan',
+    planId: 'lifetime_software',
+    planName: 'Lifetime Software',
     amount: 2599,
   });
 
@@ -24,8 +24,8 @@ export default function UnlockFunnelClient({ businessId, businessName }: UnlockF
           type="button"
           onClick={() => {
             setGatewayPlan({
-              planId: 'plan_pro_nfc_lifetime',
-              planName: 'Pro Lifetime Plan + NFC Card',
+               planId: 'lifetime_software_nfc',
+               planName: 'Lifetime Software + NFC doorstep delivery',
               amount: 2999,
             });
             setShowGatewayModal(true);
@@ -41,8 +41,8 @@ export default function UnlockFunnelClient({ businessId, businessName }: UnlockF
           type="button"
           onClick={() => {
             setGatewayPlan({
-              planId: 'plan_2year_software',
-              planName: 'Standard 2-Year Plan',
+               planId: 'lifetime_software',
+               planName: 'Lifetime Software',
               amount: 2599,
             });
             setShowGatewayModal(true);
@@ -50,7 +50,7 @@ export default function UnlockFunnelClient({ businessId, businessName }: UnlockF
           className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
         >
           <CreditCard className="w-3.5 h-3.5 text-blue-400" />
-          <span>Unlock 2-Year Plan Online (₹2,599)</span>
+           <span>Unlock Lifetime Software Online (₹2,599)</span>
         </button>
       </div>
 

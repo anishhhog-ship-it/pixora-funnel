@@ -1308,6 +1308,67 @@ export function getReviewTopics(rawCategory?: string): string[] {
 }
 
 /**
+ * Private-feedback topics are intentionally different from public review
+ * prompts: they describe service-recovery issues without steering a customer
+ * toward a positive or negative outcome.
+ */
+export const CATEGORY_PRIVATE_FEEDBACK_TOPICS: Record<string, string[]> = {
+  restaurant: ['Food quality or taste', 'Slow service', 'Staff interaction', 'Waiting time', 'Cleanliness', 'Order or billing issue'],
+  cafe: ['Coffee or drink quality', 'Freshness of food', 'Waiting time', 'Seating or ambience', 'Staff interaction', 'Order or billing issue'],
+  hotel: ['Room cleanliness', 'Check-in or check-out', 'Staff hospitality', 'Amenities or facilities', 'Noise or comfort', 'Billing issue'],
+  salon: ['Service result', 'Staff professionalism', 'Appointment waiting time', 'Cleanliness', 'Treatment comfort', 'Pricing or billing'],
+  clinic: ['Doctor or care experience', 'Waiting time', 'Staff communication', 'Cleanliness', 'Treatment clarity', 'Billing or appointment issue'],
+  dentist: ['Treatment comfort', 'Doctor communication', 'Waiting time', 'Clinic cleanliness', 'Treatment result', 'Billing or appointment issue'],
+  retail: ['Product quality', 'Product availability', 'Staff assistance', 'Store experience', 'Waiting or checkout time', 'Pricing or billing'],
+  fashion: ['Fit or alteration', 'Fabric or product quality', 'Collection availability', 'Staff assistance', 'Delivery or waiting time', 'Pricing or billing'],
+  gym: ['Trainer support', 'Equipment availability', 'Cleanliness', 'Crowding or waiting time', 'Membership service', 'Billing issue'],
+  beauty: ['Treatment result', 'Staff professionalism', 'Appointment waiting time', 'Cleanliness', 'Comfort during treatment', 'Pricing or billing'],
+  automotive: ['Work quality', 'Service delay', 'Parts or workmanship', 'Staff communication', 'Vehicle cleanliness', 'Pricing or billing'],
+  'real-estate': ['Property information', 'Communication', 'Site visit experience', 'Documentation clarity', 'Timely updates', 'Pricing or process issue'],
+  education: ['Teaching experience', 'Faculty communication', 'Class scheduling', 'Learning environment', 'Support or progress updates', 'Fees or administration'],
+  professional: ['Advice or work quality', 'Communication', 'Response time', 'Process clarity', 'Delivery or follow-up', 'Fees or billing'],
+  travel: ['Trip planning', 'Guide or staff support', 'Itinerary or timing', 'Accommodation', 'Transport or coordination', 'Pricing or booking issue'],
+  events: ['Planning or coordination', 'Venue or decor', 'Food or catering', 'Staff communication', 'Timing or execution', 'Pricing or billing'],
+  'home-services': ['Work quality', 'Technician conduct', 'Punctuality', 'Clean-up after work', 'Communication', 'Pricing or billing'],
+  electronics: ['Product quality', 'Product availability', 'Staff guidance', 'Demonstration or setup', 'Delivery or installation', 'Pricing or warranty'],
+  jewellery: ['Product quality', 'Design or selection', 'Staff assistance', 'Delivery or service time', 'Documentation clarity', 'Pricing or billing'],
+  grocery: ['Product freshness', 'Product availability', 'Store cleanliness', 'Staff interaction', 'Checkout time', 'Pricing or billing'],
+  bakery: ['Taste or freshness', 'Product availability', 'Order accuracy', 'Custom order experience', 'Waiting time', 'Pricing or billing'],
+  pharmacy: ['Medicine availability', 'Pharmacist guidance', 'Waiting time', 'Store cleanliness', 'Order accuracy', 'Pricing or billing'],
+  creative: ['Creative quality', 'Brief understanding', 'Communication', 'Delivery time', 'Revision experience', 'Pricing or billing'],
+  'pet-care': ['Care or handling', 'Veterinary guidance', 'Grooming result', 'Cleanliness', 'Waiting time', 'Pricing or billing'],
+  hardware: ['Product quality', 'Stock availability', 'Staff advice', 'Loading or delivery', 'Waiting time', 'Pricing or billing'],
+  'pvc-plumbing': ['Product quality', 'Size or stock availability', 'Staff expertise', 'Loading or delivery', 'Waiting time', 'Pricing or billing'],
+  electrical: ['Product quality', 'Brand or stock availability', 'Staff guidance', 'Delivery or installation', 'Waiting time', 'Pricing or billing'],
+  paint: ['Colour matching', 'Finish or product quality', 'Stock availability', 'Staff guidance', 'Delivery time', 'Pricing or billing'],
+  sports: ['Product quality', 'Product availability', 'Staff guidance', 'Store experience', 'Waiting time', 'Pricing or billing'],
+  kitchen: ['Product quality', 'Product availability', 'Staff assistance', 'Order or delivery time', 'Product information', 'Pricing or billing'],
+  perfumes: ['Fragrance quality', 'Product availability', 'Staff guidance', 'Packaging', 'Waiting time', 'Pricing or billing'],
+  other: ['Service quality', 'Staff interaction', 'Communication', 'Waiting time', 'Cleanliness or setup', 'Pricing or billing'],
+};
+
+export function getPrivateFeedbackTopics(rawCategory?: string): string[] {
+  const config = normalizeBusinessCategory(rawCategory);
+  return CATEGORY_PRIVATE_FEEDBACK_TOPICS[config.id] || CATEGORY_PRIVATE_FEEDBACK_TOPICS.other;
+}
+
+export function getPrivateFeedbackCopy(rawCategory?: string): {
+  heading: string;
+  subheading: string;
+  question: string;
+  placeholder: string;
+} {
+  const config = normalizeBusinessCategory(rawCategory);
+  const subject = config.name.replace(/\s*&\s*/g, ' & ').toLowerCase();
+  return {
+    heading: `Help us improve your ${subject} experience`,
+    subheading: `Your honest feedback helps the ${subject} team understand what fell short and improve the next visit.`,
+    question: `What could we improve about your ${subject} experience?`,
+    placeholder: `Please tell the ${subject} team what happened and how we can make it right...`,
+  };
+}
+
+/**
  * Normalizes any category string (from Google Places API, URL, or user input)
  * into a matching Pixora BusinessCategoryConfig.
  * 

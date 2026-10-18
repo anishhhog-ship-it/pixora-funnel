@@ -115,19 +115,19 @@ export default function TermsOfServicePage() {
           {/* Section 4 */}
           <section className="space-y-3">
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <span className="text-blue-600">4.</span> Lifetime Access Pricing & First 100 Accounts Offer
+              <span className="text-blue-600">4.</span> Lifetime Access Pricing
             </h2>
             <p>
               Pixora Funnel offers a special <strong>Lifetime Access Plan</strong> designed to eliminate ongoing monthly software subscriptions for local businesses.
             </p>
             <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200/80 space-y-2">
-              <div className="flex items-center gap-2 font-bold text-blue-900">
-                <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
-                <span>Strict Limit of 100 Accounts</span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                The special discounted price of <strong>₹2,599</strong> (one-time payment, down from the standard ₹5,999) is strictly limited to the first <strong>100 activated accounts</strong>. Each account activated automatically decreases the remaining counter. Once all 100 slots are claimed, accounts revert to standard pricing.
-              </p>
+               <div className="flex items-center gap-2 font-bold text-blue-900">
+                 <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
+                 <span>Two Lifetime Plans</span>
+               </div>
+               <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                 Pixora Funnel offers Lifetime Software at <strong>₹2,599</strong> without NFC hardware and Lifetime Software + NFC doorstep delivery at <strong>₹2,999</strong>. Both are one-time purchases with lifetime access and no account cap.
+               </p>
             </div>
           </section>
 

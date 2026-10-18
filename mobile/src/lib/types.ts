@@ -54,6 +54,7 @@ export interface MobileBusiness {
   address: string | null;
   city: string | null;
   state: string | null;
+  pincode: string | null;
   country: string | null;
   logo_url: string | null;
   cover_image_url: string | null;
@@ -102,6 +103,41 @@ export interface MobileNfcOrder {
   created_at: string;
   updated_at?: string | null;
   tracking_number?: string | null;
+}
+
+export interface StoreProduct {
+  id: string;
+  slug?: string | null;
+  name: string;
+  description: string | null;
+  priceInr: number;
+  comparePriceInr?: number | null;
+  imageUrl?: string | null;
+  badge?: string | null;
+  availableQty: number;
+}
+
+export interface StoreOrderItemInput {
+  productId: string;
+  quantity: number;
+}
+
+export interface StoreOrderInput {
+  businessId: string;
+  customer: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  shippingAddress: {
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+  };
+  items: StoreOrderItemInput[];
+  notes?: string;
 }
 
 export interface WorkspaceSnapshot {

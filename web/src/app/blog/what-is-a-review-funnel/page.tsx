@@ -97,7 +97,7 @@ export default function WhatIsReviewFunnelPage() {
               <Image src="/pixora-logo.png" alt="Pixora Funnel" width={140} height={38} className="h-9 w-auto" />
             </Link>
             <Link
-              href="/signup"
+              href="/onboarding"
               className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition"
             >
               Start Free Trial →
@@ -369,7 +369,7 @@ export default function WhatIsReviewFunnelPage() {
               Set up your restaurant&apos;s review funnel in 5 minutes. 1-day free trial — no credit card.
             </p>
             <Link
-              href="/signup"
+              href="/onboarding"
               className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-6 py-3 rounded-xl transition shadow-lg"
             >
               Start Free Trial — It&apos;s Free →
@@ -384,7 +384,7 @@ export default function WhatIsReviewFunnelPage() {
               <Link href="/#features" className="text-sm text-blue-700 hover:underline font-medium">Features →</Link>
               <Link href="/#pricing" className="text-sm text-blue-700 hover:underline font-medium">Pricing →</Link>
               <Link href="/#faq" className="text-sm text-blue-700 hover:underline font-medium">FAQ →</Link>
-              <Link href="/signup" className="text-sm text-blue-700 hover:underline font-medium">Start Free Trial →</Link>
+              <Link href="/onboarding" className="text-sm text-blue-700 hover:underline font-medium">Start Free Trial →</Link>
             </div>
           </div>
         </article>

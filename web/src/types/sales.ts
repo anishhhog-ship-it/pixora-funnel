@@ -90,6 +90,7 @@ export interface SalesDemo {
   status: 'draft' | 'active' | 'shared' | 'converted' | 'revoked';
   shared_at?: string | null;
   expires_at?: string | null;
+  is_expired?: boolean;
   view_count: number;
   created_at: string;
   updated_at: string;
@@ -128,7 +129,7 @@ export interface CommercialPlan {
   description?: string | null;
   price_paise: number;
   price_inr: number;
-  billing_interval: '2_years' | 'lifetime' | 'yearly' | 'monthly';
+  billing_interval: 'lifetime';
   duration_years: number;
   is_lifetime: boolean;
   includes_nfc: boolean;
@@ -206,8 +207,8 @@ export interface SalesDashboardMetrics {
   actualRevenueCollectedInr: number;
   nfcPendingFulfillment: number;
   lifetimeSlotsUsed: number;
-  lifetimeSlotsMax: number;
-  lifetimeSlotsRemaining: number;
+  lifetimeSlotsMax: number | null;
+  lifetimeSlotsRemaining: number | null;
   leadSourceBreakdown: Record<LeadSource, number>;
   stagePipeline: Record<ProspectStage, number>;
 }

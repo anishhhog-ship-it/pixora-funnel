@@ -40,6 +40,7 @@ import {
   PortalLoadingState,
   PortalStatCard,
 } from '@/components/client-portal/PortalUI';
+import ProfileCompletionCard from '@/components/client-portal/ProfileCompletionCard';
 
 export default function DashboardHome() {
   const [activeBiz, setActiveBiz] = useState<Business | null>(null);
@@ -353,6 +354,8 @@ export default function DashboardHome() {
           )}
         </div>
       </div>
+
+      <ProfileCompletionCard business={activeBiz} />
 
       {/* ── Mobile PWA Install Quick Card (Shown on mobile devices) ── */}
       <div className="md:hidden bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white rounded-2xl p-3.5 shadow-md border border-slate-700/80 flex items-center justify-between gap-3">

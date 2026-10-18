@@ -291,6 +291,33 @@ export default function OnboardingContent() {
   const customizeSectionRef = useRef<HTMLDivElement>(null);
   const successSectionRef = useRef<HTMLDivElement>(null);
 
+  const applyDeepLinkedCategory = (rawCategory: string, persist = false) => {
+    const catConfig = normalizeBusinessCategory(rawCategory);
+    const categoryPatch = {
+      category: catConfig.name,
+      coverImageUrl: catConfig.backgroundImage,
+      primaryColor: catConfig.defaultPrimaryColor,
+      secondaryColor: catConfig.defaultSecondaryColor,
+      tagline: catConfig.description,
+      menuEnabled: catConfig.menuEnabled,
+      servicesEnabled: catConfig.servicesEnabled,
+      productsEnabled: catConfig.productsEnabled,
+    };
+
+    setCategory(catConfig.name);
+    setCategoryConfidence('high');
+    setCoverImageUrl(catConfig.backgroundImage);
+    setCustomUploadName(null);
+    setPrimaryColor(catConfig.defaultPrimaryColor);
+    setSecondaryColor(catConfig.defaultSecondaryColor);
+    setTagline(catConfig.description);
+    setMenuEnabled(catConfig.menuEnabled);
+    setServicesEnabled(catConfig.servicesEnabled);
+    setProductsEnabled(catConfig.productsEnabled);
+
+    if (persist) onboardingService.saveOnboardingState(categoryPatch);
+  };
+
   // 1. Initial State Restoration
   useEffect(() => {
     setMounted(true);
@@ -301,12 +328,16 @@ export default function OnboardingContent() {
       onboardingService.resetOnboarding();
       setBusinessName('Your Business');
       setTagline('GOOD FOOD • GREAT COMPANY • BRIGHTER DAYS');
+      const requestedCategory = searchParams.get('category')?.trim();
+      if (requestedCategory) applyDeepLinkedCategory(requestedCategory, true);
       setSlug('your-business');
       setMapsInput('');
       setResolvedPlace(null);
       setCurrentSection('connect');
       return;
     }
+
+    const requestedCategory = searchParams.get('category')?.trim();
 
     const saved = onboardingService.getOnboardingState();
     if (saved) {
@@ -359,6 +390,10 @@ export default function OnboardingContent() {
         // ALWAYS default to Step 1 (connect) on refresh!
         setCurrentSection('connect');
       }
+
+      // An explicit category deep link is authoritative over stale local
+      // progress, while still entering the same canonical onboarding UI.
+      if (requestedCategory) applyDeepLinkedCategory(requestedCategory, true);
 
       // Check for Google OAuth callback parameters
       const googleStatus = searchParams.get('google_status');

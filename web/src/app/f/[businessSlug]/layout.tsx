@@ -1,8 +1,37 @@
-import { businessService } from '@/services';
+import type { Metadata } from 'next';
+import { getPublicFunnelResolution } from '@/services/publicFunnelResolver';
 import { notFound } from 'next/navigation';
-import { headers } from 'next/headers';
+import { connection } from 'next/server';
 import { Lock, AlertTriangle, PhoneCall, Sparkles } from 'lucide-react';
 import UnlockFunnelClient from './UnlockFunnelClient';
+
+const FALLBACK_TITLE = 'Pixora Funnel';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ businessSlug: string }>;
+}): Promise<Metadata> {
+  const { businessSlug } = await params;
+  // The business name is tenant data, so resolve it at request time rather
+  // than allowing a shared/prerendered title to appear for another funnel.
+  await connection();
+  const { business } = await getPublicFunnelResolution(businessSlug);
+  const businessName = business?.name?.trim();
+
+  if (!businessName) {
+    return { title: FALLBACK_TITLE };
+  }
+
+  return {
+    title: businessName,
+    description: `Share your experience with ${businessName}.`,
+    openGraph: {
+      title: businessName,
+      description: `Share your experience with ${businessName}.`,
+    },
+  };
+}
 
 export default async function FunnelLayout({
   children,
@@ -12,31 +41,18 @@ export default async function FunnelLayout({
   params: Promise<{ businessSlug: string }>;
 }) {
   const { businessSlug } = await params;
-  const business = await businessService.getBusinessBySlug(businessSlug);
+  // Expiry is evaluated against the current request time. Do not let a
+  // prerendered funnel keep an unpaid demo alive beyond its server expiry.
+  await connection();
+  const resolution = await getPublicFunnelResolution(businessSlug);
+  const business = resolution.business;
   if (!business) {
     notFound();
   }
 
-  // Check if trial has ended (demo time hit zero) and business is not on an active paid plan
-  // In local development / preview on localhost, always allow live preview
-  let isLocal = process.env.NODE_ENV !== 'production';
-  try {
-    const headerList = await headers();
-    const host = headerList.get('host') || '';
-    if (host.includes('localhost') || host.includes('127.0.0.1')) {
-      isLocal = true;
-    }
-  } catch {}
-
-  // The server route intentionally compares the trial against request time.
-  // eslint-disable-next-line react-hooks/purity
-  const requestNow = Date.now();
-  const isExpired = !isLocal && (
-    business.planStatus === 'expired' ||
-    (business.trialExpiresAt &&
-      new Date(business.trialExpiresAt).getTime() <= requestNow &&
-      business.planStatus !== 'active')
-  );
+  // The resolver reads both sales_demos.expires_at and the canonical business
+  // entitlement on every server request. Paid lifetime rows bypass both clocks.
+  const isExpired = resolution.isLocked;
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900">
@@ -101,8 +117,8 @@ export default async function FunnelLayout({
                   Activate a plan to re-activate your customer review system and turn on AI Auto Reply:
                 </p>
                 <div className="pt-1 space-y-1 text-[11px] text-slate-700 font-medium">
-                  <div>• <strong>₹2,599:</strong> 2-Year Plan (Without NFC Card)</div>
-                  <div>• <strong>₹2,999:</strong> Lifetime Free Access (First 100 Accounts Offer + NFC Smart Review Card)</div>
+                   <div>• <strong>₹2,599:</strong> Lifetime Software (without NFC card)</div>
+                   <div>• <strong>₹2,999:</strong> Lifetime Software + NFC card delivered to your doorstep</div>
                 </div>
               </div>
 

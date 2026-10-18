@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Linking, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Linking, Platform, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import * as Clipboard from 'expo-clipboard';
 import { Check, Copy, Edit3, ExternalLink, Link2, Save, Share2, Smartphone } from 'lucide-react-native';
 import { useWorkspace } from '@/workspace';
-import { colors, radii, shadow } from '@/theme';
+import { colors, shadow } from '@/theme';
 import { formatDate } from '@/lib/format';
 import { Card, EmptyState, ErrorState, IconButton, LoadingState, PageHeader, PrimaryButton, SecondaryButton, StatusPill } from '@/components/ui';
 
@@ -18,8 +18,10 @@ export default function FunnelScreen() {
   const [logoUrl, setLogoUrl] = useState('');
   const [primaryColor, setPrimaryColor] = useState(colors.blue);
 
+  // Keep the draft aligned with the remote business record after refreshes.
   useEffect(() => {
     if (!workspace?.business) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBusinessName(workspace.business.name);
     setTagline(workspace.business.tagline || '');
     setLogoUrl(workspace.business.logo_url || '');

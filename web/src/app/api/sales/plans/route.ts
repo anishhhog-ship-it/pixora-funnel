@@ -2,66 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdminClient } from '@/lib/supabase/server';
 import { verifySalesStaffAccess, extractAuthToken } from '@/services/salesAuthService';
 import { databaseFailure } from '@/services/salesServer';
-
-const CANONICAL_COMMERCIAL_PLANS = [
-  {
-    id: 'plan_lifetime_launch',
-    name: 'Founder Launch Lifetime Offer',
-    slug: 'lifetime_launch_100',
-    description: 'Exclusive launch offer for first 100 businesses. Lifetime Review Funnel software access with zero renewal fees.',
-    price_paise: 259900,
-    price_inr: 2599,
-    billing_interval: 'lifetime',
-    duration_years: 99,
-    is_lifetime: true,
-    includes_nfc: false,
-    max_slots: 100,
-    slots_used: 12,
-    is_active: true,
-    display_order: 1,
-    features: ['Lifetime Review Funnel Software', 'Unlimited Google Reviews Routing', 'Smart AI Review Wizard', 'Custom QR Stand Asset', 'Zero Recurring Fees'],
-    created_at: '2026-01-01T00:00:00.000Z',
-    updated_at: '2026-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'plan_2year_software',
-    name: 'Standard 2-Year Plan',
-    slug: 'standard_2year_software',
-    description: 'Full access for 2 full years to Pixora Review Funnel, smart routing, and QR assets.',
-    price_paise: 259900,
-    price_inr: 2599,
-    billing_interval: '2_years',
-    duration_years: 2,
-    is_lifetime: false,
-    includes_nfc: false,
-    max_slots: null,
-    slots_used: 0,
-    is_active: true,
-    display_order: 2,
-    features: ['2-Year Full Software License', 'Unlimited Table & Counter Scans', 'AI Auto-Reply Generator', 'Dynamic Feedback Routing', 'Priority Support'],
-    created_at: '2026-01-01T00:00:00.000Z',
-    updated_at: '2026-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'plan_2year_nfc',
-    name: 'Standard 2-Year Plan + NFC Delivery',
-    slug: 'standard_2year_nfc',
-    description: '2-Year Review Funnel access plus premium custom printed NFC Card & Stand delivered to doorstep.',
-    price_paise: 299900,
-    price_inr: 2999,
-    billing_interval: '2_years',
-    duration_years: 2,
-    is_lifetime: false,
-    includes_nfc: true,
-    max_slots: null,
-    slots_used: 0,
-    is_active: true,
-    display_order: 3,
-    features: ['2-Year Full Software License', '1x Custom NFC Business Card', '1x Acrylic Table Display Stand', 'Doorstep Express Courier', 'Ready to Tap & Collect Reviews'],
-    created_at: '2026-01-01T00:00:00.000Z',
-    updated_at: '2026-01-01T00:00:00.000Z',
-  },
-];
+import { CANONICAL_COMMERCIAL_PLANS, PRICING_PLANS, getPricingPlan, resolvePricingPlanSlug } from '@/config/pricing';
 
 export async function GET() {
   try {
@@ -70,12 +11,26 @@ export async function GET() {
       .from('commercial_plans')
       .select('*')
       .eq('is_active', true)
+      .in('slug', PRICING_PLANS.map((plan) => plan.slug))
       .order('display_order', { ascending: true });
 
-    if (!error && Array.isArray(plans) && plans.length > 0) {
-      const formatted = plans.map((p) => ({
-        ...p,
-        price_inr: p.price_inr ?? (p.price_paise ? Math.round(p.price_paise / 100) : 2599),
+    if (!error && Array.isArray(plans)) {
+      const bySlug = new Map(plans.map((plan: any) => [plan.slug, plan]));
+      const formatted = CANONICAL_COMMERCIAL_PLANS.map((canonical) => ({
+        ...canonical,
+        ...(bySlug.get(canonical.slug) || {}),
+        name: canonical.name,
+        description: canonical.description,
+        price_paise: canonical.price_paise,
+        price_inr: canonical.price_inr,
+        billing_interval: canonical.billing_interval,
+        duration_years: canonical.duration_years,
+        is_lifetime: canonical.is_lifetime,
+        includes_nfc: canonical.includes_nfc,
+        max_slots: null,
+        is_active: true,
+        display_order: canonical.display_order,
+        features: canonical.features,
       }));
       return NextResponse.json({ success: true, plans: formatted });
     }
@@ -96,25 +51,28 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, slug, description, priceInr, billingInterval, durationYears, isLifetime, includesNfc, maxSlots, features, displayOrder } = body;
-
-    const pricePaise = Math.round(Number(priceInr || 2599) * 100);
+    const canonicalSlug = resolvePricingPlanSlug(body.slug);
+    const canonicalPlan = getPricingPlan(canonicalSlug);
+    if (!canonicalPlan || canonicalPlan.slug !== body.slug) {
+      return NextResponse.json({ success: false, error: 'Only the two canonical lifetime plans can be configured' }, { status: 400 });
+    }
     const supabase = getSupabaseAdminClient();
 
     const { data: plan, error } = await (supabase as any)
       .from('commercial_plans')
       .upsert({
-        name,
-        slug,
-        description,
-        price_paise: pricePaise,
-        billing_interval: billingInterval || '2_years',
-        duration_years: durationYears || 2,
-        is_lifetime: isLifetime || false,
-        includes_nfc: includesNfc || false,
-        max_slots: maxSlots || null,
-        features: features || [],
-        display_order: displayOrder || 1,
+        name: canonicalPlan.name,
+        slug: canonicalPlan.slug,
+        description: canonicalPlan.description,
+        price_paise: canonicalPlan.price_paise,
+        billing_interval: canonicalPlan.billing_interval,
+        duration_years: canonicalPlan.duration_years,
+        is_lifetime: canonicalPlan.is_lifetime,
+        includes_nfc: canonicalPlan.includes_nfc,
+        max_slots: null,
+        features: canonicalPlan.features,
+        display_order: canonicalPlan.display_order,
+        is_active: true,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'slug' })
       .select()

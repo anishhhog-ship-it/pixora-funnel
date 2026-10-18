@@ -398,17 +398,330 @@ export async function getAdminOrders(token: string) {
   const session = await verifyAdminAccess(token);
   if (!session.isAdmin) throw new Error('Unauthorized');
   const supabase = getSupabaseAdminClient();
-  const { data, error } = await (supabase as any).from('orders').select('*, businesses(name), order_items(product_name, quantity)').order('created_at', { ascending: false });
-  if (error) throw error;
-  return (data || []).map((order: any) => ({
-    ...order,
-    // The two historical order migrations use different names. Normalize at
-    // the service boundary so the admin route remains readable in either DB.
-    order_no: order.order_no || order.order_number || order.id,
-    amount: order.amount ?? order.total_amount_inr ?? 0,
-    products: order.products || (order.order_items || []).map((item: any) => `${item.product_name} × ${item.quantity}`).join(', '),
-    status: typeof order.status === 'string' ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Pending',
+  // `order_items` is present in the production reconciliation schema, while
+  // older admin-only deployments only have the denormalized `products` field.
+  // Fall back to the base order relation so monitoring remains useful during a
+  // rolling schema deployment.
+  let data: Array<Record<string, unknown>> | null = null;
+  let error: { message?: string } | null = null;
+  const withItems = await (supabase as any)
+    .from('orders')
+    .select('*, businesses(name), order_items(*)')
+    .order('created_at', { ascending: false });
+  data = withItems.data;
+  error = withItems.error;
+  if (error) {
+    const withoutItems = await (supabase as any)
+      .from('orders')
+      .select('*, businesses(name)')
+      .order('created_at', { ascending: false });
+    data = withoutItems.data;
+    error = withoutItems.error;
+  }
+  if (error) {
+    throw new Error(`Unable to load commerce orders. Verify the orders schema is deployed: ${error.message || 'database query failed'}`);
+  }
+  return (data || []).map(normalizeAdminOrder);
+}
+
+export type AdminProduct = {
+  id: string;
+  productName: string;
+  slug: string;
+  description: string;
+  priceInr: number;
+  comparePriceInr: number | null;
+  imageUrl: string;
+  badge: string;
+  isActive: boolean;
+  sortOrder: number;
+  stock: number | null;
+  stockField: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type AdminProductInput = {
+  productName: string;
+  slug?: string;
+  description?: string;
+  priceInr: number;
+  comparePriceInr?: number | null;
+  imageUrl?: string;
+  badge?: string;
+  isActive?: boolean;
+  sortOrder?: number;
+  stock?: number | null;
+};
+
+export type AdminOrder = {
+  id: string;
+  order_no: string;
+  order_number?: string;
+  customer_name?: string | null;
+  customer_email?: string | null;
+  customer_phone?: string | null;
+  amount: number;
+  total_amount_inr?: number | null;
+  products: string;
+  status: string;
+  status_key: string;
+  created_at: string;
+  updated_at?: string | null;
+  businesses?: { name?: string | null } | { name?: string | null }[] | null;
+  order_items?: Array<{
+    id?: string;
+    product_name: string;
+    quantity: number;
+    unit_price_inr?: number | null;
+    custom_business_name?: string | null;
+    custom_logo_url?: string | null;
+  }>;
+  shipping_address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
+  country?: string | null;
+  tracking_number?: string | null;
+  courier_partner?: string | null;
+  notes?: string | null;
+};
+
+const INVENTORY_FIELDS = ['stock_quantity', 'inventory_count', 'quantity_in_stock', 'available_stock', 'stock'];
+const ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
+
+function numericValue(value: unknown, fallback: number | null = null) {
+  if (value === null || value === undefined || value === '') return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function titleCase(value: string) {
+  return value
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function normalizeStatus(value: unknown) {
+  const raw = typeof value === 'string' && value.trim() ? value.trim() : 'pending';
+  const rawKey = raw.toLowerCase().replace(/[\s-]+/g, '_');
+  const key = rawKey === 'dispatched' ? 'shipped' : rawKey === 'canceled' ? 'cancelled' : rawKey;
+  return { key, label: titleCase(raw) };
+}
+
+function normalizeAdminOrder(order: Record<string, unknown>): AdminOrder {
+  const status = normalizeStatus(order.status);
+  const rawItems = Array.isArray(order.order_items) ? order.order_items as Array<Record<string, unknown>> : [];
+  const items = rawItems.map((item) => ({
+    id: typeof item.id === 'string' ? item.id : undefined,
+    product_name: typeof item.product_name === 'string' ? item.product_name : 'Product',
+    quantity: numericValue(item.quantity, 0) || 0,
+    unit_price_inr: numericValue(item.unit_price_inr),
+    custom_business_name: typeof item.custom_business_name === 'string' ? item.custom_business_name : null,
+    custom_logo_url: typeof item.custom_logo_url === 'string' ? item.custom_logo_url : null,
   }));
+  const productText = typeof order.products === 'string' && order.products ? order.products : items
+    .map((item) => `${item.product_name} × ${item.quantity}`)
+    .join(', ');
+  const nullableText = (value: unknown) => typeof value === 'string' ? value : null;
+
+  return {
+    id: String(order.id || ''),
+    order_no: String(order.order_no || order.order_number || order.id || ''),
+    order_number: nullableText(order.order_number) || undefined,
+    customer_name: nullableText(order.customer_name),
+    customer_email: nullableText(order.customer_email),
+    customer_phone: nullableText(order.customer_phone),
+    amount: numericValue(order.amount ?? order.total_amount_inr, 0) || 0,
+    total_amount_inr: numericValue(order.total_amount_inr),
+    products: productText || 'No product lines recorded',
+    status: status.label,
+    status_key: status.key,
+    created_at: typeof order.created_at === 'string' ? order.created_at : '',
+    updated_at: nullableText(order.updated_at),
+    businesses: order.businesses as AdminOrder['businesses'],
+    order_items: items,
+    shipping_address: nullableText(order.shipping_address),
+    city: nullableText(order.city),
+    state: nullableText(order.state),
+    postal_code: nullableText(order.postal_code),
+    country: nullableText(order.country),
+    tracking_number: nullableText(order.tracking_number),
+    courier_partner: nullableText(order.courier_partner),
+    notes: nullableText(order.notes),
+  };
+}
+
+function normalizeAdminProduct(product: Record<string, unknown>): AdminProduct {
+  const stockField = INVENTORY_FIELDS.find((field) => Object.prototype.hasOwnProperty.call(product, field)) || null;
+  return {
+    id: String(product.id),
+    productName: String(product.product_name || product.name || 'Unnamed product'),
+    slug: String(product.slug || ''),
+    description: String(product.description || ''),
+    priceInr: numericValue(product.price_inr ?? product.price, 0) || 0,
+    comparePriceInr: numericValue(product.compare_price_inr ?? product.compare_price),
+    imageUrl: String(product.image_url || ''),
+    badge: String(product.badge || ''),
+    isActive: product.is_active !== false,
+    sortOrder: numericValue(product.sort_order, 0) || 0,
+    stock: stockField ? numericValue(product[stockField]) : null,
+    stockField,
+    createdAt: typeof product.created_at === 'string' ? product.created_at : null,
+    updatedAt: typeof product.updated_at === 'string' ? product.updated_at : null,
+  };
+}
+
+function productSlug(value: string) {
+  return value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+export async function getAdminProducts(token: string) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await (supabase as any)
+    .from('product_catalog')
+    .select('*')
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: false });
+  if (error) {
+    throw new Error(`Unable to load the product catalog. Verify the product_catalog schema is deployed: ${error.message || 'database query failed'}`);
+  }
+  const products: AdminProduct[] = (data || []).map((product: Record<string, unknown>) => normalizeAdminProduct(product));
+  return {
+    products,
+    inventoryTrackingAvailable: products.some((product) => product.stockField !== null),
+  };
+}
+
+export async function createAdminProduct(token: string, input: AdminProductInput) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+  const name = input.productName.trim();
+  const slug = productSlug(input.slug || name);
+  if (!name || !slug) throw new Error('Product name and a valid slug are required.');
+  if (!Number.isFinite(input.priceInr) || input.priceInr < 0) throw new Error('Product price must be a non-negative number.');
+
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await (supabase as any)
+    .from('product_catalog')
+    .insert({
+      product_name: name,
+      slug,
+      description: input.description?.trim() || null,
+      price_inr: input.priceInr,
+      compare_price_inr: input.comparePriceInr ?? null,
+      image_url: input.imageUrl?.trim() || '/products/placeholder.jpg',
+      badge: input.badge?.trim() || null,
+      is_active: input.isActive !== false,
+      sort_order: input.sortOrder ?? 1,
+    })
+    .select('*')
+    .single();
+  if (error) {
+    throw new Error(`Unable to create the product. The catalog schema may not support this operation: ${error.message || 'database query failed'}`);
+  }
+  await logAdminAction(token, 'Create Product', 'product_catalog', String(data.id), `Created ${name}`);
+  return normalizeAdminProduct(data);
+}
+
+export async function updateAdminProduct(token: string, productId: string, input: Partial<AdminProductInput>) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+  const supabase = getSupabaseAdminClient();
+  const { data: current, error: currentError } = await (supabase as any)
+    .from('product_catalog')
+    .select('*')
+    .eq('id', productId)
+    .single();
+  if (currentError || !current) {
+    throw new Error(`Unable to load this product before saving: ${currentError?.message || 'product not found'}`);
+  }
+
+  const update: Record<string, unknown> = {};
+  if (input.productName !== undefined) update.product_name = input.productName.trim();
+  if (input.slug !== undefined) update.slug = productSlug(input.slug);
+  if (input.description !== undefined) update.description = input.description.trim() || null;
+  if (input.priceInr !== undefined) {
+    if (!Number.isFinite(input.priceInr) || input.priceInr < 0) throw new Error('Product price must be a non-negative number.');
+    update.price_inr = input.priceInr;
+  }
+  if (input.comparePriceInr !== undefined) update.compare_price_inr = input.comparePriceInr;
+  if (input.imageUrl !== undefined) update.image_url = input.imageUrl.trim() || '/products/placeholder.jpg';
+  if (input.badge !== undefined) update.badge = input.badge.trim() || null;
+  if (input.isActive !== undefined) update.is_active = input.isActive;
+  if (input.sortOrder !== undefined) update.sort_order = input.sortOrder;
+  if (input.stock !== undefined) {
+    const stockField = INVENTORY_FIELDS.find((field) => Object.prototype.hasOwnProperty.call(current, field));
+    if (!stockField) {
+      throw new Error('Inventory tracking is unavailable: product_catalog has no stock quantity column, so stock changes cannot be persisted.');
+    }
+    if (input.stock !== null && (!Number.isInteger(input.stock) || input.stock < 0)) {
+      throw new Error('Stock must be a whole number greater than or equal to zero.');
+    }
+    update[stockField] = input.stock;
+  }
+  if (Object.keys(update).length === 0) return normalizeAdminProduct(current);
+
+  const { data, error } = await (supabase as any)
+    .from('product_catalog')
+    .update(update)
+    .eq('id', productId)
+    .select('*')
+    .single();
+  if (error) {
+    throw new Error(`Unable to save this product: ${error.message || 'database update failed'}`);
+  }
+  await logAdminAction(token, 'Update Product', 'product_catalog', productId, `Updated ${Object.keys(update).join(', ')}`);
+  return normalizeAdminProduct(data);
+}
+
+export async function updateAdminOrderStatus(token: string, orderId: string, statusKey: string, notes?: string) {
+  const session = await verifyAdminAccess(token);
+  if (!session.isAdmin) throw new Error('Unauthorized');
+  const requested = statusKey.toLowerCase().replace(/[\s-]+/g, '_');
+  if (!ORDER_STATUSES.includes(requested)) throw new Error('Unsupported order status.');
+  const supabase = getSupabaseAdminClient();
+  const { data: current, error: currentError } = await (supabase as any)
+    .from('orders')
+    .select('*')
+    .eq('id', orderId)
+    .single();
+  if (currentError || !current) throw new Error(`Unable to load this order before saving: ${currentError?.message || 'order not found'}`);
+
+  // The legacy admin migration used title-cased statuses; the production
+  // order schema uses lowercase values. Keep the database's existing style so
+  // old deployments do not violate their check constraint.
+  const currentStatus = typeof current.status === 'string' ? current.status : '';
+  const nextStatus = currentStatus && currentStatus === currentStatus.toLowerCase() ? requested : titleCase(requested);
+  const update: Record<string, unknown> = { status: nextStatus };
+  if (Object.prototype.hasOwnProperty.call(current, 'updated_at')) update.updated_at = new Date().toISOString();
+  if (notes !== undefined && Object.prototype.hasOwnProperty.call(current, 'notes')) update.notes = notes.trim() || null;
+
+  const { data, error } = await (supabase as any)
+    .from('orders')
+    .update(update)
+    .eq('id', orderId)
+    .select('*')
+    .single();
+  if (error) throw new Error(`Unable to update order status: ${error.message || 'database update failed'}`);
+
+  // History is additive and optional for old schemas. The status update above
+  // is authoritative; a missing history table must not make it look failed.
+  try {
+    await (supabase as any).from('order_status_history').insert({
+      order_id: orderId,
+      previous_status: current.status || null,
+      new_status: nextStatus,
+      notes: notes?.trim() || null,
+      updated_by_admin: session.adminId || null,
+    });
+  } catch (historyError) {
+    console.warn('Order status history is unavailable:', historyError);
+  }
+  await logAdminAction(token, 'Update Order Status', 'orders', orderId, `${currentStatus || 'unknown'} → ${nextStatus}`);
+  return normalizeAdminOrder({ ...current, ...data });
 }
 
 export async function getAdminIntegrations(token: string) {

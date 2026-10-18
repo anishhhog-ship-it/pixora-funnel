@@ -4,9 +4,10 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
-    "expo": "~57.0.26",
+    "expo": "~57.0.30",
     "expo-clipboard": "~57.0.2",
     "expo-constants": "~57.0.22",
+    "expo-font": "~57.0.4",
     "expo-linking": "~57.0.13",
     "expo-router": "~57.0.28",
     "expo-secure-store": "~57.0.4",
@@ -17,7 +18,7 @@
     "react-native-qrcode-svg": "^6.3.26",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
-    "react-native-svg": "^15.15.5"
+    "react-native-svg": "15.15.4"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
@@ -32,7 +33,10 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "doctor": "expo-doctor"
+    "doctor": "npx expo-doctor",
+    "release:check": "node scripts/release-check.mjs",
+    "export:android": "expo export --platform android",
+    "export:ios": "expo export --platform ios"
   },
   "private": true
 }

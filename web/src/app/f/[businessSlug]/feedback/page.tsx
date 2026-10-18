@@ -6,21 +6,15 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Star, ShieldCheck, HeartHandshake, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Star, ShieldCheck, HeartHandshake, CheckCircle2, ArrowLeft, MapPin, Phone } from 'lucide-react';
 import { businessService, reviewService, analyticsService } from '@/services';
 import { Business } from '@/types';
 import { isPrivateFeedbackRating } from '@/services/ratingRouting';
+import { getPrivateFeedbackCopy, getPrivateFeedbackTopics, normalizeBusinessCategory } from '@/config/businessCategories';
 
-const ISSUE_TAGS = [
-  'Slow Service',
-  'Food Quality / Taste',
-  'Staff Behavior',
-  'Long Waiting Time',
-  'Cleanliness & Hygiene',
-  'Incorrect Order',
-  'High Noise / Ambience',
-  'Billing Issue'
-];
+function getRatingSessionKey(slug: string): string {
+  return `pixora:funnel:${encodeURIComponent(slug)}:rating`;
+}
 
 export default function PrivateFeedbackPage() {
   const router = useRouter();
@@ -37,26 +31,39 @@ export default function PrivateFeedbackPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const categoryConfig = normalizeBusinessCategory(business?.category);
+  const feedbackCopy = getPrivateFeedbackCopy(business?.category);
+  const savedFeedbackTopics = business?.theme?.feedbackTopics;
+  const feedbackTopics = Array.isArray(savedFeedbackTopics) && savedFeedbackTopics.length > 0
+    ? savedFeedbackTopics.filter((topic): topic is string => typeof topic === 'string' && topic.trim().length > 0).slice(0, 8)
+    : getPrivateFeedbackTopics(business?.category);
+  const primaryColor = business?.theme?.primaryColor || '#0B3D2E';
+  const combinedAddress = [business?.address, business?.city]
+    .filter((value): value is string => Boolean(value && value.trim()))
+    .map((value) => value.trim())
+    .filter((value, index, values) => values.indexOf(value) === index)
+    .join(', ');
+
   useEffect(() => {
     Promise.resolve().then(() => {
       const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const urlRating = urlParams?.get('rating');
       const urlExp = urlParams?.get('text');
-      const storedRating = urlRating || sessionStorage.getItem('temp_rating');
+      const ratingSessionKey = getRatingSessionKey(businessSlug);
+      const storedRating = urlRating || sessionStorage.getItem(ratingSessionKey);
       if (storedRating) {
         const parsed = parseInt(storedRating, 10);
         if (!isNaN(parsed) && parsed >= 1 && parsed <= 5 && !isPrivateFeedbackRating(parsed)) {
-          sessionStorage.removeItem('temp_rating');
+          sessionStorage.removeItem(ratingSessionKey);
           router.replace(`/f/${businessSlug}`);
           return;
         }
         if (!isNaN(parsed) && parsed > 0 && parsed <= 3) {
           setRating(parsed);
-          sessionStorage.setItem('temp_rating', parsed.toString());
+          sessionStorage.setItem(ratingSessionKey, parsed.toString());
         }
       }
-      const storedExp = urlExp || sessionStorage.getItem('temp_experience');
-      if (storedExp) setMessage(storedExp);
+      if (urlExp) setMessage(urlExp);
     });
     businessService.getBusinessBySlug(businessSlug).then(setBusiness);
     analyticsService.trackEvent('negative_feedback_intercepted', { slug: businessSlug });
@@ -116,38 +123,60 @@ export default function PrivateFeedbackPage() {
         </div>
       </div>
 
-      {!isSubmitted ? (
+       {business && (
+         <div className="mb-4 rounded-2xl border border-slate-200/80 bg-white/85 px-4 py-3 shadow-sm">
+           <div className="flex items-start justify-between gap-3">
+             <div className="min-w-0">
+               <p className="truncate text-base font-extrabold tracking-tight text-slate-900">{business.name}</p>
+               <span className="mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">{categoryConfig.name}</span>
+             </div>
+             <HeartHandshake className="h-5 w-5 shrink-0" style={{ color: primaryColor }} aria-hidden="true" />
+           </div>
+           {combinedAddress && (
+             <div className="mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed text-slate-600">
+               <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: primaryColor }} aria-hidden="true" />
+               <span>{combinedAddress}</span>
+             </div>
+           )}
+           {business.phone && (
+             <a href={`tel:${business.phone.replace(/[^0-9+]/g, '')}`} className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 hover:underline">
+               <Phone className="h-3.5 w-3.5 shrink-0" style={{ color: primaryColor }} aria-hidden="true" />
+               {business.phone}
+             </a>
+           )}
+         </div>
+       )}
+
+       {!isSubmitted ? (
          <Card className="w-full rounded-[2rem] border border-white/60 bg-[#FDFBF7] p-6 text-gray-900 shadow-[0_24px_70px_rgba(0,0,0,0.22)] sm:p-7">
            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
             <HeartHandshake className="w-6 h-6" />
           </div>
 
-          <h2 className="text-2xl font-serif font-bold text-center mb-1 text-gray-900">
-            We are deeply sorry.
-          </h2>
-          <p className="text-xs text-center text-gray-600 mb-5 leading-relaxed max-w-[300px] mx-auto">
-            Your visit should have been flawless. Please tell the management team directly what fell short so we can make this right.
-          </p>
+             <h2 className="text-2xl font-serif font-bold text-center mb-1 text-gray-900">
+             {feedbackCopy.heading}
+           </h2>
+           <p className="text-xs text-center text-gray-600 mb-5 leading-relaxed max-w-[300px] mx-auto">
+             {feedbackCopy.subheading}
+           </p>
 
-          <div className="flex justify-center items-center gap-1.5 bg-gray-100 py-2 px-4 rounded-full w-fit mx-auto mb-6">
-            <span className="text-xs font-semibold text-gray-600 mr-1">Your rating:</span>
-            {[1, 2, 3, 4, 5].map((s) => (
-              <Star
-                key={s}
-                className={`w-4 h-4 ${
-                  s <= rating ? 'fill-amber-500 text-amber-500' : 'text-gray-300'
-                }`}
-              />
-            ))}
-          </div>
+             <div className="flex justify-center items-center gap-1.5 bg-gray-100 py-2 px-4 rounded-full w-fit mx-auto mb-6" role="group" aria-label="Select your private feedback rating">
+               <span className="text-xs font-semibold text-gray-600 mr-1">Your rating:</span>
+             {[1, 2, 3].map((s) => (
+               <button key={s} type="button" onClick={() => setRating(s)} aria-label={`Select ${s} star rating`} aria-pressed={rating === s} className="funnel-focus-ring rounded-md p-0.5">
+                 <Star className={`h-5 w-5 ${s <= rating ? 'fill-amber-500 text-amber-500' : 'text-gray-300'}`} />
+               </button>
+             ))}
+             <span className="ml-1 text-[10px] font-semibold text-slate-500">Private support</span>
+           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-2">
-                What could we have done better? (Select all that apply)
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {ISSUE_TAGS.map((tag) => {
+                 {feedbackCopy.question} (Select all that apply)
+               </label>
+               <div className="flex flex-wrap gap-1.5">
+                 {feedbackTopics.map((tag) => {
                   const active = selectedTags.includes(tag);
                    return (
                     <button
@@ -155,11 +184,12 @@ export default function PrivateFeedbackPage() {
                       type="button"
                       onClick={() => toggleTag(tag)}
                       aria-pressed={active}
-                      className={`funnel-focus-ring rounded-full border px-3 py-1.5 text-xs transition-all ${
-                        active 
-                          ? 'bg-[#0B3D2E] text-white border-[#0B3D2E] shadow-sm scale-[1.02]' 
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
-                      }`}
+                       className={`funnel-focus-ring rounded-full border px-3 py-1.5 text-xs transition-all ${
+                         active
+                           ? 'text-white shadow-sm scale-[1.02]'
+                           : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                       }`}
+                       style={active ? { backgroundColor: primaryColor, borderColor: primaryColor } : undefined}
                     >
                       {tag}
                     </button>
@@ -173,8 +203,8 @@ export default function PrivateFeedbackPage() {
                 Tell the manager what happened:
               </label>
               <Textarea
-                placeholder="Please describe your experience in detail. Your feedback goes directly to the owner/manager..."
-                 className="funnel-focus-ring min-h-[110px] resize-none rounded-xl border-gray-200 bg-white text-sm focus-visible:ring-[#0B3D2E]"
+                 placeholder={feedbackCopy.placeholder}
+                  className="funnel-focus-ring min-h-[110px] resize-none rounded-xl border-gray-200 bg-white text-sm"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 required
@@ -210,7 +240,7 @@ export default function PrivateFeedbackPage() {
               <Button
                 type="submit"
                  className="funnel-focus-ring h-12 w-full rounded-xl text-base text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
-                 style={{ backgroundColor: business?.theme?.primaryColor || '#0B3D2E' }}
+                 style={{ backgroundColor: primaryColor }}
                 disabled={isSubmitting || (!message.trim() && selectedTags.length === 0)}
               >
                 {isSubmitting ? 'Sending directly to Owner...' : 'Send Private Feedback →'}
@@ -256,7 +286,7 @@ export default function PrivateFeedbackPage() {
           <Button
             onClick={() => router.push(`/f/${businessSlug}`)}
              className="funnel-focus-ring h-11 w-full rounded-xl text-white transition-all hover:-translate-y-0.5 hover:shadow-lg"
-             style={{ backgroundColor: business?.theme?.primaryColor || '#0B3D2E' }}
+             style={{ backgroundColor: primaryColor }}
           >
             Return to Home
           </Button>

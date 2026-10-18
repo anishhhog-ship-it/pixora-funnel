@@ -27,20 +27,30 @@ export async function POST(req: NextRequest) {
     order.verificationMethod = 'ADMIN_APPROVED';
 
     const targetBizId = businessId || order.businessId;
-    const twoYearsExpiry = new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString();
+    const lifetimeExpiry = order.isLifetime === false
+      ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+      : null;
 
     // 1. Supabase Cloud Sync
     try {
       const supabase = getSupabaseAdminClient();
       if (supabase && targetBizId && !targetBizId.startsWith('biz_')) {
         await (supabase as any)
-          .from('businesses')
-          .update({ status: 'active', trial_expires_at: twoYearsExpiry })
+           .from('businesses')
+           .update({ status: 'active', plan_status: 'active', trial_expires_at: lifetimeExpiry })
           .or(`id.eq.${targetBizId},slug.eq.${targetBizId}`);
 
-        await (supabase as any)
-          .from('trials')
-          .upsert({ business_id: targetBizId, status: 'active', expires_at: twoYearsExpiry });
+         if (lifetimeExpiry) {
+           await (supabase as any)
+             .from('trials')
+             .upsert({ business_id: targetBizId, status: 'active', expires_at: lifetimeExpiry });
+         } else {
+           await (supabase as any)
+             .from('trials')
+             .update({ status: 'cancelled' })
+             .eq('business_id', targetBizId)
+             .eq('status', 'active');
+         }
       }
     } catch (e) {
       console.warn('Supabase cloud activation error in approve:', e);
@@ -48,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `✓ Order #${orderId} approved! Business dashboard has been activated for 2 Years.`,
+       message: `✓ Order #${orderId} approved! Business dashboard has been activated with lifetime access.`,
       order: order || { id: orderId, status: 'PAID' },
     });
   } catch (error: any) {

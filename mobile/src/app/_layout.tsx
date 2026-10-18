@@ -1,13 +1,18 @@
 import { Stack } from 'expo-router';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { SessionProvider, SplashScreenController, useSession } from '@/ctx';
 import { colors } from '@/theme';
 
 export default function RootLayout() {
   return (
-    <SessionProvider>
-      <SplashScreenController />
-      <RootNavigator />
-    </SessionProvider>
+    <SafeAreaProvider>
+      <SessionProvider>
+        <SplashScreenController />
+        <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.background }}>
+          <RootNavigator />
+        </SafeAreaView>
+      </SessionProvider>
+    </SafeAreaProvider>
   );
 }
 

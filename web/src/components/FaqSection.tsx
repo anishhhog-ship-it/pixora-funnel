@@ -19,7 +19,7 @@ const faqs: FaqItem[] = [
   },
   {
     question: 'How do the pricing plans work?',
-    answer: 'Pixora Funnel offers two transparent plans with zero monthly SaaS fees: (1) Standard Plan at ₹2,599/year (software only, without physical NFC card) and (2) Pro Plan at ₹2,999 — where the first 100 accounts receive permanent Lifetime Free Access with zero annual renewals (includes complete software suite + a custom printed NFC Smart Tap Review Card delivered free to your door). Both plans activate the full AI Auto Reply System for your Google Business Profile.',
+     answer: 'Pixora Funnel offers two transparent lifetime plans with zero monthly SaaS fees: Lifetime Software at ₹2,599 without a physical NFC card, and Lifetime Software + NFC doorstep delivery at ₹2,999. Both plans include the complete software suite and activate the full AI Auto Reply System for your Google Business Profile.',
   },
   {
     question: 'Is the Auto Reply system available on trial accounts?',
@@ -43,7 +43,7 @@ const faqs: FaqItem[] = [
   },
   {
     question: 'What happens after the 1-day free trial?',
-    answer: 'During your 1-day trial, you have full access to generate your live funnel, print sample QRs, and explore the dashboard. After the demo time expires, you can unlock your funnel and turn on the Auto Reply system by selecting either the ₹2,599 2-year plan (without NFC card) or the ₹2,999 plan (where the first 100 accounts get Lifetime Free access + custom NFC review card). Message admin directly on WhatsApp (+91 92573 78047) for immediate activation.',
+     answer: 'During your 1-day trial, you have full access to generate your live funnel, print sample QRs, and explore the dashboard. After the trial ends, you can unlock your funnel and turn on the Auto Reply system by selecting Lifetime Software at ₹2,599 or Lifetime Software + NFC doorstep delivery at ₹2,999. Message admin directly on WhatsApp (+91 92573 78047) for immediate activation.',
   },
   {
     question: 'Do customers need to create an account or download an app?',

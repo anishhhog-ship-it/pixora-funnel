@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Linking, RefreshControl, ScrollView, StyleShe
 import { router } from 'expo-router';
 import { ExternalLink, Filter, RefreshCw, Search, Star } from 'lucide-react-native';
 import { useWorkspace } from '@/workspace';
-import { colors, radii, shadow } from '@/theme';
+import { colors } from '@/theme';
 import { formatDate, formatRelativeDate, initials } from '@/lib/format';
 import { Card, EmptyState, ErrorState, IconButton, LoadingState, PageHeader, PrimaryButton, Stars, StatusPill } from '@/components/ui';
 import type { MobileReview } from '@/lib/types';
@@ -16,16 +16,18 @@ export default function ReviewsScreen() {
   const [replyFilter, setReplyFilter] = useState<ReplyFilter>('all');
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const filteredReviews = useMemo(() => {
+    const reviews = workspace?.reviews || [];
+    return reviews.filter((review) => (!ratingFilter || review.rating === ratingFilter) && (replyFilter === 'all' || review.reply_status === replyFilter));
+  }, [ratingFilter, replyFilter, workspace?.reviews]);
 
   if (status === 'loading') return <LoadingState label="Loading your reviews…" />;
   if (status === 'error') return <ErrorState message={error || 'The reviews workspace could not be loaded.'} onRetry={() => void refresh()} />;
   if (status === 'empty' || !workspace) return <EmptyState icon={<Search color={colors.blue} size={26} />} title="No business workspace linked" description="Reviews are scoped to your authenticated business workspace. Sign in with the account created during Pixora onboarding." actionLabel="Try again" onAction={() => void refresh()} />;
 
-  const { business, reviews, reviewsError } = workspace;
+  const { business, reviewsError } = workspace;
   const connection = business.googleConnection;
   const isConnected = connection?.status === 'connected';
-  const filteredReviews = useMemo(() => reviews.filter((review) => (!ratingFilter || review.rating === ratingFilter) && (replyFilter === 'all' || review.reply_status === replyFilter)), [ratingFilter, replyFilter, reviews]);
-
   const handleSync = async () => {
     setIsSyncing(true);
     try {

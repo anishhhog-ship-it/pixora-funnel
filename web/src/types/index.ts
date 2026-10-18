@@ -27,6 +27,7 @@ export type BusinessTheme = {
   subheadline?: string;
   ctaText?: string;
   postCompletionCTA?: string;
+  feedbackTopics?: string[];
 };
 
 export type Business = {

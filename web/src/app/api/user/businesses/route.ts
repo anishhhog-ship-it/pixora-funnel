@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdminClient } from '@/lib/supabase/server';
 import { extractAuthToken } from '@/services/salesAuthService';
 import { Business } from '@/types';
+import { resolveBusinessPlanStatus } from '@/services/businessAccess';
+import { getTrialWindow } from '@/services/trialContract';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://funnel.pixoraautomations.com';
 
@@ -97,8 +99,6 @@ async function resolveUserBusinesses(req: NextRequest) {
             if (eb.owner_id !== userId) {
               await admin.from('businesses').update({
                 owner_id: userId,
-                status: 'active',
-                plan_status: 'active',
                 updated_at: new Date().toISOString(),
               }).eq('id', eb.id);
 
@@ -143,8 +143,6 @@ async function resolveUserBusinesses(req: NextRequest) {
                 await admin.from('businesses').update({
                   owner_id: userId,
                   email: email,
-                  status: 'active',
-                  plan_status: 'active',
                   updated_at: new Date().toISOString(),
                 }).eq('id', ordBiz.id);
 
@@ -193,8 +191,6 @@ async function resolveUserBusinesses(req: NextRequest) {
                 await admin.from('businesses').update({
                   owner_id: userId,
                   email: email,
-                  status: 'active',
-                  plan_status: 'active',
                   updated_at: new Date().toISOString(),
                 }).eq('id', pBiz.id);
 
@@ -215,8 +211,9 @@ async function resolveUserBusinesses(req: NextRequest) {
       }
     }
 
-    // 6. Absolute Guarantee: If STILL empty, auto-provision an active business tenant!
-    // A client who was provisioned or logged in must NEVER be left with a dead end!
+    // 6. If there is no linked tenant, provision a trial workspace rather than
+    // silently granting paid access. Entitlement must come from an explicit
+    // onboarding or paid activation flow.
     if (businesses.length === 0) {
       try {
         const defaultName = fullName && fullName !== 'Business Owner'
@@ -224,7 +221,19 @@ async function resolveUserBusinesses(req: NextRequest) {
           : (email ? `${email.split('@')[0]} Business` : 'My Business');
 
         const slug = await generateSlug(admin, defaultName);
-        const now = new Date().toISOString();
+        const now = new Date();
+        const { startedAt, expiresAt } = getTrialWindow(now);
+
+        // The business and trial rows reference the profile record. Ensure it
+        // exists before provisioning the first client workspace.
+        await admin.from('profiles').upsert({
+          id: userId,
+          auth_user_id: userId,
+          email,
+          full_name: fullName,
+          role: 'business_owner',
+          updated_at: startedAt,
+        }, { onConflict: 'id' });
 
         const { data: newBiz, error: createBizErr } = await admin.from('businesses').insert({
           name: defaultName,
@@ -232,18 +241,29 @@ async function resolveUserBusinesses(req: NextRequest) {
           owner_id: userId,
           email: email || null,
           category: 'General Business',
-          status: 'active',
-          plan_status: 'active',
+          status: 'trial',
+          plan_status: 'trial',
+          trial_expires_at: expiresAt,
           primary_color: '#0B3D2E',
           secondary_color: '#D4AF37',
           menu_enabled: true,
           products_enabled: true,
-          created_at: now,
-          updated_at: now,
+          created_at: startedAt,
+          updated_at: startedAt,
         }).select('*').single();
 
         if (newBiz) {
           businesses.push(newBiz);
+
+          // Match the public onboarding flow: the business entitlement fields
+          // and the active trial record describe the same 24-hour window.
+          await admin.from('trials').insert({
+            user_id: userId,
+            business_id: newBiz.id,
+            started_at: startedAt,
+            expires_at: expiresAt,
+            status: 'active',
+          });
 
           // Auto-create funnel
           const { data: funnel } = await admin.from('funnels').insert({
@@ -252,8 +272,8 @@ async function resolveUserBusinesses(req: NextRequest) {
             status: 'active',
             review_enabled: true,
             smart_review_enabled: true,
-            created_at: now,
-            updated_at: now,
+            created_at: startedAt,
+            updated_at: startedAt,
           }).select('id').single();
 
           // Auto-create QR code
@@ -265,8 +285,8 @@ async function resolveUserBusinesses(req: NextRequest) {
               short_code: `px-${crypto.randomUUID().slice(0, 8)}`,
               destination_url: `${APP_URL}/f/${slug}`,
               status: 'active',
-              created_at: now,
-              updated_at: now,
+              created_at: startedAt,
+              updated_at: startedAt,
             });
           }
 
@@ -275,8 +295,8 @@ async function resolveUserBusinesses(req: NextRequest) {
               business_id: newBiz.id,
               user_id: userId,
               role: 'owner',
-              created_at: now,
-              updated_at: now,
+              created_at: startedAt,
+              updated_at: startedAt,
             }, { onConflict: 'business_id,user_id' });
           } catch {}
         }
@@ -289,6 +309,7 @@ async function resolveUserBusinesses(req: NextRequest) {
     try {
       await admin.from('profiles').upsert({
         id: userId,
+        auth_user_id: userId,
         email: email,
         full_name: fullName,
         role: 'business_owner',
@@ -317,8 +338,8 @@ async function resolveUserBusinesses(req: NextRequest) {
       ownerName: fullName,
       phone: b.phone || '',
       email: b.email || email,
-      planStatus: 'active' as const,
-      trialExpiresAt: b.trial_expires_at || null,
+      planStatus: resolveBusinessPlanStatus(b),
+      trialExpiresAt: b.trial_expires_at || undefined,
       qrScans: b.qr_scans || 0,
       reviewsCount: b.reviews_count || 0,
       createdAt: b.created_at,

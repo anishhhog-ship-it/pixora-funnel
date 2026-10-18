@@ -56,6 +56,7 @@ export interface Database {
           address: string | null;
           city: string | null;
           state: string | null;
+          pincode: string | null;
           country: string | null;
           logo_url: string | null;
           cover_image_url: string | null;
@@ -67,6 +68,8 @@ export interface Database {
           menu_enabled: boolean | null;
           services_enabled: boolean | null;
           status: string;
+          plan_status: 'trial' | 'active' | 'expired' | null;
+          trial_expires_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -84,6 +87,7 @@ export interface Database {
           address?: string | null;
           city?: string | null;
           state?: string | null;
+          pincode?: string | null;
           country?: string | null;
           logo_url?: string | null;
           cover_image_url?: string | null;
@@ -95,6 +99,8 @@ export interface Database {
           menu_enabled?: boolean | null;
           services_enabled?: boolean | null;
           status?: string;
+          plan_status?: 'trial' | 'active' | 'expired' | null;
+          trial_expires_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -112,6 +118,7 @@ export interface Database {
           address?: string | null;
           city?: string | null;
           state?: string | null;
+          pincode?: string | null;
           country?: string | null;
           logo_url?: string | null;
           cover_image_url?: string | null;
@@ -123,6 +130,8 @@ export interface Database {
           menu_enabled?: boolean | null;
           services_enabled?: boolean | null;
           status?: string;
+          plan_status?: 'trial' | 'active' | 'expired' | null;
+          trial_expires_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

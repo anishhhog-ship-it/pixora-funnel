@@ -1,6 +1,7 @@
 import { Trial } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { statsService } from './statsService';
+import { getTrialWindow } from './trialContract';
 
 const isBrowser = typeof window !== 'undefined';
 const TRIAL_STORAGE_KEY = 'pixora_active_trial';
@@ -10,9 +11,7 @@ export const trialService = {
     // Increment live platform demos count
     statsService.recordTrialStarted();
 
-    const startedAt = new Date().toISOString();
-    // 1-Day Trial (24 hours from start)
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const { startedAt, expiresAt } = getTrialWindow();
 
     let trialId = `trial_${Date.now()}`;
 
@@ -32,6 +31,19 @@ export const trialService = {
 
         if (!error && data) {
           trialId = data.id;
+        }
+
+        // Keep the business entitlement fields in sync with the trial record.
+        // This also repairs rows created by an older onboarding attempt.
+        if (businessId && !businessId.startsWith('biz_')) {
+          await supabase
+            .from('businesses')
+            .update({
+              status: 'trial',
+              plan_status: 'trial',
+              trial_expires_at: expiresAt,
+            })
+            .eq('id', businessId);
         }
       } catch (err) {
         console.warn('Could not persist trial to Supabase:', err);

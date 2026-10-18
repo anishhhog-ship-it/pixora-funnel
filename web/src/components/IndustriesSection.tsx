@@ -35,7 +35,7 @@ const industries: Industry[] = [
   {
     id: 'restaurants',
     name: 'Restaurants & Cafés',
-    categorySlug: 'Restaurant & Fine Dining',
+    categorySlug: 'restaurant',
     icon: Utensils,
     bgColor: 'bg-amber-50/70',
     iconColor: 'text-amber-600',
@@ -48,7 +48,7 @@ const industries: Industry[] = [
   {
     id: 'salons',
     name: 'Salons & Spas',
-    categorySlug: 'Salon & Luxury Spa',
+    categorySlug: 'salon',
     icon: Scissors,
     bgColor: 'bg-rose-50/70',
     iconColor: 'text-rose-500',
@@ -61,7 +61,7 @@ const industries: Industry[] = [
   {
     id: 'clinics',
     name: 'Clinics & Healthcare',
-    categorySlug: 'Clinic & Wellness Centre',
+    categorySlug: 'clinic',
     icon: PlusSquare,
     bgColor: 'bg-sky-50/70',
     iconColor: 'text-sky-600',
@@ -74,7 +74,7 @@ const industries: Industry[] = [
   {
     id: 'retail',
     name: 'Retail Stores & Boutiques',
-    categorySlug: 'Retail Boutique & Lifestyle',
+    categorySlug: 'retail',
     icon: ShoppingBag,
     bgColor: 'bg-purple-50/70',
     iconColor: 'text-purple-600',
@@ -87,7 +87,7 @@ const industries: Industry[] = [
   {
     id: 'gyms',
     name: 'Gyms & Fitness',
-    categorySlug: 'Fitness & Sports Club',
+    categorySlug: 'gym',
     icon: Dumbbell,
     bgColor: 'bg-emerald-50/70',
     iconColor: 'text-emerald-600',
@@ -100,7 +100,7 @@ const industries: Industry[] = [
   {
     id: 'hotels',
     name: 'Hotels & Homestays',
-    categorySlug: 'Boutique Hotel & Stay',
+    categorySlug: 'hotel',
     icon: Bed,
     bgColor: 'bg-orange-50/70',
     iconColor: 'text-orange-500',
@@ -113,7 +113,7 @@ const industries: Industry[] = [
   {
     id: 'education',
     name: 'Education & Coaching',
-    categorySlug: 'Education & Coaching Institute',
+    categorySlug: 'education',
     icon: GraduationCap,
     bgColor: 'bg-blue-50/70',
     iconColor: 'text-blue-600',
@@ -126,7 +126,7 @@ const industries: Industry[] = [
   {
     id: 'other',
     name: 'Any Local Business',
-    categorySlug: 'Local Business',
+    categorySlug: 'other',
     icon: MoreHorizontal,
     bgColor: 'bg-slate-100/70',
     iconColor: 'text-slate-600',

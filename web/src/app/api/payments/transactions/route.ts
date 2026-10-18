@@ -34,23 +34,33 @@ export async function POST(req: NextRequest) {
     }
 
     const targetBizId = businessId || order?.businessId;
-    const twoYearsExpiry = new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString();
+    const lifetimeExpiry = order?.isLifetime === false
+      ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+      : null;
 
     const supabase = getSupabaseAdminClient();
     if (supabase && targetBizId && !targetBizId.startsWith('biz_')) {
       await (supabase as any)
         .from('businesses')
-        .update({ status: 'active', trial_expires_at: twoYearsExpiry })
+         .update({ status: 'active', plan_status: 'active', trial_expires_at: lifetimeExpiry })
         .or(`id.eq.${targetBizId},slug.eq.${targetBizId}`);
 
-      await (supabase as any)
-        .from('trials')
-        .upsert({ business_id: targetBizId, status: 'active', expires_at: twoYearsExpiry });
+       if (lifetimeExpiry) {
+         await (supabase as any)
+           .from('trials')
+           .upsert({ business_id: targetBizId, status: 'active', expires_at: lifetimeExpiry });
+       } else {
+         await (supabase as any)
+           .from('trials')
+           .update({ status: 'cancelled' })
+           .eq('business_id', targetBizId)
+           .eq('status', 'active');
+       }
     }
 
     return NextResponse.json({
       success: true,
-      message: '✓ Order manually approved and business activated for 2 Years.',
+      message: '✓ Order manually approved and business activated with lifetime access.',
       order,
     });
   } catch (error: any) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { constructUpiUri } from '@/lib/qrDecoder';
+import { DEFAULT_PRICING_PLAN_SLUG, getPricingPlan } from '@/config/pricing';
 
 // In-memory global order map for instant server-side status checks
 declare global {
@@ -22,9 +23,10 @@ if (!global.__pixoraPaymentConfig) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { businessId, businessName, planId, planName, amount } = body;
+    const { businessId, businessName, planId } = body;
+    const plan = getPricingPlan(planId || DEFAULT_PRICING_PLAN_SLUG);
 
-    if (!amount || !businessId) {
+    if (!businessId || !plan) {
       return NextResponse.json({ success: false, error: 'Missing required parameters' }, { status: 400 });
     }
 
@@ -37,18 +39,20 @@ export async function POST(req: NextRequest) {
     const upiUri = constructUpiUri({
       upiId: config.upiId,
       payeeName: config.payeeName,
-      amount: Number(amount),
+      amount: plan.price_inr,
       orderId,
-      note: `Pixora Plan - ${orderId}`,
+      note: `Pixora ${plan.name} - ${orderId}`,
     });
 
     const order = {
       id: orderId,
       businessId,
       businessName: businessName || 'Client Business',
-      planId: planId || 'plan_2year_software',
-      planName: planName || 'Standard 2-Year Plan',
-      amount: Number(amount),
+      planId: plan.slug,
+      planName: plan.name,
+      amount: plan.price_inr,
+      isLifetime: plan.is_lifetime,
+      includesNfc: plan.includes_nfc,
       currency: 'INR',
       status: 'PENDING',
       upiUri,
