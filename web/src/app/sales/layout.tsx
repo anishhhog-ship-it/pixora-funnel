@@ -45,7 +45,13 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     async function checkSalesAuth() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        let session = (await supabase.auth.getSession()).data.session;
+        if (!session || (session.expires_at && session.expires_at * 1000 < Date.now() + 60000)) {
+          const refreshed = await supabase.auth.refreshSession();
+          if (refreshed.data.session) {
+            session = refreshed.data.session;
+          }
+        }
         if (!session) {
           router.push('/login?redirect=/sales');
           return;

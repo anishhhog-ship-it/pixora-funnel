@@ -70,7 +70,13 @@ function ConversionsPage() {
     async function loadInitialData() {
       try {
         setLoadError(null);
-        const { data: { session } } = await supabase.auth.getSession();
+        let session = (await supabase.auth.getSession()).data.session;
+        if (!session || (session.expires_at && session.expires_at * 1000 < Date.now() + 60000)) {
+          const refreshed = await supabase.auth.refreshSession();
+          if (refreshed.data.session) {
+            session = refreshed.data.session;
+          }
+        }
         const headers = { Authorization: session ? `Bearer ${session.access_token}` : '' };
 
         const [pRes, dRes, plRes] = await Promise.all([
@@ -153,14 +159,27 @@ function ConversionsPage() {
     setSubmitting(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      let session = (await supabase.auth.getSession()).data.session;
+      if (!session || (session.expires_at && session.expires_at * 1000 < Date.now() + 60000)) {
+        const refreshed = await supabase.auth.refreshSession();
+        if (refreshed.data.session) {
+          session = refreshed.data.session;
+        }
+      }
+
+      if (!session) {
+        setErrorMessage('Your sales session has expired. Please refresh the page or log in again.');
+        setSubmitting(false);
+        return;
+      }
+
       const idempotencyKey = createSalesIdempotencyKey(selectedProspectId || null, selectedDemoId || null);
 
       const res = await fetch('/api/sales/convert', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: session ? `Bearer ${session.access_token}` : '',
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           prospectId: selectedProspectId || null,
